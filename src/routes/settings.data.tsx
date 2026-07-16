@@ -71,12 +71,14 @@ const KIND_LABEL: Record<ImportKind, string> = {
   cluster: "Master Cluster",
   ticket: "Ticket",
   analyst: "Analyst Market",
+  competitor: "Competitor",
 };
 
 type ImportSummary = {
   cluster?: { rows: number; kab: number; prov: number };
   ticket?: { rows: number; bulan: number };
   analyst?: { rows: number; ae: number };
+  competitor?: { rows: number; unique: number; hargaMin: number; hargaMax: number; promo: number };
 };
 
 function formatBytes(n: number) {
