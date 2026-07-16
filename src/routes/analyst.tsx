@@ -177,8 +177,13 @@ function AnalystPage() {
           <CardHeader className="flex-row items-center gap-2 space-y-0">
             <Sparkles className="h-5 w-5 text-primary" />
             <CardTitle className="font-display text-base">AI Insight — Ringkasan Analyst Market</CardTitle>
-          </CardHeader>
+          <CardContent>
+            <p className="text-sm leading-relaxed text-muted-foreground">{aiInsight}</p>
+          </CardContent>
+        </Card>
+
         <Tabs defaultValue="charts" className="space-y-4">
+
           <TabsList>
             <TabsTrigger value="charts">Visualisasi</TabsTrigger>
             <TabsTrigger value="detail">Detail Profiling</TabsTrigger>
