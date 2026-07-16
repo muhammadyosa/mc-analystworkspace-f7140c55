@@ -57,14 +57,49 @@ function ReportsPage() {
 
   const stats = useMemo(() => {
     if (!clusters.length) return null;
-    const sumJun = clusters.reduce((a, c) => a + c.juni, 0);
-    const sumMei = clusters.reduce((a, c) => a + c.mei, 0);
+    const monthKeys: Array<keyof typeof clusters[number]> = [
+      "januari", "februari", "maret", "april", "mei", "juni",
+    ] as const;
+    const monthLabel = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun"];
+    const hcTrend = monthKeys.map((k, i) => ({
+      bulan: monthLabel[i],
+      hc: clusters.reduce((a, c) => a + (Number(c[k]) || 0), 0),
+    }));
+    const sumJun = hcTrend[5].hc;
+    const sumMei = hcTrend[4].hc;
     const growth = sumMei > 0 ? ((sumJun - sumMei) / sumMei) * 100 : 0;
     const topGrowth = [...clusters].sort((a, b) => b.deltaMeiJuni - a.deltaMeiJuni).slice(0, 5);
     const topDecline = [...clusters].sort((a, b) => a.deltaMeiJuni - b.deltaMeiJuni).slice(0, 5);
     const totalTicket = clusters.reduce((a, c) => a + c.ticket, 0);
     const running = actions.filter((a) => a.status === "onprogress").length;
-    return { sumJun, sumMei, growth, topGrowth, topDecline, totalTicket, running };
+    const done = actions.filter((a) => a.status === "done").length;
+    const belum = actions.filter((a) => a.status === "belum").length;
+    const actionStatus = [
+      { name: "Belum", value: belum },
+      { name: "On Progress", value: running },
+      { name: "Done", value: done },
+    ];
+    const topHC = [...clusters].sort((a, b) => b.juni - a.juni).slice(0, 8)
+      .map((c) => ({ cluster: c.cluster, hc: c.juni }));
+    const topTicket = [...clusters].sort((a, b) => b.ticket - a.ticket).slice(0, 8)
+      .map((c) => ({ cluster: c.cluster, ticket: c.ticket }));
+    // PIC performance: sum HC per PIC
+    const picMap = new Map<string, { hc: number; ticket: number }>();
+    clusters.forEach((c) => {
+      const pic = c.pic || "-";
+      const cur = picMap.get(pic) ?? { hc: 0, ticket: 0 };
+      cur.hc += c.juni;
+      cur.ticket += c.ticket;
+      picMap.set(pic, cur);
+    });
+    const picPerf = Array.from(picMap.entries())
+      .map(([pic, v]) => ({ pic, ...v }))
+      .sort((a, b) => b.hc - a.hc)
+      .slice(0, 8);
+    return {
+      sumJun, sumMei, growth, topGrowth, topDecline, totalTicket, running, done, belum,
+      hcTrend, actionStatus, topHC, topTicket, picPerf,
+    };
   }, [clusters, actions]);
 
   // Competitor Intelligence-derived charts
