@@ -4,6 +4,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useTheme } from "@/hooks/use-theme";
 import { useDataStore } from "@/lib/store";
 import { formatDistanceToNow } from "date-fns";
+import plnLogo from "@/assets/pln-iconplus.png.asset.json";
 
 export function AppHeader({ title, subtitle }: { title: string; subtitle?: string }) {
   const { theme, toggle } = useTheme();
@@ -22,6 +23,11 @@ export function AppHeader({ title, subtitle }: { title: string; subtitle?: strin
           Updated {formatDistanceToNow(lastUpdated, { addSuffix: true })}
         </div>
       )}
+      <img
+        src={plnLogo.url}
+        alt="PLN Icon Plus"
+        className="hidden h-8 w-auto object-contain sm:block"
+      />
       <Button variant="ghost" size="icon" onClick={toggle} aria-label="Toggle theme">
         {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
       </Button>
