@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as UploadRouteImport } from './routes/upload'
 import { Route as PriorityRouteImport } from './routes/priority'
 import { Route as MasterRouteImport } from './routes/master'
+import { Route as LoyaltyRouteImport } from './routes/loyalty'
 import { Route as ActionPlanRouteImport } from './routes/action-plan'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ClusterNameRouteImport } from './routes/cluster.$name'
@@ -29,6 +30,11 @@ const PriorityRoute = PriorityRouteImport.update({
 const MasterRoute = MasterRouteImport.update({
   id: '/master',
   path: '/master',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoyaltyRoute = LoyaltyRouteImport.update({
+  id: '/loyalty',
+  path: '/loyalty',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ActionPlanRoute = ActionPlanRouteImport.update({
@@ -50,6 +56,7 @@ const ClusterNameRoute = ClusterNameRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/action-plan': typeof ActionPlanRoute
+  '/loyalty': typeof LoyaltyRoute
   '/master': typeof MasterRoute
   '/priority': typeof PriorityRoute
   '/upload': typeof UploadRoute
@@ -58,6 +65,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/action-plan': typeof ActionPlanRoute
+  '/loyalty': typeof LoyaltyRoute
   '/master': typeof MasterRoute
   '/priority': typeof PriorityRoute
   '/upload': typeof UploadRoute
@@ -67,6 +75,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/action-plan': typeof ActionPlanRoute
+  '/loyalty': typeof LoyaltyRoute
   '/master': typeof MasterRoute
   '/priority': typeof PriorityRoute
   '/upload': typeof UploadRoute
@@ -77,6 +86,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/action-plan'
+    | '/loyalty'
     | '/master'
     | '/priority'
     | '/upload'
@@ -85,6 +95,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/action-plan'
+    | '/loyalty'
     | '/master'
     | '/priority'
     | '/upload'
@@ -93,6 +104,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/action-plan'
+    | '/loyalty'
     | '/master'
     | '/priority'
     | '/upload'
@@ -102,6 +114,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ActionPlanRoute: typeof ActionPlanRoute
+  LoyaltyRoute: typeof LoyaltyRoute
   MasterRoute: typeof MasterRoute
   PriorityRoute: typeof PriorityRoute
   UploadRoute: typeof UploadRoute
@@ -131,6 +144,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MasterRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/loyalty': {
+      id: '/loyalty'
+      path: '/loyalty'
+      fullPath: '/loyalty'
+      preLoaderRoute: typeof LoyaltyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/action-plan': {
       id: '/action-plan'
       path: '/action-plan'
@@ -158,6 +178,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ActionPlanRoute: ActionPlanRoute,
+  LoyaltyRoute: LoyaltyRoute,
   MasterRoute: MasterRoute,
   PriorityRoute: PriorityRoute,
   UploadRoute: UploadRoute,
