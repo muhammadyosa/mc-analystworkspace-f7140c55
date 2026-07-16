@@ -200,11 +200,12 @@ function MasterPage() {
               })}
             </TableBody>
           </Table>
-          <div className="flex items-center justify-between border-t border-border/60 px-4 py-3 text-xs text-muted-foreground">
+          </div>
+          <div className="flex flex-col gap-2 border-t border-border/60 px-4 py-3 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
             <div>
               {filtered.length} hasil · Halaman {page} / {totalPages}
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 self-end sm:self-auto">
               <Button size="sm" variant="outline" disabled={page === 1} onClick={() => setPage((p) => p - 1)}>
                 Prev
               </Button>
@@ -214,6 +215,7 @@ function MasterPage() {
             </div>
           </div>
         </Card>
+
       </div>
     </>
   );
