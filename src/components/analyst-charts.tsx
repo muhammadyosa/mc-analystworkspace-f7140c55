@@ -20,7 +20,23 @@ type Stats = {
   dayaBeli: { name: string; value: number }[];
 };
 
-export default function AnalystCharts({ stats: s }: { stats: Stats }) {
+type ChartClick = { activePayload?: Array<{ payload: Record<string, unknown> }> };
+
+export default function AnalystCharts({
+  stats: s,
+  onSelect,
+}: {
+  stats: Stats;
+  onSelect?: (kind: "competitor" | "potensi" | "promo" | "segment" | "strategy" | "dayaBeli", data: Record<string, unknown>) => void;
+}) {
+  const handleBar = (kind: Parameters<NonNullable<typeof onSelect>>[0]) => (p: ChartClick) => {
+    const d = p?.activePayload?.[0]?.payload;
+    if (d && onSelect) onSelect(kind, d);
+  };
+  const handlePie = (kind: Parameters<NonNullable<typeof onSelect>>[0]) => (d: Record<string, unknown>) => {
+    if (d && onSelect) onSelect(kind, d);
+  };
+  const cursor = onSelect ? { style: { cursor: "pointer" } } : {};
   const potensiData = [
     { name: "Tinggi", value: s.potensi.tinggi },
     { name: "Sedang", value: s.potensi.sedang },
