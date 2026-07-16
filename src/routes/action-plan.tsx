@@ -369,15 +369,15 @@ function ActionPlanPage() {
   }, [analyst]);
 
   const competitorByCluster = useMemo(() => {
-    const m = new Map<string, (typeof competitors)[number][]>();
-    for (const c of competitors) {
+    const m = new Map<string, (typeof competitorData)[number][]>();
+    for (const c of competitorData) {
       const k = (c.cluster || "").toLowerCase();
       if (!k) continue;
       if (!m.has(k)) m.set(k, []);
       m.get(k)!.push(c);
     }
     return m;
-  }, [competitors]);
+  }, [competitorData]);
 
   // Recompute status live (some rows may have moved from planned→onprogress by date)
   const rows = useMemo(() => {
