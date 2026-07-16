@@ -111,18 +111,6 @@ function AuthPage() {
             Market &amp; Consumer Analyst — pusat kendali cluster, ticket, dan strategi
             akuisisi Iconnet di seluruh Indonesia.
           </p>
-          <div className="mt-10 grid grid-cols-3 gap-4 max-w-lg">
-            {[
-              { k: "34", v: "Provinsi" },
-              { k: "500+", v: "Cluster" },
-              { k: "AI", v: "Insight Engine" },
-            ].map((s) => (
-              <div key={s.v} className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-md">
-                <div className="font-display text-2xl font-bold text-white">{s.k}</div>
-                <div className="mt-1 text-[11px] uppercase tracking-wider text-white/50">{s.v}</div>
-              </div>
-            ))}
-          </div>
         </div>
 
         {/* Right: login card */}
