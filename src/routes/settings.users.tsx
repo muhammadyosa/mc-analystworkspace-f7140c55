@@ -15,6 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export const Route = createFileRoute("/settings/users")({
   head: () => ({ meta: [{ title: "User Management — MCA Workspace" }] }),
@@ -25,6 +26,7 @@ type Row = {
   id: string;
   email: string | null;
   full_name: string | null;
+  avatar_url: string | null;
   approved: boolean;
   created_at: string;
   role: "admin" | "user";
@@ -49,7 +51,7 @@ function UserManagementPage() {
       return;
     }
     const [{ data: profiles, error: pErr }, { data: roles, error: rErr }] = await Promise.all([
-      supabase.from("profiles").select("id, email, full_name, approved, created_at").order("created_at", { ascending: false }),
+      supabase.from("profiles").select("id, email, full_name, avatar_url, approved, created_at").order("created_at", { ascending: false }),
       supabase.from("user_roles").select("user_id, role"),
     ]);
     if (pErr || rErr) {
@@ -67,6 +69,7 @@ function UserManagementPage() {
         id: p.id,
         email: p.email,
         full_name: p.full_name,
+        avatar_url: p.avatar_url,
         approved: p.approved,
         created_at: p.created_at,
         role: roleMap.get(p.id) ?? "user",
@@ -193,8 +196,18 @@ function UserManagementPage() {
                 {filtered.map((r) => (
                   <TableRow key={r.id}>
                     <TableCell>
-                      <div className="font-medium">{r.full_name ?? "—"}</div>
-                      <div className="text-xs text-muted-foreground">{r.email ?? r.id}</div>
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-9 w-9 ring-1 ring-border/60">
+                          {r.avatar_url && <AvatarImage src={r.avatar_url} alt={r.full_name ?? "User"} />}
+                          <AvatarFallback className="text-[11px]">
+                            {(r.full_name ?? r.email ?? "U").slice(0, 2).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0">
+                          <div className="font-medium truncate">{r.full_name ?? "—"}</div>
+                          <div className="text-xs text-muted-foreground truncate">{r.email ?? r.id}</div>
+                        </div>
+                      </div>
                     </TableCell>
                     <TableCell>
                       <Badge variant={r.role === "admin" ? "default" : "secondary"}>{r.role}</Badge>

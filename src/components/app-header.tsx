@@ -2,6 +2,7 @@ import { Moon, Sun, RefreshCw, LogOut } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useTheme } from "@/hooks/use-theme";
 import { useDataStore } from "@/lib/store";
 import { formatDistanceToNow } from "date-fns";
@@ -18,10 +19,19 @@ export function AppHeader({ title, subtitle }: { title: string; subtitle?: strin
   const lastUpdated = useDataStore((s) => s.lastUpdated);
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const [email, setEmail] = useState<string | null>(null);
+  const [user, setUser] = useState<{ email: string | null; name: string | null; avatar: string | null } | null>(null);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? null));
+    supabase.auth.getUser().then(({ data }) => {
+      const u = data.user;
+      if (!u) return setUser(null);
+      const md = (u.user_metadata ?? {}) as Record<string, string | undefined>;
+      setUser({
+        email: u.email ?? null,
+        name: md.full_name ?? md.name ?? u.email ?? null,
+        avatar: md.avatar_url ?? md.picture ?? null,
+      });
+    });
   }, []);
 
   async function handleSignOut() {
@@ -55,10 +65,13 @@ export function AppHeader({ title, subtitle }: { title: string; subtitle?: strin
           Updated {formatDistanceToNow(lastUpdated, { addSuffix: true })}
         </div>
       )}
-      {email && (
-        <span className="hidden max-w-[180px] truncate text-xs text-muted-foreground md:inline" title={email}>
-          {email}
-        </span>
+      {user && (
+        <Avatar className="h-8 w-8 ring-1 ring-border/60" title={user.email ?? undefined}>
+          {user.avatar && <AvatarImage src={user.avatar} alt={user.name ?? "User"} />}
+          <AvatarFallback className="text-[11px]">
+            {(user.name ?? user.email ?? "U").slice(0, 2).toUpperCase()}
+          </AvatarFallback>
+        </Avatar>
       )}
       <Button variant="ghost" size="icon" onClick={toggle} aria-label="Toggle theme">
         {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
