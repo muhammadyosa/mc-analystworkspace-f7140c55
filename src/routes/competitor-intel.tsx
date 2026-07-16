@@ -222,20 +222,23 @@ function CompetitorIntelPage() {
 
   if (!competitorData.length) {
     return (
-      <div className="p-6">
-        <Card className="glass-card border-0">
-          <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
-            <div className="grid h-14 w-14 place-items-center rounded-2xl gradient-primary">
-              <RadarIcon className="h-7 w-7 text-white" />
-            </div>
-            <div className="font-display text-lg font-semibold">Belum ada data Competitor</div>
-            <div className="max-w-md text-sm text-muted-foreground">
-              Upload file KOMPETITOR.xlsx melalui menu Settings → Data Management. Sistem akan
-              otomatis mendeteksi dataset berdasarkan struktur kolom.
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <>
+        <AppHeader title="Competitor Intelligence" subtitle="Analisa persaingan otomatis dari KOMPETITOR.xlsx" />
+        <div className="p-6">
+          <Card className="glass-card border-0">
+            <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
+              <div className="grid h-14 w-14 place-items-center rounded-2xl gradient-primary">
+                <RadarIcon className="h-7 w-7 text-white" />
+              </div>
+              <div className="font-display text-lg font-semibold">Belum ada data Competitor</div>
+              <div className="max-w-md text-sm text-muted-foreground">
+                Upload file KOMPETITOR.xlsx melalui menu Settings → Data Management. Sistem akan
+                otomatis mendeteksi dataset berdasarkan struktur kolom.
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </>
     );
   }
 
