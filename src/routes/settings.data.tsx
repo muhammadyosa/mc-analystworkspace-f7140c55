@@ -31,6 +31,7 @@ import {
   exportToExcel,
   downloadTemplate,
   fileChecksum,
+  parseActionPlanFile,
   parseAnalystFile,
   parseClusterFile,
   parseCompetitorFile,
