@@ -260,129 +260,50 @@ function Dashboard() {
           </Card>
         </div>
 
-        {/* Charts */}
-        <div className="grid gap-4 lg:grid-cols-2">
-          <Card className="glass-card border-0">
-            <CardHeader>
-              <CardTitle className="font-display text-base">HC Trend (Jan–Jun)</CardTitle>
-            </CardHeader>
-            <CardContent className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={s.trend}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                  <XAxis dataKey="month" stroke="var(--color-muted-foreground)" fontSize={12} />
-                  <YAxis stroke="var(--color-muted-foreground)" fontSize={12} />
-                  <Tooltip contentStyle={{ background: "var(--color-popover)", border: "1px solid var(--color-border)", borderRadius: 8 }} />
-                  <Line type="monotone" dataKey="hc" stroke="var(--color-chart-1)" strokeWidth={3} dot={{ r: 4 }} isAnimationActive={false} />
-                </LineChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          <Card className="glass-card border-0">
-            <CardHeader>
-              <CardTitle className="font-display text-base">Top 10 HC Cluster</CardTitle>
-            </CardHeader>
-            <CardContent className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={s.topHc} layout="vertical" margin={{ left: 60 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                  <XAxis type="number" stroke="var(--color-muted-foreground)" fontSize={11} />
-                  <YAxis type="category" dataKey="cluster" stroke="var(--color-muted-foreground)" fontSize={11} width={90} />
-                  <Tooltip contentStyle={{ background: "var(--color-popover)", border: "1px solid var(--color-border)", borderRadius: 8 }} />
-                  <Bar dataKey="juni" fill="var(--color-chart-1)" radius={[0, 6, 6, 0]} isAnimationActive={false} />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          <Card className="glass-card border-0">
-            <CardHeader>
-              <CardTitle className="font-display text-base">HC Growth (Delta Mei–Juni)</CardTitle>
-            </CardHeader>
-            <CardContent className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={s.growth}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                  <XAxis dataKey="cluster" stroke="var(--color-muted-foreground)" fontSize={10} angle={-30} textAnchor="end" height={60} />
-                  <YAxis stroke="var(--color-muted-foreground)" fontSize={11} />
-                  <Tooltip contentStyle={{ background: "var(--color-popover)", border: "1px solid var(--color-border)", borderRadius: 8 }} />
-                  <Bar dataKey="deltaMeiJuni" radius={[6, 6, 0, 0]} isAnimationActive={false}>
-                    {s.growth.map((g, i) => (
-                      <Cell key={i} fill={g.deltaMeiJuni >= 0 ? "var(--color-success)" : "var(--color-destructive)"} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          <Card className="glass-card border-0">
-            <CardHeader>
-              <CardTitle className="font-display text-base">Ticket Analysis (Top 8)</CardTitle>
-            </CardHeader>
-            <CardContent className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={s.topTicket}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                  <XAxis dataKey="cluster" stroke="var(--color-muted-foreground)" fontSize={10} angle={-30} textAnchor="end" height={60} />
-                  <YAxis stroke="var(--color-muted-foreground)" fontSize={11} />
-                  <Tooltip contentStyle={{ background: "var(--color-popover)", border: "1px solid var(--color-border)", borderRadius: 8 }} />
-                  <Bar dataKey="ticket" fill="var(--color-chart-4)" radius={[6, 6, 0, 0]} isAnimationActive={false} />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          <Card className="glass-card border-0">
-            <CardHeader>
-              <CardTitle className="font-display text-base">Province Distribution (HC)</CardTitle>
-            </CardHeader>
-            <CardContent className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={s.provDist} dataKey="value" nameKey="name" outerRadius={90} label isAnimationActive={false}>
-                    {s.provDist.map((_, i) => (
-                      <Cell key={i} fill={chartColors[i % chartColors.length]} />
-                    ))}
-                  </Pie>
-                  <Legend />
-                  <Tooltip contentStyle={{ background: "var(--color-popover)", border: "1px solid var(--color-border)", borderRadius: 8 }} />
-                </PieChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          <Card className="glass-card border-0">
-            <CardHeader>
-              <CardTitle className="font-display text-base">PIC Performance (Top 8)</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {s.pics.map((p, i) => (
-                  <div key={p.pic} className="flex items-center gap-3 rounded-lg border border-border/60 bg-muted/30 p-2.5">
-                    <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full gradient-primary text-xs font-bold text-white">
-                      {i + 1}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-medium">{p.pic}</div>
-                      <div className="text-[10px] text-muted-foreground">
-                        {p.clusters} cluster • {p.ticket} ticket
+        {/* Charts & PIC in Tabs (lazy) */}
+        <Tabs defaultValue="charts" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="charts">Visualisasi</TabsTrigger>
+            <TabsTrigger value="pic">PIC Performance</TabsTrigger>
+          </TabsList>
+          <TabsContent value="charts" className="mt-0">
+            <Suspense fallback={<ChartFallback />}>
+              <DashboardCharts stats={s} />
+            </Suspense>
+          </TabsContent>
+          <TabsContent value="pic" className="mt-0">
+            <Card className="glass-card border-0">
+              <CardHeader>
+                <CardTitle className="font-display text-base">PIC Performance (Top 8)</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {s.pics.map((p, i) => (
+                    <div key={p.pic} className="flex items-center gap-3 rounded-lg border border-border/60 bg-muted/30 p-2.5">
+                      <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full gradient-primary text-xs font-bold text-white">
+                        {i + 1}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-sm font-medium">{p.pic}</div>
+                        <div className="text-[10px] text-muted-foreground">
+                          {p.clusters} cluster • {p.ticket} ticket
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-display text-sm font-bold tabular-nums">{p.hc.toLocaleString("id-ID")}</div>
+                        <div className={`text-[10px] ${p.growth >= 0 ? "text-success" : "text-destructive"}`}>
+                          {p.growth >= 0 ? "+" : ""}
+                          {p.growth}
+                        </div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="font-display text-sm font-bold tabular-nums">{p.hc.toLocaleString("id-ID")}</div>
-                      <div className={`text-[10px] ${p.growth >= 0 ? "text-success" : "text-destructive"}`}>
-                        {p.growth >= 0 ? "+" : ""}
-                        {p.growth}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+
 
         <div className="text-center text-xs text-muted-foreground">
           Butuh detail cluster?{" "}
