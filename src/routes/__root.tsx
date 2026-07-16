@@ -76,25 +76,28 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "MCA Workspace — Cluster Intelligence & Strategy" },
+      { title: "MCA Workspace" },
       {
         name: "description",
         content:
-          "Market & Consumer Analyst Workspace: platform analisa cluster, HC, ticket, dan strategi enterprise dengan visualisasi modern.",
+          "Dashboard executive: HC, ticket, growth, dan prioritas cluster.",
       },
       { name: "author", content: "MCA Workspace" },
-      { property: "og:title", content: "MCA Workspace — Cluster Intelligence & Strategy" },
+      { property: "og:title", content: "MCA Workspace" },
       {
         property: "og:description",
         content:
-          "Intelligent Cluster Analysis & Strategy Management Platform untuk tim market & consumer analyst.",
+          "Dashboard executive: HC, ticket, growth, dan prioritas cluster.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "MCA Workspace" },
+      { name: "twitter:description", content: "Dashboard executive: HC, ticket, growth, dan prioritas cluster." },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/661191a1-5dd1-4314-83c1-287baf66b1a1" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/661191a1-5dd1-4314-83c1-287baf66b1a1" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {

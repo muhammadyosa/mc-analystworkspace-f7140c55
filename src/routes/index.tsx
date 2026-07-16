@@ -37,7 +37,7 @@ import { useDataStore, computePriority } from "@/lib/store";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Dashboard — MCA Workspace" },
+      { title: "MCA Workspace" },
       { name: "description", content: "Dashboard executive: HC, ticket, growth, dan prioritas cluster." },
     ],
   }),
