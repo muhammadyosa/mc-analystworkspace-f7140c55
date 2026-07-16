@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage, type StateStorage } from "zustand/middleware";
-import type { AnalystRow, ClusterRow, TicketRow, UploadMeta } from "./excel";
+import type { AnalystRow, ClusterRow, CompetitorRow, TicketRow, UploadMeta } from "./excel";
 
 // Debounced localStorage — sync reads keep hydration flash-free,
 // async writes prevent JSON.stringify on large datasets from blocking navigation.
