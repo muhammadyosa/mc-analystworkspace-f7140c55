@@ -333,6 +333,7 @@ function AnalystPage() {
         </Tabs>
 
       </div>
+      <DrilldownDialog state={drill} onClose={() => setDrill(null)} />
     </>
   );
 }
