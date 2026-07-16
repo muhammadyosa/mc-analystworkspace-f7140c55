@@ -402,7 +402,6 @@ function ReportsPage() {
             </Card>
           </TabsContent>
 
-          </TabsContent>
 
           <TabsContent value="intel">
             {!compCharts ? (
