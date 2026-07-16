@@ -8,9 +8,9 @@ import {
   Users,
   Swords,
   FileText,
-  Sparkles,
   UserSearch,
 } from "lucide-react";
+import iconnetLogo from "@/assets/iconnet-logo.png.asset.json";
 import {
   Sidebar,
   SidebarContent,
