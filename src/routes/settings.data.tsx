@@ -171,7 +171,7 @@ function ClassifiedList({
   }, [items]);
 
   return (
-    <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-5">
       {(Object.keys(groups) as ImportKind[]).map((k) => (
         <div key={k} className="rounded-xl border border-border/60 bg-muted/20 p-3">
           <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide">
