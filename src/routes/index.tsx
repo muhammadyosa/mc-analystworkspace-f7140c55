@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { lazy, memo, Suspense, useMemo } from "react";
+import { lazy, memo, Suspense, useMemo, useState } from "react";
 import {
   Users,
   TrendingUp,
@@ -18,6 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDataStore, computePriority } from "@/lib/store";
+import { DrilldownDialog, type DrilldownState } from "@/components/drilldown-dialog";
 
 const DashboardCharts = lazy(() => import("@/components/dashboard-charts"));
 
