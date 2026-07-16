@@ -15,6 +15,7 @@ import { Route as PriorityRouteImport } from './routes/priority'
 import { Route as MasterRouteImport } from './routes/master'
 import { Route as LoyaltyRouteImport } from './routes/loyalty'
 import { Route as CompetitorRouteImport } from './routes/competitor'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AnalystRouteImport } from './routes/analyst'
 import { Route as ActionPlanRouteImport } from './routes/action-plan'
 import { Route as IndexRouteImport } from './routes/index'
@@ -50,6 +51,11 @@ const CompetitorRoute = CompetitorRouteImport.update({
   path: '/competitor',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AnalystRoute = AnalystRouteImport.update({
   id: '/analyst',
   path: '/analyst',
@@ -75,6 +81,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/action-plan': typeof ActionPlanRoute
   '/analyst': typeof AnalystRoute
+  '/auth': typeof AuthRoute
   '/competitor': typeof CompetitorRoute
   '/loyalty': typeof LoyaltyRoute
   '/master': typeof MasterRoute
@@ -87,6 +94,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/action-plan': typeof ActionPlanRoute
   '/analyst': typeof AnalystRoute
+  '/auth': typeof AuthRoute
   '/competitor': typeof CompetitorRoute
   '/loyalty': typeof LoyaltyRoute
   '/master': typeof MasterRoute
@@ -100,6 +108,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/action-plan': typeof ActionPlanRoute
   '/analyst': typeof AnalystRoute
+  '/auth': typeof AuthRoute
   '/competitor': typeof CompetitorRoute
   '/loyalty': typeof LoyaltyRoute
   '/master': typeof MasterRoute
@@ -114,6 +123,7 @@ export interface FileRouteTypes {
     | '/'
     | '/action-plan'
     | '/analyst'
+    | '/auth'
     | '/competitor'
     | '/loyalty'
     | '/master'
@@ -126,6 +136,7 @@ export interface FileRouteTypes {
     | '/'
     | '/action-plan'
     | '/analyst'
+    | '/auth'
     | '/competitor'
     | '/loyalty'
     | '/master'
@@ -138,6 +149,7 @@ export interface FileRouteTypes {
     | '/'
     | '/action-plan'
     | '/analyst'
+    | '/auth'
     | '/competitor'
     | '/loyalty'
     | '/master'
@@ -151,6 +163,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ActionPlanRoute: typeof ActionPlanRoute
   AnalystRoute: typeof AnalystRoute
+  AuthRoute: typeof AuthRoute
   CompetitorRoute: typeof CompetitorRoute
   LoyaltyRoute: typeof LoyaltyRoute
   MasterRoute: typeof MasterRoute
@@ -204,6 +217,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CompetitorRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/analyst': {
       id: '/analyst'
       path: '/analyst'
@@ -239,6 +259,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ActionPlanRoute: ActionPlanRoute,
   AnalystRoute: AnalystRoute,
+  AuthRoute: AuthRoute,
   CompetitorRoute: CompetitorRoute,
   LoyaltyRoute: LoyaltyRoute,
   MasterRoute: MasterRoute,
@@ -250,3 +271,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
