@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as UploadRouteImport } from './routes/upload'
+import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as PriorityRouteImport } from './routes/priority'
 import { Route as MasterRouteImport } from './routes/master'
 import { Route as LoyaltyRouteImport } from './routes/loyalty'
@@ -21,6 +22,11 @@ import { Route as ClusterNameRouteImport } from './routes/cluster.$name'
 const UploadRoute = UploadRouteImport.update({
   id: '/upload',
   path: '/upload',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReportsRoute = ReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PriorityRoute = PriorityRouteImport.update({
@@ -66,6 +72,7 @@ export interface FileRoutesByFullPath {
   '/loyalty': typeof LoyaltyRoute
   '/master': typeof MasterRoute
   '/priority': typeof PriorityRoute
+  '/reports': typeof ReportsRoute
   '/upload': typeof UploadRoute
   '/cluster/$name': typeof ClusterNameRoute
 }
@@ -76,6 +83,7 @@ export interface FileRoutesByTo {
   '/loyalty': typeof LoyaltyRoute
   '/master': typeof MasterRoute
   '/priority': typeof PriorityRoute
+  '/reports': typeof ReportsRoute
   '/upload': typeof UploadRoute
   '/cluster/$name': typeof ClusterNameRoute
 }
@@ -87,6 +95,7 @@ export interface FileRoutesById {
   '/loyalty': typeof LoyaltyRoute
   '/master': typeof MasterRoute
   '/priority': typeof PriorityRoute
+  '/reports': typeof ReportsRoute
   '/upload': typeof UploadRoute
   '/cluster/$name': typeof ClusterNameRoute
 }
@@ -99,6 +108,7 @@ export interface FileRouteTypes {
     | '/loyalty'
     | '/master'
     | '/priority'
+    | '/reports'
     | '/upload'
     | '/cluster/$name'
   fileRoutesByTo: FileRoutesByTo
@@ -109,6 +119,7 @@ export interface FileRouteTypes {
     | '/loyalty'
     | '/master'
     | '/priority'
+    | '/reports'
     | '/upload'
     | '/cluster/$name'
   id:
@@ -119,6 +130,7 @@ export interface FileRouteTypes {
     | '/loyalty'
     | '/master'
     | '/priority'
+    | '/reports'
     | '/upload'
     | '/cluster/$name'
   fileRoutesById: FileRoutesById
@@ -130,6 +142,7 @@ export interface RootRouteChildren {
   LoyaltyRoute: typeof LoyaltyRoute
   MasterRoute: typeof MasterRoute
   PriorityRoute: typeof PriorityRoute
+  ReportsRoute: typeof ReportsRoute
   UploadRoute: typeof UploadRoute
   ClusterNameRoute: typeof ClusterNameRoute
 }
@@ -141,6 +154,13 @@ declare module '@tanstack/react-router' {
       path: '/upload'
       fullPath: '/upload'
       preLoaderRoute: typeof UploadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reports': {
+      id: '/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof ReportsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/priority': {
@@ -202,9 +222,20 @@ const rootRouteChildren: RootRouteChildren = {
   LoyaltyRoute: LoyaltyRoute,
   MasterRoute: MasterRoute,
   PriorityRoute: PriorityRoute,
+  ReportsRoute: ReportsRoute,
   UploadRoute: UploadRoute,
   ClusterNameRoute: ClusterNameRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
