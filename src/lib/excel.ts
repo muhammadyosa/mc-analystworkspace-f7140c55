@@ -663,6 +663,15 @@ export function detectKind(wb: XLSX.WorkBook, fileName: string): ImportKind {
   const hs = collectHeaders(wb);
   const has = (needle: string) => hs.some((h) => h.includes(needle));
 
+  // Action Plan: NAMA + CLUSTER + PROGRAM + START DATE + END DATE + KETERANGAN
+  if (
+    (has("program") || sheets.some((s) => s.includes("actionplan") || s.includes("actionpla"))) &&
+    (has("startdate") || has("tanggalmulai")) &&
+    (has("enddate") || has("tanggalselesai"))
+  ) {
+    return "actionplan";
+  }
+
   // Competitor: NAMA KOMPETITOR + HARGA KOMPETITOR (TERMURAH) + PROMO
   if (
     has("namakompetitor") &&
@@ -672,20 +681,19 @@ export function detectKind(wb: XLSX.WorkBook, fileName: string): ImportKind {
     return "competitor";
   }
   if (sheets.some((s) => s.includes("kompetitor") || s.includes("competitor"))) {
-    // ambiguous with analyst sheet naming — only accept when cluster header exists too
     if (has("cluster") && (has("hargakompetitor") || has("namakompetitor"))) return "competitor";
   }
 
-  // Analyst: HASIL PROFILING sheet or profiling-specific columns
+  // Analyst
   if (sheets.some((s) => s.includes("hasilprofiling") || s.includes("profiling"))) return "analyst";
   if (has("namaae") || has("insightae") || has("relokasifat") || has("tingkatpotensicluster")) return "analyst";
 
-  // Cluster: DATA CLUSTER sheet or PROV/KAB/CLUSTER header + PIC
+  // Cluster
   if (sheets.some((s) => s.includes("datacluster"))) return "cluster";
   if (has("provkabcluster") && (has("pic") || has("statusketersediaan"))) return "cluster";
   if (has("totalhc2026") || has("statusketersediaantimserpo") || has("statusketersediaantimikr")) return "cluster";
 
-  // Ticket: pivot / list ticketing / has cluster+bulan and no PIC
+  // Ticket
   if (sheets.some((s) => s.includes("listticketing") || s.includes("ticket") || s.includes("pivot"))) return "ticket";
   if ((has("cluster") || has("wilayah") || has("kabupaten")) && (has("januari") || has("februari") || has("bulan"))) {
     return "ticket";
@@ -693,6 +701,7 @@ export function detectKind(wb: XLSX.WorkBook, fileName: string): ImportKind {
 
   // Filename fallback
   const fn = norm(fileName);
+  if (fn.includes("actionplan") || fn.includes("action")) return "actionplan";
   if (fn.includes("kompetitor") || fn.includes("competitor")) return "competitor";
   if (fn.includes("analyst")) return "analyst";
   if (fn.includes("cluster") || fn.includes("pembagian") || fn.includes("sibt")) return "cluster";
