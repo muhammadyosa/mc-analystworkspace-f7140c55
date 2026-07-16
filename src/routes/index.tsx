@@ -277,7 +277,7 @@ function Dashboard() {
                   <XAxis dataKey="month" stroke="var(--color-muted-foreground)" fontSize={12} />
                   <YAxis stroke="var(--color-muted-foreground)" fontSize={12} />
                   <Tooltip contentStyle={{ background: "var(--color-popover)", border: "1px solid var(--color-border)", borderRadius: 8 }} />
-                  <Line type="monotone" dataKey="hc" stroke="var(--color-chart-1)" strokeWidth={3} dot={{ r: 4 }} />
+                  <Line type="monotone" dataKey="hc" stroke="var(--color-chart-1)" strokeWidth={3} dot={{ r: 4 }} isAnimationActive={false} />
                 </LineChart>
               </ResponsiveContainer>
             </CardContent>
@@ -294,7 +294,7 @@ function Dashboard() {
                   <XAxis type="number" stroke="var(--color-muted-foreground)" fontSize={11} />
                   <YAxis type="category" dataKey="cluster" stroke="var(--color-muted-foreground)" fontSize={11} width={90} />
                   <Tooltip contentStyle={{ background: "var(--color-popover)", border: "1px solid var(--color-border)", borderRadius: 8 }} />
-                  <Bar dataKey="juni" fill="var(--color-chart-1)" radius={[0, 6, 6, 0]} />
+                  <Bar dataKey="juni" fill="var(--color-chart-1)" radius={[0, 6, 6, 0]} isAnimationActive={false} />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
@@ -311,7 +311,7 @@ function Dashboard() {
                   <XAxis dataKey="cluster" stroke="var(--color-muted-foreground)" fontSize={10} angle={-30} textAnchor="end" height={60} />
                   <YAxis stroke="var(--color-muted-foreground)" fontSize={11} />
                   <Tooltip contentStyle={{ background: "var(--color-popover)", border: "1px solid var(--color-border)", borderRadius: 8 }} />
-                  <Bar dataKey="deltaMeiJuni" radius={[6, 6, 0, 0]}>
+                  <Bar dataKey="deltaMeiJuni" radius={[6, 6, 0, 0]} isAnimationActive={false}>
                     {s.growth.map((g, i) => (
                       <Cell key={i} fill={g.deltaMeiJuni >= 0 ? "var(--color-success)" : "var(--color-destructive)"} />
                     ))}
@@ -332,7 +332,7 @@ function Dashboard() {
                   <XAxis dataKey="cluster" stroke="var(--color-muted-foreground)" fontSize={10} angle={-30} textAnchor="end" height={60} />
                   <YAxis stroke="var(--color-muted-foreground)" fontSize={11} />
                   <Tooltip contentStyle={{ background: "var(--color-popover)", border: "1px solid var(--color-border)", borderRadius: 8 }} />
-                  <Bar dataKey="ticket" fill="var(--color-chart-4)" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="ticket" fill="var(--color-chart-4)" radius={[6, 6, 0, 0]} isAnimationActive={false} />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
@@ -345,7 +345,7 @@ function Dashboard() {
             <CardContent className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={s.provDist} dataKey="value" nameKey="name" outerRadius={90} label>
+                  <Pie data={s.provDist} dataKey="value" nameKey="name" outerRadius={90} label isAnimationActive={false}>
                     {s.provDist.map((_, i) => (
                       <Cell key={i} fill={chartColors[i % chartColors.length]} />
                     ))}
