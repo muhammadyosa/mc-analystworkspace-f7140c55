@@ -33,6 +33,7 @@ import {
   fileChecksum,
   parseAnalystFile,
   parseClusterFile,
+  parseCompetitorFile,
   parseTicketFile,
   type ImportKind,
   type UploadMeta,
