@@ -37,7 +37,23 @@ const tooltipStyle = {
   borderRadius: 8,
 };
 
-export default function DashboardCharts({ stats: s }: { stats: Stats }) {
+type ChartClick = { activePayload?: Array<{ payload: Record<string, unknown> }> };
+
+export default function DashboardCharts({
+  stats: s,
+  onSelect,
+}: {
+  stats: Stats;
+  onSelect?: (kind: "cluster" | "province" | "month", data: Record<string, unknown>) => void;
+}) {
+  const handleBar = (kind: "cluster" | "province" | "month") => (p: ChartClick) => {
+    const d = p?.activePayload?.[0]?.payload;
+    if (d && onSelect) onSelect(kind, d);
+  };
+  const handlePie = (kind: "cluster" | "province" | "month") => (data: Record<string, unknown>) => {
+    if (data && onSelect) onSelect(kind, data);
+  };
+  const cursor = onSelect ? { style: { cursor: "pointer" } } : {};
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       <Card className="glass-card border-0">
