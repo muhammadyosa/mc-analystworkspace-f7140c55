@@ -335,11 +335,13 @@ function UploadPage() {
     tickets,
     analyst,
     competitorData,
+    actionPlans,
     history,
     setClusters,
     setTickets,
     setAnalyst,
     setCompetitorData,
+    setActionPlans,
     pushHistory,
     clearAll,
   } = useDataStore();
