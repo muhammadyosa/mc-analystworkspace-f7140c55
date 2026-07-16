@@ -234,6 +234,12 @@ function UploadPage() {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
+            <SmartDropZone
+              running={smart.running}
+              log={smart.log}
+              onFiles={runSmartImport}
+            />
+
             <div className="grid gap-4 md:grid-cols-3">
               <DropZone
                 label="PEMBAGIAN CLUSTER SIBT.xlsx"
