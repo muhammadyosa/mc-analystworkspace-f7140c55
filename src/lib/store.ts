@@ -65,7 +65,7 @@ export type Competitor = {
 };
 
 export type UploadHistoryEntry = UploadMeta & {
-  kind: "cluster" | "ticket" | "analyst" | "competitor";
+  kind: "cluster" | "ticket" | "analyst" | "competitor" | "actionplan";
   mode: "replace" | "append";
   checksum?: string;
 };
