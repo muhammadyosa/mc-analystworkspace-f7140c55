@@ -5,6 +5,8 @@ import { useTheme } from "@/hooks/use-theme";
 import { useDataStore } from "@/lib/store";
 import { formatDistanceToNow } from "date-fns";
 import plnLogo from "@/assets/pln-iconplus.png.asset.json";
+import danantaraLight from "@/assets/danantara-light.png.asset.json";
+import danantaraDark from "@/assets/danantara-dark.svg.asset.json";
 
 export function AppHeader({ title, subtitle }: { title: string; subtitle?: string }) {
   const { theme, toggle } = useTheme();
@@ -23,6 +25,11 @@ export function AppHeader({ title, subtitle }: { title: string; subtitle?: strin
           Updated {formatDistanceToNow(lastUpdated, { addSuffix: true })}
         </div>
       )}
+      <img
+        src={theme === "dark" ? danantaraDark.url : danantaraLight.url}
+        alt="Danantara Indonesia"
+        className="hidden h-7 w-auto object-contain sm:block"
+      />
       <img
         src={plnLogo.url}
         alt="PLN Icon Plus"
