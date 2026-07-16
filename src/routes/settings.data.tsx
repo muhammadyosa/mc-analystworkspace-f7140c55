@@ -289,6 +289,12 @@ function SummaryResult({ summary }: { summary: ImportSummary }) {
       value: summary.analyst.rows.toLocaleString("id-ID"),
       sub: `${summary.analyst.ae} AE`,
     });
+  if (summary.competitor)
+    items.push({
+      label: "Competitor",
+      value: summary.competitor.rows.toLocaleString("id-ID"),
+      sub: `${summary.competitor.unique} Kompetitor · Rp${summary.competitor.hargaMin.toLocaleString("id-ID")}–${summary.competitor.hargaMax.toLocaleString("id-ID")} · ${summary.competitor.promo} promo`,
+    });
   if (!items.length) return null;
   return (
     <motion.div
@@ -299,7 +305,7 @@ function SummaryResult({ summary }: { summary: ImportSummary }) {
       <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-success">
         <CheckCircle2 className="h-4 w-4" /> Import Completed · Dashboard diperbarui
       </div>
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {items.map((it) => (
           <div key={it.label} className="rounded-lg bg-background/70 p-3">
             <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
