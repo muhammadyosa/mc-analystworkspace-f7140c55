@@ -51,12 +51,14 @@ const KpiCard = memo(function KpiCard({
   delta,
   icon: Icon,
   tint = "primary",
+  onClick,
 }: {
   label: string;
   value: string | number;
   delta?: { value: number; suffix?: string };
   icon: React.ComponentType<{ className?: string }>;
   tint?: "primary" | "success" | "warning" | "info" | "destructive";
+  onClick?: () => void;
 }) {
   const tintMap: Record<string, string> = {
     primary: "from-primary/20 to-primary/5 text-primary",
@@ -65,8 +67,14 @@ const KpiCard = memo(function KpiCard({
     info: "from-info/20 to-info/5 text-info",
     destructive: "from-destructive/20 to-destructive/5 text-destructive",
   };
+  const Comp = onClick ? "button" : "div";
   return (
-    <div className="glass-card rounded-2xl p-4 animate-in fade-in slide-in-from-bottom-1 duration-300">
+    <Comp
+      onClick={onClick}
+      className={`glass-card rounded-2xl p-4 animate-in fade-in slide-in-from-bottom-1 duration-300 text-left w-full ${
+        onClick ? "cursor-pointer transition-all hover:scale-[1.02] hover:shadow-lg hover:border-primary/40" : ""
+      }`}
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="truncate text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
@@ -90,7 +98,7 @@ const KpiCard = memo(function KpiCard({
           <Icon className="h-5 w-5" />
         </div>
       </div>
-    </div>
+    </Comp>
   );
 });
 
