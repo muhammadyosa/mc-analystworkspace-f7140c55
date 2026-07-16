@@ -7,7 +7,6 @@ import {
   Users,
   FileText,
   UserSearch,
-  UserSearch,
   Settings,
   Radar,
 } from "lucide-react";
