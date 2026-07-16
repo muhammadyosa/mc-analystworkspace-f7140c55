@@ -87,6 +87,19 @@ export type PromoCategory =
   | "Tidak Ada Promo"
   | "Lainnya";
 
+export type ActionPlanStatus = "planned" | "onprogress" | "completed" | "overdue";
+export type ActionPlanRow = {
+  id: string;
+  pic: string;
+  cluster: string;
+  program: string;
+  startDate: string; // ISO YYYY-MM-DD
+  endDate: string; // ISO YYYY-MM-DD
+  description: string;
+  status: ActionPlanStatus;
+  durationDays: number;
+};
+
 export type UploadMeta = {
   fileName: string;
   sheetCount: number;
