@@ -24,6 +24,7 @@ export type Competitor = {
 export type UploadHistoryEntry = UploadMeta & {
   kind: "cluster" | "ticket" | "analyst";
   mode: "replace" | "append";
+  checksum?: string;
 };
 
 type DataState = {

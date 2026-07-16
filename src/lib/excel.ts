@@ -409,6 +409,30 @@ export async function smartImport(file: File): Promise<SmartResult> {
   return { kind: "ticket", ...r };
 }
 
+export async function classifyFile(
+  file: File,
+): Promise<{ kind: ImportKind; fileName: string; sheetName: string; sheetCount: number; size: number }> {
+  const buf = await file.arrayBuffer();
+  const wb = XLSX.read(buf, { type: "array" });
+  const kind = detectKind(wb, file.name);
+  const preferred =
+    kind === "cluster"
+      ? ["DATA CLUSTER", "CLUSTER", "PEMBAGIAN"]
+      : kind === "analyst"
+        ? ["HASIL PROFILING", "PROFILING", "ANALYST"]
+        : ["TICKET", "DATA", "PIVOT"];
+  const { name } = pickSheet(wb, preferred);
+  return { kind, fileName: file.name, sheetName: name, sheetCount: wb.SheetNames.length, size: file.size };
+}
+
+export async function fileChecksum(file: File): Promise<string> {
+  const buf = await file.arrayBuffer();
+  const hash = await crypto.subtle.digest("SHA-256", buf);
+  return Array.from(new Uint8Array(hash))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
 export function exportToExcel<T extends Record<string, unknown>>(rows: T[], filename: string) {
   const ws = XLSX.utils.json_to_sheet(rows);
   const wb = XLSX.utils.book_new();
