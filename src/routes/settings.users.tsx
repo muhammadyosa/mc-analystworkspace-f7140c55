@@ -26,6 +26,7 @@ type Row = {
   id: string;
   email: string | null;
   full_name: string | null;
+  avatar_url: string | null;
   approved: boolean;
   created_at: string;
   role: "admin" | "user";
