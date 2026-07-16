@@ -439,6 +439,10 @@ function UploadPage() {
           const r = await parseCompetitorFile(q.file);
           return { q, kind: "competitor" as const, rows: r.rows, meta: r.meta };
         }
+        if (q.kind === "actionplan") {
+          const r = await parseActionPlanFile(q.file);
+          return { q, kind: "actionplan" as const, rows: r.rows, meta: r.meta };
+        }
         const r = await parseAnalystFile(q.file);
         return { q, kind: "analyst" as const, rows: r.rows, meta: r.meta };
       });
@@ -456,6 +460,7 @@ function UploadPage() {
         ticket: [] as Awaited<ReturnType<typeof parseTicketFile>>["rows"],
         analyst: [] as Awaited<ReturnType<typeof parseAnalystFile>>["rows"],
         competitor: [] as Awaited<ReturnType<typeof parseCompetitorFile>>["rows"],
+        actionplan: [] as Awaited<ReturnType<typeof parseActionPlanFile>>["rows"],
       };
       const metas: { kind: ImportKind; meta: UploadMeta; checksum: string }[] = [];
 
@@ -467,6 +472,7 @@ function UploadPage() {
         if (res.kind === "cluster") buckets.cluster.push(...res.rows);
         else if (res.kind === "ticket") buckets.ticket.push(...res.rows);
         else if (res.kind === "competitor") buckets.competitor.push(...res.rows);
+        else if (res.kind === "actionplan") buckets.actionplan.push(...res.rows);
         else buckets.analyst.push(...res.rows);
         metas.push({ kind: res.kind, meta: res.meta, checksum: queue[i].checksum });
       });
@@ -501,6 +507,19 @@ function UploadPage() {
           hargaMin: prices.length ? Math.min(...prices) : 0,
           hargaMax: prices.length ? Math.max(...prices) : 0,
           promo: promo.size,
+        };
+      }
+      if (buckets.actionplan.length) {
+        setActionPlans(buckets.actionplan, mode);
+        const pics = new Set(buckets.actionplan.map((r) => r.pic).filter(Boolean));
+        const cls = new Set(buckets.actionplan.map((r) => r.cluster).filter(Boolean));
+        sum.actionplan = {
+          rows: buckets.actionplan.length,
+          pic: pics.size,
+          cluster: cls.size,
+          aktif: buckets.actionplan.filter((r) => r.status === "onprogress").length,
+          selesai: buckets.actionplan.filter((r) => r.status === "completed").length,
+          mendatang: buckets.actionplan.filter((r) => r.status === "planned").length,
         };
       }
       metas.forEach((m) =>
