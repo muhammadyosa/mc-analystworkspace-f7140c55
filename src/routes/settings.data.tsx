@@ -325,10 +325,12 @@ function UploadPage() {
     clusters,
     tickets,
     analyst,
+    competitorData,
     history,
     setClusters,
     setTickets,
     setAnalyst,
+    setCompetitorData,
     pushHistory,
     clearAll,
   } = useDataStore();
@@ -342,7 +344,8 @@ function UploadPage() {
   const [confirmMode, setConfirmMode] = useState<null | "prompt">(null);
   const [errors, setErrors] = useState<{ name: string; message: string }[]>([]);
 
-  const hasData = clusters.length > 0 || tickets.length > 0 || analyst.length > 0;
+  const hasData =
+    clusters.length > 0 || tickets.length > 0 || analyst.length > 0 || competitorData.length > 0;
   const knownChecksums = useMemo(
     () => new Set(history.map((h) => h.checksum).filter(Boolean) as string[]),
     [history],
