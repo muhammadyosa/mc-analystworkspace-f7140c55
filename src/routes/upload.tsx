@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useState } from "react";
-import { Upload, FileSpreadsheet, CheckCircle2, Trash2, Download, History } from "lucide-react";
+import { Upload, FileSpreadsheet, CheckCircle2, Trash2, Download, History, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { AppHeader } from "@/components/app-header";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,9 @@ import {
   parseAnalystFile,
   exportToExcel,
   downloadTemplate,
+  smartImport,
   type UploadMeta,
+  type ImportKind,
 } from "@/lib/excel";
 import { useDataStore, type UploadHistoryEntry } from "@/lib/store";
 
@@ -115,6 +117,71 @@ function MetaCard({ meta, kind }: { meta: UploadMeta; kind: Kind }) {
   );
 }
 
+function SmartDropZone({
+  running,
+  log,
+  onFiles,
+}: {
+  running: boolean;
+  log: { name: string; kind: ImportKind; count: number; ok: boolean; error?: string }[];
+  onFiles: (files: File[]) => void;
+}) {
+  const [drag, setDrag] = useState(false);
+  const handle = (fl: FileList | null) => {
+    if (!fl || !fl.length) return;
+    onFiles(Array.from(fl));
+  };
+  return (
+    <div
+      onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
+      onDragLeave={() => setDrag(false)}
+      onDrop={(e) => { e.preventDefault(); setDrag(false); handle(e.dataTransfer.files); }}
+      className={`rounded-2xl border-2 border-dashed p-5 transition ${
+        drag ? "border-primary bg-primary/5" : "border-primary/40 bg-gradient-to-br from-primary/5 to-transparent"
+      }`}
+    >
+      <div className="flex flex-col items-center gap-3 text-center sm:flex-row sm:text-left">
+        <div className="grid h-12 w-12 place-items-center rounded-2xl gradient-primary shadow-lg">
+          <Sparkles className="h-6 w-6 text-white" />
+        </div>
+        <div className="flex-1">
+          <div className="font-display text-sm font-semibold">Smart Import — Drag beberapa file sekaligus</div>
+          <div className="text-xs text-muted-foreground">
+            Otomatis mendeteksi jenis file (Cluster / Ticket / Analyst) berdasarkan sheet, header, & isi. Fuzzy header matching aktif.
+          </div>
+        </div>
+        <label className="cursor-pointer">
+          <input
+            type="file"
+            multiple
+            accept=".xlsx,.xls,.csv"
+            className="hidden"
+            onChange={(e) => { handle(e.target.files); e.currentTarget.value = ""; }}
+          />
+          <span className="inline-flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground shadow hover:opacity-90">
+            <Upload className="h-3.5 w-3.5" /> Pilih File
+          </span>
+        </label>
+      </div>
+      {(running || log.length > 0) && (
+        <div className="mt-4 space-y-1 rounded-xl border border-border/60 bg-background/50 p-3 text-xs">
+          {log.map((l, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <CheckCircle2 className={`h-3.5 w-3.5 ${l.ok ? "text-success" : "text-destructive"}`} />
+              <span className="font-medium">{l.name}</span>
+              <span className="uppercase text-muted-foreground">→ {l.kind}</span>
+              <span className="ml-auto">
+                {l.ok ? `${l.count.toLocaleString("id-ID")} baris` : (l.error ?? "gagal")}
+              </span>
+            </div>
+          ))}
+          {running && <div className="text-muted-foreground">Memproses…</div>}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function UploadPage() {
   const {
     clusters, tickets, analyst, history,
@@ -123,6 +190,7 @@ function UploadPage() {
   const [append, setAppend] = useState(false);
   const [progress, setProgress] = useState<Record<Kind, number>>({ cluster: 0, ticket: 0, analyst: 0 });
   const [metas, setMetas] = useState<Partial<Record<Kind, UploadMeta>>>({});
+  const [smart, setSmart] = useState<{ running: boolean; log: { name: string; kind: ImportKind; count: number; ok: boolean; error?: string }[] }>({ running: false, log: [] });
 
   const runImport = async (kind: Kind, file: File) => {
     setProgress((p) => ({ ...p, [kind]: 20 }));
@@ -167,6 +235,49 @@ function UploadPage() {
     toast.success("Data diekspor");
   };
 
+  const runSmartImport = async (files: File[]) => {
+    if (!files.length) return;
+    setSmart({ running: true, log: [] });
+    // Group results so we can apply per-kind replace/append semantics once
+    const buckets: Record<ImportKind, { rows: unknown[]; metas: UploadMeta[] }> = {
+      cluster: { rows: [], metas: [] },
+      ticket: { rows: [], metas: [] },
+      analyst: { rows: [], metas: [] },
+    };
+    const log: { name: string; kind: ImportKind; count: number; ok: boolean; error?: string }[] = [];
+    for (const f of files) {
+      try {
+        const r = await smartImport(f);
+        buckets[r.kind].rows.push(...(r.rows as unknown[]));
+        buckets[r.kind].metas.push(r.meta);
+        log.push({ name: f.name, kind: r.kind, count: r.rows.length, ok: true });
+      } catch (e) {
+        log.push({ name: f.name, kind: "cluster", count: 0, ok: false, error: (e as Error).message });
+      }
+      setSmart({ running: true, log: [...log] });
+    }
+    // Apply
+    const mode: "append" | "replace" = append ? "append" : "replace";
+    if (buckets.cluster.rows.length) {
+      setClusters(buckets.cluster.rows as never, mode);
+      buckets.cluster.metas.forEach((m) => pushHistory({ ...m, kind: "cluster", mode }));
+      setMetas((prev) => ({ ...prev, cluster: buckets.cluster.metas[buckets.cluster.metas.length - 1] }));
+    }
+    if (buckets.ticket.rows.length) {
+      setTickets(buckets.ticket.rows as never, mode);
+      buckets.ticket.metas.forEach((m) => pushHistory({ ...m, kind: "ticket", mode }));
+      setMetas((prev) => ({ ...prev, ticket: buckets.ticket.metas[buckets.ticket.metas.length - 1] }));
+    }
+    if (buckets.analyst.rows.length) {
+      setAnalyst(buckets.analyst.rows as never, mode);
+      buckets.analyst.metas.forEach((m) => pushHistory({ ...m, kind: "analyst", mode }));
+      setMetas((prev) => ({ ...prev, analyst: buckets.analyst.metas[buckets.analyst.metas.length - 1] }));
+    }
+    setSmart({ running: false, log });
+    const ok = log.filter((l) => l.ok).length;
+    toast.success(`Smart Import selesai · ${ok}/${files.length} file · dashboard diperbarui`);
+  };
+
   return (
     <>
       <AppHeader title="Data Management" subtitle="Import Excel, kelola dataset, riwayat upload" />
@@ -188,6 +299,12 @@ function UploadPage() {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
+            <SmartDropZone
+              running={smart.running}
+              log={smart.log}
+              onFiles={runSmartImport}
+            />
+
             <div className="grid gap-4 md:grid-cols-3">
               <DropZone
                 label="PEMBAGIAN CLUSTER SIBT.xlsx"
