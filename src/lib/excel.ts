@@ -96,6 +96,7 @@ export type ActionPlanRow = {
   startDate: string; // ISO YYYY-MM-DD
   endDate: string; // ISO YYYY-MM-DD
   description: string;
+  result: string;
   status: ActionPlanStatus;
   durationDays: number;
 };
@@ -143,26 +144,20 @@ function toISODate(v: unknown): string {
   return "";
 }
 
-export function computeActionStatus(startISO: string, endISO: string): ActionPlanStatus {
+export function computeActionStatus(
+  startISO: string,
+  endISO: string,
+  result?: string,
+): ActionPlanStatus {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const s = startISO ? new Date(startISO) : null;
   const e = endISO ? new Date(endISO) : null;
-  if (e && e < today) return "completed";
+  const hasResult = !!(result && result.trim());
   if (s && s > today) return "planned";
+  if (e && e < today) return hasResult ? "completed" : "overdue";
   if (s && e && s <= today && today <= e) return "onprogress";
-  if (e && e < today) return "overdue";
-  return "planned";
-}
-
-function statusWithOverdue(startISO: string, endISO: string): ActionPlanStatus {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const e = endISO ? new Date(endISO) : null;
-  const s = startISO ? new Date(startISO) : null;
-  if (s && s > today) return "planned";
-  if (s && e && s <= today && today <= e) return "onprogress";
-  if (e && e < today) return "overdue"; // will be flipped to completed only via kanban manual override in UI
+  if (hasResult) return "completed";
   return "planned";
 }
 
@@ -594,6 +589,7 @@ export async function parseActionPlanFile(
     const startDate = toISODate(pick(r, ["START DATE", "TANGGAL MULAI", "START"]));
     const endDate = toISODate(pick(r, ["END DATE", "TANGGAL SELESAI", "END"]));
     const description = toStr(pick(r, ["KETERANGAN", "DESKRIPSI", "CATATAN"]));
+    const result = toStr(pick(r, ["HASIL", "OUTCOME", "RESULT", "HASIL PROGRAM"]));
     const key = `${pic}|${cluster}|${program}|${startDate}|${endDate}`;
     if (seen.has(key)) return;
     seen.add(key);
@@ -610,7 +606,8 @@ export async function parseActionPlanFile(
       startDate,
       endDate,
       description,
-      status: statusWithOverdue(startDate, endDate),
+      result,
+      status: computeActionStatus(startDate, endDate, result),
       durationDays,
     });
   });
@@ -663,11 +660,11 @@ export function detectKind(wb: XLSX.WorkBook, fileName: string): ImportKind {
   const hs = collectHeaders(wb);
   const has = (needle: string) => hs.some((h) => h.includes(needle));
 
-  // Action Plan: NAMA + CLUSTER + PROGRAM + START DATE + END DATE + KETERANGAN
+  // Action Plan: NAMA + CLUSTER + PROGRAM + START DATE + END DATE + KETERANGAN + Hasil
   if (
     (has("program") || sheets.some((s) => s.includes("actionplan") || s.includes("actionpla"))) &&
     (has("startdate") || has("tanggalmulai")) &&
-    (has("enddate") || has("tanggalselesai"))
+    (has("enddate") || has("tanggalselesai") || has("hasil"))
   ) {
     return "actionplan";
   }
@@ -774,7 +771,7 @@ export function downloadTemplate(kind: ImportKind) {
       "CLUSTER", "KABUPATEN", "PROVINSI", "NAMA KOMPETITOR",
       "HARGA KOMPETITOR TERMURAH", "PROMO COMPETITOR",
     ],
-    actionplan: ["NAMA", "CLUSTER", "PROGRAM", "START DATE", "END DATE", "KETERANGAN"],
+    actionplan: ["NAMA", "CLUSTER", "PROGRAM", "START DATE", "END DATE", "KETERANGAN", "Hasil"],
   };
   const headers = templates[kind];
   const ws = XLSX.utils.aoa_to_sheet([headers]);

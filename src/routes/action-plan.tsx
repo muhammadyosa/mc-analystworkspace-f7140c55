@@ -9,7 +9,9 @@ import {
   ListChecks,
   Sparkles,
   Target,
+  Trophy,
   Users,
+  Link2,
 } from "lucide-react";
 import {
   DndContext,
@@ -29,6 +31,13 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useDataStore } from "@/lib/store";
 import { computeActionStatus, type ActionPlanRow, type ActionPlanStatus } from "@/lib/excel";
 
@@ -68,29 +77,39 @@ function fmtDate(iso: string) {
   }
 }
 
-function DraggableCard({ row }: { row: ActionPlanRow }) {
+function DraggableCard({ row, onOpen }: { row: ActionPlanRow; onOpen: (r: ActionPlanRow) => void }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: row.id });
   const style = transform
     ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`, opacity: isDragging ? 0.5 : 1 }
     : undefined;
   const meta = STATUS_META[row.status];
   const pct = progressOf(row);
+  const hasResult = !!row.result?.trim();
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className={`glass-card group rounded-xl border-0 p-3 shadow-sm ring-1 ${meta.ring}`}
+      className={`glass-card group cursor-pointer rounded-xl border-0 p-3 shadow-sm ring-1 ${meta.ring} hover:ring-primary/60`}
+      onClick={() => onOpen(row)}
     >
       <div className="flex items-start gap-2">
         <button
           {...attributes}
           {...listeners}
+          onClick={(e) => e.stopPropagation()}
           className="mt-1 cursor-grab text-muted-foreground hover:text-foreground"
         >
           <GripVertical className="h-4 w-4" />
         </button>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold">{row.cluster || "—"}</p>
+          <div className="flex items-start justify-between gap-2">
+            <p className="truncate text-sm font-semibold">{row.cluster || "—"}</p>
+            {hasResult && (
+              <Badge className="shrink-0 border-emerald-500/40 bg-emerald-500/10 text-[9px] text-emerald-600">
+                Hasil ✓
+              </Badge>
+            )}
+          </div>
           <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{row.program}</p>
           <div className="mt-2 flex items-center justify-between text-[10px] text-muted-foreground">
             <span className="truncate">PIC: {row.pic || "-"}</span>
@@ -107,7 +126,15 @@ function DraggableCard({ row }: { row: ActionPlanRow }) {
   );
 }
 
-function KanbanColumn({ status, rows }: { status: ActionPlanStatus; rows: ActionPlanRow[] }) {
+function KanbanColumn({
+  status,
+  rows,
+  onOpen,
+}: {
+  status: ActionPlanStatus;
+  rows: ActionPlanRow[];
+  onOpen: (r: ActionPlanRow) => void;
+}) {
   const { setNodeRef, isOver } = useDroppable({ id: status });
   const meta = STATUS_META[status];
   const Icon = meta.icon;
@@ -127,7 +154,7 @@ function KanbanColumn({ status, rows }: { status: ActionPlanStatus; rows: Action
       </div>
       <div className="space-y-2">
         {rows.map((r) => (
-          <DraggableCard key={r.id} row={r} />
+          <DraggableCard key={r.id} row={r} onOpen={onOpen} />
         ))}
         {!rows.length && (
           <p className="px-1 py-6 text-center text-xs text-muted-foreground">Kosong</p>
@@ -311,10 +338,46 @@ function CalendarView({ rows }: { rows: ActionPlanRow[] }) {
 }
 
 function ActionPlanPage() {
-  const { actionPlans, clusters, tickets, overrideActionPlanStatus } = useDataStore();
+  const { actionPlans, clusters, tickets, analyst, competitorData, overrideActionPlanStatus } = useDataStore();
   const [search, setSearch] = useState("");
   const [filterPic, setFilterPic] = useState("");
+  const [filterCluster, setFilterCluster] = useState("");
+  const [filterKab, setFilterKab] = useState("");
+  const [filterProv, setFilterProv] = useState("");
+  const [filterStatus, setFilterStatus] = useState<"" | ActionPlanStatus>("");
+  const [filterMonth, setFilterMonth] = useState("");
+  const [openRow, setOpenRow] = useState<ActionPlanRow | null>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+
+  // Cluster meta lookup by name (case-insensitive)
+  const clusterMeta = useMemo(() => {
+    const m = new Map<string, (typeof clusters)[number]>();
+    for (const c of clusters) if (c.cluster) m.set(c.cluster.toLowerCase(), c);
+    return m;
+  }, [clusters]);
+
+  const ticketByCluster = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const t of tickets) m.set(t.cluster, (m.get(t.cluster) ?? 0) + t.ticket);
+    return m;
+  }, [tickets]);
+
+  const analystByCluster = useMemo(() => {
+    const m = new Map<string, (typeof analyst)[number]>();
+    for (const a of analyst) if (a.cluster) m.set(a.cluster.toLowerCase(), a);
+    return m;
+  }, [analyst]);
+
+  const competitorByCluster = useMemo(() => {
+    const m = new Map<string, (typeof competitorData)[number][]>();
+    for (const c of competitorData) {
+      const k = (c.cluster || "").toLowerCase();
+      if (!k) continue;
+      if (!m.has(k)) m.set(k, []);
+      m.get(k)!.push(c);
+    }
+    return m;
+  }, [competitorData]);
 
   // Recompute status live (some rows may have moved from planned→onprogress by date)
   const rows = useMemo(() => {
@@ -323,28 +386,53 @@ function ActionPlanPage() {
       status:
         r.status === "completed"
           ? r.status
-          : computeActionStatus(r.startDate, r.endDate),
+          : computeActionStatus(r.startDate, r.endDate, r.result),
     }));
   }, [actionPlans]);
 
-  const pics = useMemo(
-    () => Array.from(new Set(rows.map((r) => r.pic).filter(Boolean))).sort(),
-    [rows],
+  const pics = useMemo(() => Array.from(new Set(rows.map((r) => r.pic).filter(Boolean))).sort(), [rows]);
+  const clusterOpts = useMemo(() => Array.from(new Set(rows.map((r) => r.cluster).filter(Boolean))).sort(), [rows]);
+  const kabOpts = useMemo(
+    () =>
+      Array.from(
+        new Set(rows.map((r) => clusterMeta.get(r.cluster.toLowerCase())?.kabupaten).filter(Boolean) as string[]),
+      ).sort(),
+    [rows, clusterMeta],
+  );
+  const provOpts = useMemo(
+    () =>
+      Array.from(
+        new Set(rows.map((r) => clusterMeta.get(r.cluster.toLowerCase())?.provinsi).filter(Boolean) as string[]),
+      ).sort(),
+    [rows, clusterMeta],
   );
 
   const filtered = useMemo(() => {
     const s = search.trim().toLowerCase();
     return rows.filter((r) => {
       if (filterPic && r.pic !== filterPic) return false;
+      if (filterCluster && r.cluster !== filterCluster) return false;
+      if (filterStatus && r.status !== filterStatus) return false;
+      const meta = clusterMeta.get(r.cluster.toLowerCase());
+      if (filterKab && meta?.kabupaten !== filterKab) return false;
+      if (filterProv && meta?.provinsi !== filterProv) return false;
+      if (filterMonth) {
+        const [y, m] = filterMonth.split("-");
+        const st = r.startDate?.slice(0, 7);
+        const en = r.endDate?.slice(0, 7);
+        const target = `${y}-${m}`;
+        if (!(st && en && st <= target && target <= en)) return false;
+      }
       if (!s) return true;
       return (
         r.cluster.toLowerCase().includes(s) ||
         r.program.toLowerCase().includes(s) ||
         r.pic.toLowerCase().includes(s) ||
-        r.description.toLowerCase().includes(s)
+        r.description.toLowerCase().includes(s) ||
+        (r.result || "").toLowerCase().includes(s)
       );
     });
-  }, [rows, search, filterPic]);
+  }, [rows, search, filterPic, filterCluster, filterKab, filterProv, filterStatus, filterMonth, clusterMeta]);
 
   const kpis = useMemo(() => {
     const total = rows.length;
@@ -354,29 +442,32 @@ function ActionPlanPage() {
     const overdue = rows.filter((r) => r.status === "overdue").length;
     const uniquePic = new Set(rows.map((r) => r.pic).filter(Boolean)).size;
     const uniqueCluster = new Set(rows.map((r) => r.cluster).filter(Boolean)).size;
+    const withResult = rows.filter((r) => r.result?.trim()).length;
     const completion = total ? Math.round((completed / total) * 100) : 0;
-    return { total, planned, onprogress, completed, overdue, uniquePic, uniqueCluster, completion };
+    const effectiveness = total ? Math.round((withResult / total) * 100) : 0;
+    return { total, planned, onprogress, completed, overdue, uniquePic, uniqueCluster, completion, effectiveness, withResult };
   }, [rows]);
 
-  // AI-ish recommendation engine
   const recommendations = useMemo(() => {
     const out: { severity: "high" | "med" | "low"; title: string; detail: string }[] = [];
     const overdueList = rows.filter((r) => r.status === "overdue");
     if (overdueList.length) {
       out.push({
         severity: "high",
-        title: `${overdueList.length} program terlambat`,
-        detail: `Segera lakukan Site Visit & review komitmen PIC: ${Array.from(
-          new Set(overdueList.map((r) => r.pic).filter(Boolean)),
-        )
-          .slice(0, 5)
-          .join(", ") || "-"}.`,
+        title: `${overdueList.length} program terlambat (belum ada Hasil)`,
+        detail: `Evaluasi & Site Visit: ${Array.from(new Set(overdueList.map((r) => `${r.cluster}·${r.pic}`))).slice(0, 5).join(" | ") || "-"}. Update kolom Hasil untuk menutup program.`,
+      });
+    }
+    const bestPractice = rows.filter((r) => r.status === "completed" && r.result?.trim());
+    if (bestPractice.length) {
+      out.push({
+        severity: "low",
+        title: `Best Practice: ${bestPractice.length} program sukses`,
+        detail: `Replikasi: ${bestPractice.slice(0, 4).map((r) => `${r.program} @ ${r.cluster}`).join(" | ")}.`,
       });
     }
     const clustersWithPlan = new Set(rows.map((r) => r.cluster));
-    const clustersNoPlan = clusters
-      .map((c) => c.cluster)
-      .filter((c) => c && !clustersWithPlan.has(c));
+    const clustersNoPlan = clusters.map((c) => c.cluster).filter((c) => c && !clustersWithPlan.has(c));
     if (clustersNoPlan.length) {
       out.push({
         severity: "med",
@@ -384,9 +475,6 @@ function ActionPlanPage() {
         detail: `Contoh: ${clustersNoPlan.slice(0, 6).join(", ")}. Rekomendasi: Branding lokal & Program Loyalty.`,
       });
     }
-    // Ticket-heavy clusters without on-progress program
-    const ticketByCluster = new Map<string, number>();
-    for (const t of tickets) ticketByCluster.set(t.cluster, (ticketByCluster.get(t.cluster) ?? 0) + t.ticket);
     const hotSpots = Array.from(ticketByCluster.entries())
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5)
@@ -398,11 +486,11 @@ function ActionPlanPage() {
         detail: `Prioritas: ${hotSpots.map(([c, n]) => `${c} (${n} tiket)`).join(", ")}. Rekomendasi: Preventive Maintenance & Care Program.`,
       });
     }
-    if (kpis.completion >= 70) {
+    if (kpis.effectiveness >= 60) {
       out.push({
         severity: "low",
-        title: `Completion rate sehat (${kpis.completion}%)`,
-        detail: "Pertahankan momentum, siapkan program acquisition baru untuk kuartal berikutnya.",
+        title: `Efektivitas program ${kpis.effectiveness}%`,
+        detail: `${kpis.withResult}/${kpis.total} program terisi Hasil — dokumentasi konsisten, pertahankan.`,
       });
     }
     if (!rows.length) {
@@ -413,7 +501,7 @@ function ActionPlanPage() {
       });
     }
     return out;
-  }, [rows, clusters, tickets, kpis.completion]);
+  }, [rows, clusters, ticketByCluster, kpis]);
 
   const onDragEnd = (e: DragEndEvent) => {
     const overId = e.over?.id as ActionPlanStatus | undefined;
@@ -425,11 +513,11 @@ function ActionPlanPage() {
     <>
       <AppHeader
         title="Action Plan"
-        subtitle="Timeline, Kanban, Kalender & AI Recommendation berbasis ACTION PLAN.xlsx"
+        subtitle="Timeline, Kanban, Kalender, Detail & AI Recommendation berbasis ACTION PLAN.xlsx"
       />
       <div className="space-y-4 p-4 sm:p-6">
         {/* KPI Row */}
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8">
           <KpiCard icon={ListChecks} label="Total Program" value={kpis.total} sub={`${kpis.uniqueCluster} cluster`} />
           <KpiCard icon={CalendarDays} label="Planned" value={kpis.planned} color="text-sky-500" />
           <KpiCard icon={Clock} label="On Progress" value={kpis.onprogress} color="text-amber-500" />
@@ -437,29 +525,70 @@ function ActionPlanPage() {
           <KpiCard icon={AlertTriangle} label="Overdue" value={kpis.overdue} color="text-rose-500" />
           <KpiCard icon={Users} label="PIC Terlibat" value={kpis.uniquePic} color="text-primary" />
           <KpiCard icon={Target} label="Completion" value={`${kpis.completion}%`} sub="rate keseluruhan" />
+          <KpiCard icon={Trophy} label="Efektivitas" value={`${kpis.effectiveness}%`} sub={`${kpis.withResult} program ada Hasil`} color="text-emerald-500" />
         </div>
+
+        {/* Exec Summary */}
+        <Card className="glass-card border-0">
+          <CardHeader className="flex-row items-center gap-2 space-y-0">
+            <Sparkles className="h-4 w-4 text-primary" />
+            <CardTitle className="font-display text-base">Executive Summary</CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm text-muted-foreground">
+            {rows.length
+              ? `Dari ${kpis.total} program di ${kpis.uniqueCluster} cluster, ${kpis.onprogress} sedang berjalan, ${kpis.completed} selesai (${kpis.completion}%) dan ${kpis.overdue} terlambat. Efektivitas dokumentasi Hasil mencapai ${kpis.effectiveness}%. ${kpis.overdue > 0 ? "Fokus utama: menutup program overdue dengan mengisi kolom Hasil atau melakukan evaluasi." : "Semua program berjalan sesuai jalur — lanjutkan planning kuartal berikutnya."}`
+              : "Belum ada data Action Plan. Upload ACTION PLAN.xlsx untuk memulai analisis."}
+          </CardContent>
+        </Card>
 
         {/* Toolbar */}
         <Card className="glass-card border-0">
           <CardContent className="flex flex-wrap items-center gap-2 p-3">
             <Input
-              placeholder="Cari cluster / program / PIC…"
+              placeholder="Cari cluster / program / PIC / hasil…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="h-8 max-w-xs"
             />
+            <FilterSelect value={filterPic} onChange={setFilterPic} placeholder="Semua PIC" options={pics} />
+            <FilterSelect value={filterCluster} onChange={setFilterCluster} placeholder="Semua Cluster" options={clusterOpts} />
+            <FilterSelect value={filterKab} onChange={setFilterKab} placeholder="Semua Kabupaten" options={kabOpts} />
+            <FilterSelect value={filterProv} onChange={setFilterProv} placeholder="Semua Provinsi" options={provOpts} />
             <select
-              value={filterPic}
-              onChange={(e) => setFilterPic(e.target.value)}
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value as "" | ActionPlanStatus)}
               className="h-8 rounded-md border border-input bg-background px-2 text-xs"
             >
-              <option value="">Semua PIC</option>
-              {pics.map((p) => (
-                <option key={p} value={p}>
-                  {p}
-                </option>
-              ))}
+              <option value="">Semua Status</option>
+              <option value="planned">Planned</option>
+              <option value="onprogress">On Progress</option>
+              <option value="completed">Completed</option>
+              <option value="overdue">Overdue</option>
             </select>
+            <input
+              type="month"
+              value={filterMonth}
+              onChange={(e) => setFilterMonth(e.target.value)}
+              className="h-8 rounded-md border border-input bg-background px-2 text-xs"
+            />
+            {(search || filterPic || filterCluster || filterKab || filterProv || filterStatus || filterMonth) && (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-8"
+                onClick={() => {
+                  setSearch("");
+                  setFilterPic("");
+                  setFilterCluster("");
+                  setFilterKab("");
+                  setFilterProv("");
+                  setFilterStatus("");
+                  setFilterMonth("");
+                }}
+              >
+                Reset
+              </Button>
+            )}
             <div className="ml-auto text-[11px] text-muted-foreground">
               {filtered.length} dari {rows.length} program
             </div>
@@ -478,7 +607,12 @@ function ActionPlanPage() {
             <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={onDragEnd}>
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                 {COLUMNS.map((c) => (
-                  <KanbanColumn key={c} status={c} rows={filtered.filter((r) => r.status === c)} />
+                  <KanbanColumn
+                    key={c}
+                    status={c}
+                    rows={filtered.filter((r) => r.status === c)}
+                    onOpen={setOpenRow}
+                  />
                 ))}
               </div>
             </DndContext>
@@ -530,12 +664,185 @@ function ActionPlanPage() {
         {!rows.length && (
           <Card className="glass-card border-0">
             <CardContent className="p-6 text-center text-sm text-muted-foreground">
-              Belum ada data. Upload <code className="font-mono">ACTION PLAN.xlsx</code> di Settings →
-              Data Management.
+              Belum ada data. Upload <code className="font-mono">ACTION PLAN.xlsx</code> di Settings → Data Management.
             </CardContent>
           </Card>
         )}
       </div>
+
+      <DetailDialog
+        row={openRow}
+        onClose={() => setOpenRow(null)}
+        clusterMeta={clusterMeta}
+        ticketByCluster={ticketByCluster}
+        analystByCluster={analystByCluster}
+        competitorByCluster={competitorByCluster}
+      />
     </>
+  );
+}
+
+function FilterSelect({
+  value,
+  onChange,
+  placeholder,
+  options,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+  options: string[];
+}) {
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="h-8 max-w-[160px] rounded-md border border-input bg-background px-2 text-xs"
+    >
+      <option value="">{placeholder}</option>
+      {options.map((o) => (
+        <option key={o} value={o}>
+          {o}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+function DetailDialog({
+  row,
+  onClose,
+  clusterMeta,
+  ticketByCluster,
+  analystByCluster,
+  competitorByCluster,
+}: {
+  row: ActionPlanRow | null;
+  onClose: () => void;
+  clusterMeta: Map<string, any>;
+  ticketByCluster: Map<string, number>;
+  analystByCluster: Map<string, any>;
+  competitorByCluster: Map<string, any[]>;
+}) {
+  if (!row) return null;
+  const key = row.cluster.toLowerCase();
+  const meta = clusterMeta.get(key);
+  const tickets = ticketByCluster.get(row.cluster) ?? 0;
+  const a = analystByCluster.get(key);
+  const comps = competitorByCluster.get(key) ?? [];
+  const pct = progressOf(row);
+  const status = STATUS_META[row.status];
+  const hcNow = meta?.juni ?? 0;
+  const hcTarget = meta?.totalHC2026 ?? 0;
+  const hcJan = meta?.januari ?? 0;
+  const growth = hcJan > 0 ? Math.round(((hcNow - hcJan) / hcJan) * 100) : 0;
+  const potensi = hcTarget > 0 ? Math.round((hcNow / hcTarget) * 100) : 0;
+  const aiNote = row.status === "completed" && row.result?.trim()
+    ? `Program berhasil dieksekusi. Best Practice: replikasi pola "${row.program}" ke cluster serupa (potensi ${potensi}%).`
+    : row.status === "overdue"
+      ? `Program overdue tanpa Hasil. Rekomendasi: evaluasi PIC ${row.pic || "-"}, jadwalkan Site Visit dan update kolom Hasil untuk closing.`
+      : row.status === "onprogress"
+        ? `Program aktif ${pct}%. Pantau progres mingguan, siapkan dokumentasi Hasil menjelang End Date.`
+        : `Program akan dimulai. Pastikan resource PIC ${row.pic || "-"} & alignment dengan cluster ${row.cluster}.`;
+
+  return (
+    <Dialog open={!!row} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
+        <DialogHeader>
+          <div className="flex items-center gap-2">
+            <Badge className={`${status.ring} ${status.color}`} variant="outline">
+              {status.label}
+            </Badge>
+            <DialogTitle className="font-display">{row.program || "—"}</DialogTitle>
+          </div>
+          <DialogDescription>
+            {row.cluster} · PIC: {row.pic || "-"}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-4 md:grid-cols-3">
+          {/* Left: Program Detail */}
+          <div className="space-y-3 md:col-span-2">
+            <Card className="glass-card border-0">
+              <CardContent className="space-y-3 p-4 text-sm">
+                <div className="grid grid-cols-2 gap-3 text-xs">
+                  <Info label="Start Date" value={fmtDate(row.startDate)} />
+                  <Info label="End Date" value={fmtDate(row.endDate)} />
+                  <Info label="Durasi" value={`${row.durationDays} hari`} />
+                  <Info label="Progress" value={`${pct}%`} />
+                </div>
+                <div>
+                  <div className="mb-1 text-xs font-semibold text-muted-foreground">Progress Timeline</div>
+                  <Progress value={pct} className="h-2" />
+                </div>
+                {row.description && (
+                  <div>
+                    <div className="mb-1 text-xs font-semibold text-muted-foreground">Keterangan</div>
+                    <p className="whitespace-pre-wrap text-sm">{row.description}</p>
+                  </div>
+                )}
+                <div>
+                  <div className="mb-1 flex items-center gap-2 text-xs font-semibold">
+                    <Trophy className="h-3.5 w-3.5 text-emerald-500" />
+                    <span className="text-muted-foreground">Hasil / Outcome</span>
+                  </div>
+                  {row.result?.trim() ? (
+                    <p className="whitespace-pre-wrap rounded-md border border-emerald-500/30 bg-emerald-500/5 p-2 text-sm">
+                      {row.result}
+                    </p>
+                  ) : (
+                    <p className="rounded-md border border-dashed border-border p-2 text-xs italic text-muted-foreground">
+                      Belum ada hasil dicatat.
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="glass-card border-0">
+              <CardHeader className="flex-row items-center gap-2 space-y-0 pb-2">
+                <Sparkles className="h-4 w-4 text-primary" />
+                <CardTitle className="font-display text-sm">AI Analysis</CardTitle>
+              </CardHeader>
+              <CardContent className="text-sm text-muted-foreground">{aiNote}</CardContent>
+            </Card>
+          </div>
+
+          {/* Right: Smart Relations */}
+          <div className="space-y-3">
+            <Card className="glass-card border-0">
+              <CardHeader className="flex-row items-center gap-2 space-y-0 pb-2">
+                <Link2 className="h-4 w-4 text-primary" />
+                <CardTitle className="font-display text-sm">Smart Relation</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2 text-xs">
+                <Info label="Kabupaten" value={meta?.kabupaten || "-"} />
+                <Info label="Provinsi" value={meta?.provinsi || "-"} />
+                <Info label="HC Juni" value={hcNow.toLocaleString()} />
+                <Info label="Target HC 2026" value={hcTarget.toLocaleString()} />
+                <Info label="Growth (Jan→Jun)" value={`${growth}%`} />
+                <Info label="Potensi Realisasi" value={`${potensi}%`} />
+                <Info label="Total Ticket" value={tickets.toLocaleString()} />
+                <Info label="Kompetitor" value={comps.length ? Array.from(new Set(comps.map((c) => c.competitor))).slice(0, 3).join(", ") : "-"} />
+                {a && (
+                  <>
+                    <Info label="AE" value={a.aeName || "-"} />
+                    <Info label="Tingkat Potensi" value={a.potential || "-"} />
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function Info({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="flex items-center justify-between gap-3 border-b border-border/40 py-1 last:border-0">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="text-right font-medium">{value}</span>
+    </div>
   );
 }
