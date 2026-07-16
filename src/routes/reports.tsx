@@ -2,10 +2,14 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useRef } from "react";
 import { Printer, FileText, Calendar, Radar as RadarIcon } from "lucide-react";
 import {
+  Area,
+  AreaChart,
   Bar,
   BarChart,
   CartesianGrid,
   Cell,
+  Line,
+  LineChart,
   Pie,
   PieChart,
   ResponsiveContainer,
@@ -53,14 +57,49 @@ function ReportsPage() {
 
   const stats = useMemo(() => {
     if (!clusters.length) return null;
-    const sumJun = clusters.reduce((a, c) => a + c.juni, 0);
-    const sumMei = clusters.reduce((a, c) => a + c.mei, 0);
+    const monthKeys: Array<keyof typeof clusters[number]> = [
+      "januari", "februari", "maret", "april", "mei", "juni",
+    ] as const;
+    const monthLabel = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun"];
+    const hcTrend = monthKeys.map((k, i) => ({
+      bulan: monthLabel[i],
+      hc: clusters.reduce((a, c) => a + (Number(c[k]) || 0), 0),
+    }));
+    const sumJun = hcTrend[5].hc;
+    const sumMei = hcTrend[4].hc;
     const growth = sumMei > 0 ? ((sumJun - sumMei) / sumMei) * 100 : 0;
     const topGrowth = [...clusters].sort((a, b) => b.deltaMeiJuni - a.deltaMeiJuni).slice(0, 5);
     const topDecline = [...clusters].sort((a, b) => a.deltaMeiJuni - b.deltaMeiJuni).slice(0, 5);
     const totalTicket = clusters.reduce((a, c) => a + c.ticket, 0);
     const running = actions.filter((a) => a.status === "onprogress").length;
-    return { sumJun, sumMei, growth, topGrowth, topDecline, totalTicket, running };
+    const done = actions.filter((a) => a.status === "done").length;
+    const belum = actions.filter((a) => a.status === "belum").length;
+    const actionStatus = [
+      { name: "Belum", value: belum },
+      { name: "On Progress", value: running },
+      { name: "Done", value: done },
+    ];
+    const topHC = [...clusters].sort((a, b) => b.juni - a.juni).slice(0, 8)
+      .map((c) => ({ cluster: c.cluster, hc: c.juni }));
+    const topTicket = [...clusters].sort((a, b) => b.ticket - a.ticket).slice(0, 8)
+      .map((c) => ({ cluster: c.cluster, ticket: c.ticket }));
+    // PIC performance: sum HC per PIC
+    const picMap = new Map<string, { hc: number; ticket: number }>();
+    clusters.forEach((c) => {
+      const pic = c.pic || "-";
+      const cur = picMap.get(pic) ?? { hc: 0, ticket: 0 };
+      cur.hc += c.juni;
+      cur.ticket += c.ticket;
+      picMap.set(pic, cur);
+    });
+    const picPerf = Array.from(picMap.entries())
+      .map(([pic, v]) => ({ pic, ...v }))
+      .sort((a, b) => b.hc - a.hc)
+      .slice(0, 8);
+    return {
+      sumJun, sumMei, growth, topGrowth, topDecline, totalTicket, running, done, belum,
+      hcTrend, actionStatus, topHC, topTicket, picPerf,
+    };
   }, [clusters, actions]);
 
   // Competitor Intelligence-derived charts
@@ -152,7 +191,7 @@ function ReportsPage() {
             <TabsTrigger value="intel"><RadarIcon className="mr-1 h-4 w-4" /> Competitor Intel</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="weekly">
+          <TabsContent value="weekly" className="space-y-4">
             <Card className="glass-card border-0">
               <CardHeader className="flex-row items-center justify-between space-y-0">
                 <CardTitle className="font-display text-base">Weekly Report</CardTitle>
@@ -169,7 +208,7 @@ function ReportsPage() {
                     <div className="kpi inline-block mr-6"><div className="label text-[10px] uppercase text-muted-foreground">Growth</div><div className="value font-display text-lg font-bold">{s.growth.toFixed(1)}%</div></div>
                     <div className="kpi inline-block"><div className="label text-[10px] uppercase text-muted-foreground">Ticket</div><div className="value font-display text-lg font-bold">{s.totalTicket}</div></div>
                   </div>
-                  <div><h2 className="font-semibold">Executive Summary</h2><p>HC {s.growth >= 0 ? "tumbuh" : "turun"} {s.growth.toFixed(1)}% dari periode sebelumnya. {s.running} action plan sedang berjalan.</p></div>
+                  <div><h2 className="font-semibold">Executive Summary</h2><p>HC {s.growth >= 0 ? "tumbuh" : "turun"} {s.growth.toFixed(1)}% dari periode sebelumnya. {s.running} action plan sedang berjalan, {s.done} program telah selesai.</p></div>
                   <div><h2 className="font-semibold">Top Growth Cluster</h2><ul>{s.topGrowth.map((c) => <li key={c.id}>{c.cluster} (+{c.deltaMeiJuni})</li>)}</ul></div>
                   <div><h2 className="font-semibold">Top Decline Cluster</h2><ul>{s.topDecline.map((c) => <li key={c.id}>{c.cluster} ({c.deltaMeiJuni})</li>)}</ul></div>
                   <div><h2 className="font-semibold">Program Berjalan</h2><ul>{actions.filter((a) => a.status === "onprogress").map((a) => <li key={a.id}>{a.cluster} — {a.program}</li>)}{!actions.filter((a) => a.status === "onprogress").length && <li>Tidak ada</li>}</ul></div>
@@ -177,9 +216,93 @@ function ReportsPage() {
                 </div>
               </CardContent>
             </Card>
+
+            <div className="grid gap-4 lg:grid-cols-2">
+              <Card className="glass-card border-0">
+                <CardHeader><CardTitle className="font-display text-sm">Tren HC 6 Bulan Terakhir</CardTitle></CardHeader>
+                <CardContent className="h-64">
+                  <ResponsiveContainer>
+                    <AreaChart data={s.hcTrend}>
+                      <defs>
+                        <linearGradient id="hcGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#6366f1" stopOpacity={0.6} />
+                          <stop offset="100%" stopColor="#6366f1" stopOpacity={0.05} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                      <XAxis dataKey="bulan" fontSize={11} />
+                      <YAxis fontSize={11} tickFormatter={(v) => (v >= 1000 ? `${(v / 1000).toFixed(0)}K` : String(v))} />
+                      <Tooltip formatter={(v: number) => v.toLocaleString("id-ID")} />
+                      <Area type="monotone" dataKey="hc" stroke="#6366f1" strokeWidth={2} fill="url(#hcGrad)" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+
+              <Card className="glass-card border-0">
+                <CardHeader><CardTitle className="font-display text-sm">Status Action Plan</CardTitle></CardHeader>
+                <CardContent className="h-64">
+                  <ResponsiveContainer>
+                    <PieChart>
+                      <Pie data={s.actionStatus} dataKey="value" nameKey="name" outerRadius={90}
+                        label={(e: any) => `${e.name}: ${e.value}`} labelLine={false}>
+                        {s.actionStatus.map((_, i) => (
+                          <Cell key={i} fill={["#94a3b8", "#f59e0b", "#22c55e"][i]} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+
+              <Card className="glass-card border-0">
+                <CardHeader><CardTitle className="font-display text-sm">Top 8 Cluster Growth (Mei → Jun)</CardTitle></CardHeader>
+                <CardContent className="h-72">
+                  <ResponsiveContainer>
+                    <BarChart data={s.topGrowth.concat(s.topDecline).slice(0, 8).map((c) => ({ cluster: c.cluster, delta: c.deltaMeiJuni }))}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                      <XAxis dataKey="cluster" fontSize={10} angle={-25} textAnchor="end" height={70} />
+                      <YAxis fontSize={10} />
+                      <Tooltip />
+                      <Bar dataKey="delta" radius={[6, 6, 0, 0]}>
+                        {s.topGrowth.concat(s.topDecline).slice(0, 8).map((c, i) => (
+                          <Cell key={i} fill={c.deltaMeiJuni >= 0 ? "#22c55e" : "#ef4444"} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+
+              <Card className="glass-card border-0">
+                <CardHeader><CardTitle className="font-display text-sm">Top Cluster berdasarkan Ticket</CardTitle></CardHeader>
+                <CardContent className="h-72">
+                  <ResponsiveContainer>
+                    <BarChart data={s.topTicket} layout="vertical" margin={{ left: 40 }}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                      <XAxis type="number" fontSize={10} />
+                      <YAxis type="category" dataKey="cluster" fontSize={10} width={100} />
+                      <Tooltip />
+                      <Bar dataKey="ticket" fill="#ef4444" radius={[0, 6, 6, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card className="glass-card border-0">
+              <CardHeader><CardTitle className="font-display text-sm">Analisa Mingguan</CardTitle></CardHeader>
+              <CardContent className="space-y-2 text-sm">
+                <p>• HC minggu ini <b>{s.sumJun.toLocaleString("id-ID")}</b> ({s.growth >= 0 ? "naik" : "turun"} <b>{Math.abs(s.growth).toFixed(1)}%</b> dari Mei). Momentum ini harus dijaga lewat program retensi di top decline cluster.</p>
+                <p>• Cluster paling agresif tumbuh: <b>{s.topGrowth[0]?.cluster ?? "-"}</b> (+{s.topGrowth[0]?.deltaMeiJuni ?? 0}). Replikasi strategi ke cluster serupa.</p>
+                <p>• Ticket menumpuk pada <b>{s.topTicket[0]?.cluster ?? "-"}</b> ({s.topTicket[0]?.ticket ?? 0} tiket). Perlu quick-win perbaikan layanan minggu ini.</p>
+                <p>• Action plan aktif <b>{s.running}</b>, selesai <b>{s.done}</b>. Rasio penyelesaian {s.done + s.running > 0 ? Math.round((s.done / (s.done + s.running)) * 100) : 0}%.</p>
+              </CardContent>
+            </Card>
           </TabsContent>
 
-          <TabsContent value="monthly">
+          <TabsContent value="monthly" className="space-y-4">
             <Card className="glass-card border-0">
               <CardHeader className="flex-row items-center justify-between space-y-0">
                 <CardTitle className="font-display text-base">Monthly Report</CardTitle>
@@ -194,13 +317,91 @@ function ReportsPage() {
                   <div><h2 className="font-semibold">HC Summary</h2><p>Total HC bulan ini: {s.sumJun.toLocaleString("id-ID")} (bulan lalu {s.sumMei.toLocaleString("id-ID")}).</p></div>
                   <div><h2 className="font-semibold">Growth Summary</h2><p>Pertumbuhan {s.growth.toFixed(1)}%. Top cluster: {s.topGrowth[0]?.cluster ?? "—"}.</p></div>
                   <div><h2 className="font-semibold">Ticket Summary</h2><p>Total ticket: {s.totalTicket}. Kluster dengan ticket tertinggi memerlukan retention.</p></div>
-                  <div><h2 className="font-semibold">Program Effectiveness</h2><p>{actions.filter((a) => a.status === "done").length} program selesai. {s.running} sedang berjalan.</p></div>
+                  <div><h2 className="font-semibold">Program Effectiveness</h2><p>{s.done} program selesai. {s.running} sedang berjalan.</p></div>
                   <div><h2 className="font-semibold">Insight Bulanan</h2><ul><li>Prioritaskan retention pada cluster decline</li><li>Perluas coverage di area low-HC dengan potensi tinggi</li></ul></div>
                   <div><h2 className="font-semibold">Prioritas Bulan Depan</h2><ul><li>Eksekusi acquisition strategy</li><li>Optimalisasi PIC performance</li><li>Deploy loyalty program</li></ul></div>
                 </div>
               </CardContent>
             </Card>
+
+            <div className="grid gap-4 lg:grid-cols-2">
+              <Card className="glass-card border-0">
+                <CardHeader><CardTitle className="font-display text-sm">Tren HC Bulanan (Jan – Jun)</CardTitle></CardHeader>
+                <CardContent className="h-64">
+                  <ResponsiveContainer>
+                    <LineChart data={s.hcTrend}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                      <XAxis dataKey="bulan" fontSize={11} />
+                      <YAxis fontSize={11} tickFormatter={(v) => (v >= 1000 ? `${(v / 1000).toFixed(0)}K` : String(v))} />
+                      <Tooltip formatter={(v: number) => v.toLocaleString("id-ID")} />
+                      <Line type="monotone" dataKey="hc" stroke="#6366f1" strokeWidth={2.5} dot={{ r: 4 }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+
+              <Card className="glass-card border-0">
+                <CardHeader><CardTitle className="font-display text-sm">Top 8 Cluster berdasarkan HC</CardTitle></CardHeader>
+                <CardContent className="h-64">
+                  <ResponsiveContainer>
+                    <BarChart data={s.topHC} layout="vertical" margin={{ left: 40 }}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                      <XAxis type="number" fontSize={10} />
+                      <YAxis type="category" dataKey="cluster" fontSize={10} width={100} />
+                      <Tooltip />
+                      <Bar dataKey="hc" fill="#6366f1" radius={[0, 6, 6, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+
+              <Card className="glass-card border-0">
+                <CardHeader><CardTitle className="font-display text-sm">PIC Performance (HC vs Ticket)</CardTitle></CardHeader>
+                <CardContent className="h-72">
+                  <ResponsiveContainer>
+                    <BarChart data={s.picPerf}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                      <XAxis dataKey="pic" fontSize={10} angle={-25} textAnchor="end" height={70} />
+                      <YAxis fontSize={10} />
+                      <Tooltip />
+                      <Legend wrapperStyle={{ fontSize: 11 }} />
+                      <Bar dataKey="hc" fill="#6366f1" name="HC" />
+                      <Bar dataKey="ticket" fill="#ef4444" name="Ticket" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+
+              <Card className="glass-card border-0">
+                <CardHeader><CardTitle className="font-display text-sm">Status Action Plan</CardTitle></CardHeader>
+                <CardContent className="h-72">
+                  <ResponsiveContainer>
+                    <PieChart>
+                      <Pie data={s.actionStatus} dataKey="value" nameKey="name" outerRadius={95}
+                        label={(e: any) => `${e.name}: ${e.value}`} labelLine={false}>
+                        {s.actionStatus.map((_, i) => (
+                          <Cell key={i} fill={["#94a3b8", "#f59e0b", "#22c55e"][i]} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card className="glass-card border-0">
+              <CardHeader><CardTitle className="font-display text-sm">Analisa Bulanan</CardTitle></CardHeader>
+              <CardContent className="space-y-2 text-sm">
+                <p>• Total HC Juni <b>{s.sumJun.toLocaleString("id-ID")}</b>, bergerak {s.growth >= 0 ? "positif" : "negatif"} <b>{s.growth.toFixed(1)}%</b> dari Mei. Tren 6 bulan {s.hcTrend[5].hc >= s.hcTrend[0].hc ? "menunjukkan pertumbuhan konsisten" : "cenderung menurun dan perlu intervensi"}.</p>
+                <p>• Kontributor HC terbesar: <b>{s.topHC[0]?.cluster ?? "-"}</b> ({(s.topHC[0]?.hc ?? 0).toLocaleString("id-ID")}). Fokus development cluster ini untuk menjaga base.</p>
+                <p>• PIC dengan portofolio terbesar: <b>{s.picPerf[0]?.pic ?? "-"}</b> ({(s.picPerf[0]?.hc ?? 0).toLocaleString("id-ID")} HC, {s.picPerf[0]?.ticket ?? 0} ticket). Beban ticket perlu dievaluasi.</p>
+                <p>• Efektivitas program: {s.done} selesai, {s.running} berjalan, {s.belum} belum dieksekusi. Rasio delivery {s.done + s.running + s.belum > 0 ? Math.round((s.done / (s.done + s.running + s.belum)) * 100) : 0}%.</p>
+                <p>• Rekomendasi: perluas program retention di cluster decline, replikasi strategi cluster top growth, dan alokasikan resource tambahan untuk PIC dengan ticket tinggi.</p>
+              </CardContent>
+            </Card>
           </TabsContent>
+
 
           <TabsContent value="intel">
             {!compCharts ? (
