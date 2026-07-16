@@ -35,12 +35,30 @@ function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
 
+  const [pending, setPending] = useState(false);
+
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/", replace: true });
-      else setChecking(false);
+    supabase.auth.getSession().then(async ({ data }) => {
+      if (!data.session) return setChecking(false);
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return setChecking(false);
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("approved")
+        .eq("id", u.user.id)
+        .maybeSingle();
+      if (profile?.approved) navigate({ to: "/", replace: true });
+      else {
+        setPending(true);
+        setChecking(false);
+      }
     });
   }, [navigate]);
+
+  async function handleSignOut() {
+    await supabase.auth.signOut();
+    setPending(false);
+  }
 
   async function handleGoogle() {
     setLoading(true);
