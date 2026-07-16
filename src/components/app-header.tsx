@@ -19,10 +19,19 @@ export function AppHeader({ title, subtitle }: { title: string; subtitle?: strin
   const lastUpdated = useDataStore((s) => s.lastUpdated);
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const [email, setEmail] = useState<string | null>(null);
+  const [user, setUser] = useState<{ email: string | null; name: string | null; avatar: string | null } | null>(null);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? null));
+    supabase.auth.getUser().then(({ data }) => {
+      const u = data.user;
+      if (!u) return setUser(null);
+      const md = (u.user_metadata ?? {}) as Record<string, string | undefined>;
+      setUser({
+        email: u.email ?? null,
+        name: md.full_name ?? md.name ?? u.email ?? null,
+        avatar: md.avatar_url ?? md.picture ?? null,
+      });
+    });
   }, []);
 
   async function handleSignOut() {
