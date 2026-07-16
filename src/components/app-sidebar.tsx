@@ -31,6 +31,7 @@ const nav = [
   { title: "Action Plan", url: "/action-plan", icon: ListTodo },
   { title: "Customer Loyalty", url: "/loyalty", icon: Users },
   { title: "Competitor", url: "/competitor", icon: Wrench },
+  { title: "Competitor Intelligence", url: "/competitor-intel", icon: Radar },
   { title: "Reports", url: "/reports", icon: FileText },
   { title: "Settings", url: "/settings", icon: Settings },
 ];
