@@ -825,8 +825,8 @@ function DetailDialog({
                 <Info label="Kompetitor" value={comps.length ? Array.from(new Set(comps.map((c) => c.competitor))).slice(0, 3).join(", ") : "-"} />
                 {a && (
                   <>
-                    <Info label="AE" value={a.ae || "-"} />
-                    <Info label="Tingkat Potensi" value={a.tingkatPotensi || "-"} />
+                    <Info label="AE" value={a.aeName || "-"} />
+                    <Info label="Tingkat Potensi" value={a.potential || "-"} />
                   </>
                 )}
               </CardContent>
