@@ -66,7 +66,7 @@ function CompetitorPage() {
                     <XAxis dataKey="nama" stroke="var(--color-muted-foreground)" fontSize={11} />
                     <YAxis stroke="var(--color-muted-foreground)" fontSize={11} />
                     <Tooltip contentStyle={{ background: "var(--color-popover)", border: "1px solid var(--color-border)", borderRadius: 8 }} />
-                    <Bar dataKey="harga" fill="var(--color-chart-1)" radius={[6, 6, 0, 0]} />
+                    <Bar dataKey="harga" fill="var(--color-chart-1)" radius={[6, 6, 0, 0]} isAnimationActive={false} />
                   </BarChart>
                 </ResponsiveContainer>
               ) : (

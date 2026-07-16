@@ -1,6 +1,49 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { persist, createJSONStorage, type StateStorage } from "zustand/middleware";
 import type { AnalystRow, ClusterRow, TicketRow, UploadMeta } from "./excel";
+
+// Debounced localStorage — sync reads keep hydration flash-free,
+// async writes prevent JSON.stringify on large datasets from blocking navigation.
+const writeTimers = new Map<string, ReturnType<typeof setTimeout>>();
+const pending = new Map<string, string>();
+const debouncedLocalStorage: StateStorage = {
+  getItem: (name) => {
+    try {
+      return typeof window === "undefined" ? null : window.localStorage.getItem(name);
+    } catch {
+      return null;
+    }
+  },
+  setItem: (name, value) => {
+    pending.set(name, value);
+    const t = writeTimers.get(name);
+    if (t) clearTimeout(t);
+    writeTimers.set(
+      name,
+      setTimeout(() => {
+        const v = pending.get(name);
+        pending.delete(name);
+        writeTimers.delete(name);
+        if (v === undefined) return;
+        try {
+          const write = () => window.localStorage.setItem(name, v);
+          const ric = (window as unknown as { requestIdleCallback?: (cb: () => void) => void }).requestIdleCallback;
+          if (typeof ric === "function") ric(write);
+          else write();
+        } catch {
+          /* quota / private mode — ignore */
+        }
+      }, 400),
+    );
+  },
+  removeItem: (name) => {
+    try {
+      window.localStorage.removeItem(name);
+    } catch {
+      /* ignore */
+    }
+  },
+};
 
 export type ActionStatus = "belum" | "onprogress" | "done";
 export type ActionItem = {
@@ -82,7 +125,7 @@ export const useDataStore = create<DataState>()(
       clearAll: () =>
         set({ clusters: [], tickets: [], analyst: [], actions: [], competitors: [], history: [], lastUpdated: null }),
     }),
-    { name: "mcaw-store" },
+    { name: "mcaw-store", storage: createJSONStorage(() => debouncedLocalStorage) },
   ),
 );
 

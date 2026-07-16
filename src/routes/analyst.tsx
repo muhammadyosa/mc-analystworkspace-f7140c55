@@ -188,7 +188,7 @@ function AnalystPage() {
                   <XAxis type="number" fontSize={11} />
                   <YAxis type="category" dataKey="name" fontSize={11} width={100} />
                   <Tooltip cursor={{ fill: "hsl(var(--muted))" }} contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }} />
-                  <Bar dataKey="count" fill="hsl(var(--primary))" radius={[0, 6, 6, 0]} />
+                  <Bar dataKey="count" fill="hsl(var(--primary))" radius={[0, 6, 6, 0]} isAnimationActive={false} />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
@@ -199,7 +199,7 @@ function AnalystPage() {
             <CardContent className="h-[320px]">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={potensiData} dataKey="value" nameKey="name" innerRadius={60} outerRadius={110} paddingAngle={4}>
+                  <Pie data={potensiData} dataKey="value" nameKey="name" innerRadius={60} outerRadius={110} paddingAngle={4} isAnimationActive={false}>
                     {potensiData.map((_, i) => <Cell key={i} fill={COLORS[i]} />)}
                   </Pie>
                   <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }} />
@@ -216,7 +216,7 @@ function AnalystPage() {
                   <XAxis dataKey="name" fontSize={10} angle={-25} textAnchor="end" height={60} />
                   <YAxis fontSize={11} tickFormatter={(v) => `${v / 1000}k`} />
                   <Tooltip formatter={(v: number) => `Rp${v.toLocaleString("id-ID")}`} contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }} />
-                  <Bar dataKey="avgPrice" fill="hsl(var(--accent))" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="avgPrice" fill="hsl(var(--accent))" radius={[6, 6, 0, 0]} isAnimationActive={false} />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
@@ -227,7 +227,7 @@ function AnalystPage() {
             <CardContent className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={s.promos} dataKey="value" nameKey="name" outerRadius={110}>
+                  <Pie data={s.promos} dataKey="value" nameKey="name" outerRadius={110} isAnimationActive={false}>
                     {s.promos.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                   </Pie>
                   <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }} />
@@ -244,7 +244,7 @@ function AnalystPage() {
                   <XAxis type="number" fontSize={11} />
                   <YAxis type="category" dataKey="name" fontSize={11} width={110} />
                   <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }} />
-                  <Bar dataKey="value" fill="hsl(var(--success))" radius={[0, 6, 6, 0]} />
+                  <Bar dataKey="value" fill="hsl(var(--success))" radius={[0, 6, 6, 0]} isAnimationActive={false} />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
@@ -255,10 +255,10 @@ function AnalystPage() {
             <CardContent className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={s.segments} dataKey="value" nameKey="name" cx="30%" outerRadius={90} label={{ fontSize: 10 }}>
+                  <Pie data={s.segments} dataKey="value" nameKey="name" cx="30%" outerRadius={90} label={{ fontSize: 10 }} isAnimationActive={false}>
                     {s.segments.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                   </Pie>
-                  <Pie data={s.dayaBeli} dataKey="value" nameKey="name" cx="75%" innerRadius={50} outerRadius={90} label={{ fontSize: 10 }}>
+                  <Pie data={s.dayaBeli} dataKey="value" nameKey="name" cx="75%" innerRadius={50} outerRadius={90} label={{ fontSize: 10 }} isAnimationActive={false}>
                     {s.dayaBeli.map((_, i) => <Cell key={i} fill={COLORS[(i + 2) % COLORS.length]} />)}
                   </Pie>
                   <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }} />

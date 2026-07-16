@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo } from "react";
-import { motion } from "framer-motion";
+import { memo, useMemo } from "react";
+
 import {
   Bar,
   BarChart,
@@ -47,7 +47,7 @@ export const Route = createFileRoute("/")({
 const MONTHS = ["januari", "februari", "maret", "april", "mei", "juni"] as const;
 const MONTH_LABEL = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun"];
 
-function KpiCard({
+const KpiCard = memo(function KpiCard({
   label,
   value,
   delta,
@@ -68,12 +68,7 @@ function KpiCard({
     destructive: "from-destructive/20 to-destructive/5 text-destructive",
   };
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35 }}
-      className="glass-card rounded-2xl p-4"
-    >
+    <div className="glass-card rounded-2xl p-4 animate-in fade-in slide-in-from-bottom-1 duration-300">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="truncate text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
@@ -97,9 +92,10 @@ function KpiCard({
           <Icon className="h-5 w-5" />
         </div>
       </div>
-    </motion.div>
+    </div>
   );
-}
+});
+
 
 function Dashboard() {
   const clusters = useDataStore((s) => s.clusters);
@@ -218,7 +214,7 @@ function Dashboard() {
         </div>
 
         {/* Executive Summary */}
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }}>
+        <div className="animate-in fade-in duration-500">
           <Card className="glass-card border-0 overflow-hidden">
             <div className="absolute inset-0 gradient-primary opacity-[0.03] pointer-events-none" />
             <CardHeader className="flex-row items-center gap-2 space-y-0">
@@ -266,7 +262,7 @@ function Dashboard() {
               </div>
             </CardContent>
           </Card>
-        </motion.div>
+        </div>
 
         {/* Charts */}
         <div className="grid gap-4 lg:grid-cols-2">
@@ -281,7 +277,7 @@ function Dashboard() {
                   <XAxis dataKey="month" stroke="var(--color-muted-foreground)" fontSize={12} />
                   <YAxis stroke="var(--color-muted-foreground)" fontSize={12} />
                   <Tooltip contentStyle={{ background: "var(--color-popover)", border: "1px solid var(--color-border)", borderRadius: 8 }} />
-                  <Line type="monotone" dataKey="hc" stroke="var(--color-chart-1)" strokeWidth={3} dot={{ r: 4 }} />
+                  <Line type="monotone" dataKey="hc" stroke="var(--color-chart-1)" strokeWidth={3} dot={{ r: 4 }} isAnimationActive={false} />
                 </LineChart>
               </ResponsiveContainer>
             </CardContent>
@@ -298,7 +294,7 @@ function Dashboard() {
                   <XAxis type="number" stroke="var(--color-muted-foreground)" fontSize={11} />
                   <YAxis type="category" dataKey="cluster" stroke="var(--color-muted-foreground)" fontSize={11} width={90} />
                   <Tooltip contentStyle={{ background: "var(--color-popover)", border: "1px solid var(--color-border)", borderRadius: 8 }} />
-                  <Bar dataKey="juni" fill="var(--color-chart-1)" radius={[0, 6, 6, 0]} />
+                  <Bar dataKey="juni" fill="var(--color-chart-1)" radius={[0, 6, 6, 0]} isAnimationActive={false} />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
@@ -315,7 +311,7 @@ function Dashboard() {
                   <XAxis dataKey="cluster" stroke="var(--color-muted-foreground)" fontSize={10} angle={-30} textAnchor="end" height={60} />
                   <YAxis stroke="var(--color-muted-foreground)" fontSize={11} />
                   <Tooltip contentStyle={{ background: "var(--color-popover)", border: "1px solid var(--color-border)", borderRadius: 8 }} />
-                  <Bar dataKey="deltaMeiJuni" radius={[6, 6, 0, 0]}>
+                  <Bar dataKey="deltaMeiJuni" radius={[6, 6, 0, 0]} isAnimationActive={false}>
                     {s.growth.map((g, i) => (
                       <Cell key={i} fill={g.deltaMeiJuni >= 0 ? "var(--color-success)" : "var(--color-destructive)"} />
                     ))}
@@ -336,7 +332,7 @@ function Dashboard() {
                   <XAxis dataKey="cluster" stroke="var(--color-muted-foreground)" fontSize={10} angle={-30} textAnchor="end" height={60} />
                   <YAxis stroke="var(--color-muted-foreground)" fontSize={11} />
                   <Tooltip contentStyle={{ background: "var(--color-popover)", border: "1px solid var(--color-border)", borderRadius: 8 }} />
-                  <Bar dataKey="ticket" fill="var(--color-chart-4)" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="ticket" fill="var(--color-chart-4)" radius={[6, 6, 0, 0]} isAnimationActive={false} />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
@@ -349,7 +345,7 @@ function Dashboard() {
             <CardContent className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={s.provDist} dataKey="value" nameKey="name" outerRadius={90} label>
+                  <Pie data={s.provDist} dataKey="value" nameKey="name" outerRadius={90} label isAnimationActive={false}>
                     {s.provDist.map((_, i) => (
                       <Cell key={i} fill={chartColors[i % chartColors.length]} />
                     ))}
