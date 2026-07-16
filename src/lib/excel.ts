@@ -660,11 +660,11 @@ export function detectKind(wb: XLSX.WorkBook, fileName: string): ImportKind {
   const hs = collectHeaders(wb);
   const has = (needle: string) => hs.some((h) => h.includes(needle));
 
-  // Action Plan: NAMA + CLUSTER + PROGRAM + START DATE + END DATE + KETERANGAN
+  // Action Plan: NAMA + CLUSTER + PROGRAM + START DATE + END DATE + KETERANGAN + Hasil
   if (
     (has("program") || sheets.some((s) => s.includes("actionplan") || s.includes("actionpla"))) &&
     (has("startdate") || has("tanggalmulai")) &&
-    (has("enddate") || has("tanggalselesai"))
+    (has("enddate") || has("tanggalselesai") || has("hasil"))
   ) {
     return "actionplan";
   }
