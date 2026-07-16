@@ -125,7 +125,7 @@ export const useDataStore = create<DataState>()(
       clearAll: () =>
         set({ clusters: [], tickets: [], analyst: [], actions: [], competitors: [], history: [], lastUpdated: null }),
     }),
-    { name: "mcaw-store", storage: createJSONStorage(() => idbStorage) },
+    { name: "mcaw-store", storage: createJSONStorage(() => debouncedLocalStorage) },
   ),
 );
 
