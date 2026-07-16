@@ -1,22 +1,30 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo } from "react";
-import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell,
-} from "recharts";
+import { lazy, Suspense, useMemo } from "react";
 import { Users, Target, TrendingUp, Award, Sparkles, ExternalLink, AlertTriangle } from "lucide-react";
 import { AppHeader } from "@/components/app-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EmptyState } from "@/components/empty-state";
 import { useDataStore } from "@/lib/store";
+
+const AnalystCharts = lazy(() => import("@/components/analyst-charts"));
 
 export const Route = createFileRoute("/analyst")({
   head: () => ({ meta: [{ title: "Analyst Market — MCA Workspace" }] }),
   component: AnalystPage,
 });
 
-const COLORS = ["hsl(var(--primary))", "hsl(var(--success))", "hsl(var(--warning))", "hsl(var(--destructive))", "hsl(var(--accent))"];
+function ChartFallback() {
+  return (
+    <div className="grid gap-4 lg:grid-cols-2">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div key={i} className="glass-card h-72 animate-pulse rounded-2xl" />
+      ))}
+    </div>
+  );
+}
 
 function KpiCard({ label, value, icon: Icon, hint }: { label: string; value: string | number; icon: React.ElementType; hint?: string }) {
   return (
@@ -144,11 +152,7 @@ function AnalystPage() {
   }
 
   const s = stats!;
-  const potensiData = [
-    { name: "Tinggi", value: s.potensi.tinggi },
-    { name: "Sedang", value: s.potensi.sedang },
-    { name: "Rendah", value: s.potensi.rendah },
-  ];
+
 
   return (
     <>
@@ -175,136 +179,63 @@ function AnalystPage() {
             <CardTitle className="font-display text-base">AI Insight — Ringkasan Analyst Market</CardTitle>
           </CardHeader>
           <CardContent>
+
             <p className="text-sm leading-relaxed text-muted-foreground">{aiInsight}</p>
           </CardContent>
         </Card>
 
-        <div className="grid gap-4 lg:grid-cols-2">
-          <Card className="glass-card border-0">
-            <CardHeader><CardTitle className="font-display text-base">Top 10 Kompetitor</CardTitle></CardHeader>
-            <CardContent className="h-[320px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={s.topCompetitors} layout="vertical" margin={{ left: 20 }}>
-                  <XAxis type="number" fontSize={11} />
-                  <YAxis type="category" dataKey="name" fontSize={11} width={100} />
-                  <Tooltip cursor={{ fill: "hsl(var(--muted))" }} contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }} />
-                  <Bar dataKey="count" fill="hsl(var(--primary))" radius={[0, 6, 6, 0]} isAnimationActive={false} />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
+        <Tabs defaultValue="charts" className="space-y-4">
 
-          <Card className="glass-card border-0">
-            <CardHeader><CardTitle className="font-display text-base">Potensi Cluster</CardTitle></CardHeader>
-            <CardContent className="h-[320px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={potensiData} dataKey="value" nameKey="name" innerRadius={60} outerRadius={110} paddingAngle={4} isAnimationActive={false}>
-                    {potensiData.map((_, i) => <Cell key={i} fill={COLORS[i]} />)}
-                  </Pie>
-                  <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }} />
-                </PieChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          <Card className="glass-card border-0">
-            <CardHeader><CardTitle className="font-display text-base">Harga Rata-rata Kompetitor</CardTitle></CardHeader>
-            <CardContent className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={s.topCompetitors.filter((c) => c.avgPrice > 0)}>
-                  <XAxis dataKey="name" fontSize={10} angle={-25} textAnchor="end" height={60} />
-                  <YAxis fontSize={11} tickFormatter={(v) => `${v / 1000}k`} />
-                  <Tooltip formatter={(v: number) => `Rp${v.toLocaleString("id-ID")}`} contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }} />
-                  <Bar dataKey="avgPrice" fill="hsl(var(--accent))" radius={[6, 6, 0, 0]} isAnimationActive={false} />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          <Card className="glass-card border-0">
-            <CardHeader><CardTitle className="font-display text-base">Promo Kompetitor</CardTitle></CardHeader>
-            <CardContent className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={s.promos} dataKey="value" nameKey="name" outerRadius={110} isAnimationActive={false}>
-                    {s.promos.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-                  </Pie>
-                  <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }} />
-                </PieChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          <Card className="glass-card border-0">
-            <CardHeader><CardTitle className="font-display text-base">Strategi Marketing</CardTitle></CardHeader>
-            <CardContent className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={s.strategies} layout="vertical" margin={{ left: 20 }}>
-                  <XAxis type="number" fontSize={11} />
-                  <YAxis type="category" dataKey="name" fontSize={11} width={110} />
-                  <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }} />
-                  <Bar dataKey="value" fill="hsl(var(--success))" radius={[0, 6, 6, 0]} isAnimationActive={false} />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          <Card className="glass-card border-0">
-            <CardHeader><CardTitle className="font-display text-base">Segmen Pelanggan & Daya Beli</CardTitle></CardHeader>
-            <CardContent className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={s.segments} dataKey="value" nameKey="name" cx="30%" outerRadius={90} label={{ fontSize: 10 }} isAnimationActive={false}>
-                    {s.segments.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-                  </Pie>
-                  <Pie data={s.dayaBeli} dataKey="value" nameKey="name" cx="75%" innerRadius={50} outerRadius={90} label={{ fontSize: 10 }} isAnimationActive={false}>
-                    {s.dayaBeli.map((_, i) => <Cell key={i} fill={COLORS[(i + 2) % COLORS.length]} />)}
-                  </Pie>
-                  <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }} />
-                </PieChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </div>
-
-        <Card className="glass-card border-0">
-          <CardHeader><CardTitle className="font-display text-base">Detail Profiling per Cluster</CardTitle></CardHeader>
-          <CardContent>
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-              {analyst.slice(0, 12).map((a) => (
-                <div key={a.id} className="rounded-xl border border-border/60 bg-muted/20 p-3 text-xs">
-                  <div className="flex items-center justify-between">
-                    <div className="font-display text-sm font-semibold">{a.cluster || "—"}</div>
-                    <Badge variant={/tinggi|potensial/i.test(a.potential) ? "default" : /sedang/i.test(a.potential) ? "secondary" : "outline"}>
-                      {a.potential || "—"}
-                    </Badge>
-                  </div>
-                  <div className="mt-1 text-muted-foreground">AE: {a.aeName || "—"}</div>
-                  <div className="mt-2 space-y-1">
-                    <div><span className="text-muted-foreground">Kompetitor:</span> {a.competitor || "—"}</div>
-                    <div><span className="text-muted-foreground">Harga:</span> {a.competitorPrice ? `Rp${a.competitorPrice.toLocaleString("id-ID")}` : "—"}</div>
-                    <div><span className="text-muted-foreground">Segmen:</span> {a.customerSegment || "—"} · <span className="text-muted-foreground">Daya beli:</span> {a.purchasingPower || "—"}</div>
-                    <div><span className="text-muted-foreground">SF/MI:</span> {a.sfToday} · <span className="text-muted-foreground">Close Won:</span> {a.closewonToday}</div>
-                    {a.aeInsight && <div className="mt-1 rounded-md bg-primary/10 p-2 text-[11px] italic">"{a.aeInsight}"</div>}
-                  </div>
-                  {a.evidence && /^https?:\/\//.test(a.evidence) && (
-                    <Button size="sm" variant="outline" className="mt-2 h-7 text-[11px]" asChild>
-                      <a href={a.evidence} target="_blank" rel="noreferrer">
-                        <ExternalLink className="mr-1 h-3 w-3" /> Open Evidence
-                      </a>
-                    </Button>
-                  )}
+          <TabsList>
+            <TabsTrigger value="charts">Visualisasi</TabsTrigger>
+            <TabsTrigger value="detail">Detail Profiling</TabsTrigger>
+          </TabsList>
+          <TabsContent value="charts" className="mt-0">
+            <Suspense fallback={<ChartFallback />}>
+              <AnalystCharts stats={s} />
+            </Suspense>
+          </TabsContent>
+          <TabsContent value="detail" className="mt-0">
+            <Card className="glass-card border-0">
+              <CardHeader><CardTitle className="font-display text-base">Detail Profiling per Cluster</CardTitle></CardHeader>
+              <CardContent>
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                  {analyst.slice(0, 12).map((a) => (
+                    <div key={a.id} className="rounded-xl border border-border/60 bg-muted/20 p-3 text-xs">
+                      <div className="flex items-center justify-between">
+                        <div className="font-display text-sm font-semibold">{a.cluster || "—"}</div>
+                        <Badge variant={/tinggi|potensial/i.test(a.potential) ? "default" : /sedang/i.test(a.potential) ? "secondary" : "outline"}>
+                          {a.potential || "—"}
+                        </Badge>
+                      </div>
+                      <div className="mt-1 text-muted-foreground">AE: {a.aeName || "—"}</div>
+                      <div className="mt-2 space-y-1">
+                        <div><span className="text-muted-foreground">Kompetitor:</span> {a.competitor || "—"}</div>
+                        <div><span className="text-muted-foreground">Harga:</span> {a.competitorPrice ? `Rp${a.competitorPrice.toLocaleString("id-ID")}` : "—"}</div>
+                        <div><span className="text-muted-foreground">Segmen:</span> {a.customerSegment || "—"} · <span className="text-muted-foreground">Daya beli:</span> {a.purchasingPower || "—"}</div>
+                        <div><span className="text-muted-foreground">SF/MI:</span> {a.sfToday} · <span className="text-muted-foreground">Close Won:</span> {a.closewonToday}</div>
+                        {a.aeInsight && <div className="mt-1 rounded-md bg-primary/10 p-2 text-[11px] italic">"{a.aeInsight}"</div>}
+                      </div>
+                      {a.evidence && /^https?:\/\//.test(a.evidence) && (
+                        <Button size="sm" variant="outline" className="mt-2 h-7 text-[11px]" asChild>
+                          <a href={a.evidence} target="_blank" rel="noreferrer">
+                            <ExternalLink className="mr-1 h-3 w-3" /> Open Evidence
+                          </a>
+                        </Button>
+                      )}
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-            {analyst.length > 12 && (
-              <div className="mt-3 text-center text-xs text-muted-foreground">
-                Menampilkan 12 dari {analyst.length} hasil profiling
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                {analyst.length > 12 && (
+                  <div className="mt-3 text-center text-xs text-muted-foreground">
+                    Menampilkan 12 dari {analyst.length} hasil profiling
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+
       </div>
     </>
   );
