@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo } from "react";
-import { motion } from "framer-motion";
+import { memo, useMemo } from "react";
+
 import {
   Bar,
   BarChart,
