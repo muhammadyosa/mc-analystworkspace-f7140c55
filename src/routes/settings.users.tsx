@@ -51,7 +51,7 @@ function UserManagementPage() {
       return;
     }
     const [{ data: profiles, error: pErr }, { data: roles, error: rErr }] = await Promise.all([
-      supabase.from("profiles").select("id, email, full_name, approved, created_at").order("created_at", { ascending: false }),
+      supabase.from("profiles").select("id, email, full_name, avatar_url, approved, created_at").order("created_at", { ascending: false }),
       supabase.from("user_roles").select("user_id, role"),
     ]);
     if (pErr || rErr) {
@@ -69,6 +69,7 @@ function UserManagementPage() {
         id: p.id,
         email: p.email,
         full_name: p.full_name,
+        avatar_url: p.avatar_url,
         approved: p.approved,
         created_at: p.created_at,
         role: roleMap.get(p.id) ?? "user",
