@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { lazy, memo, Suspense, useMemo } from "react";
+import { lazy, memo, Suspense, useMemo, useState } from "react";
 import {
   Users,
   TrendingUp,
@@ -18,6 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDataStore, computePriority } from "@/lib/store";
+import { DrilldownDialog, type DrilldownState } from "@/components/drilldown-dialog";
 
 const DashboardCharts = lazy(() => import("@/components/dashboard-charts"));
 
@@ -50,12 +51,14 @@ const KpiCard = memo(function KpiCard({
   delta,
   icon: Icon,
   tint = "primary",
+  onClick,
 }: {
   label: string;
   value: string | number;
   delta?: { value: number; suffix?: string };
   icon: React.ComponentType<{ className?: string }>;
   tint?: "primary" | "success" | "warning" | "info" | "destructive";
+  onClick?: () => void;
 }) {
   const tintMap: Record<string, string> = {
     primary: "from-primary/20 to-primary/5 text-primary",
@@ -64,8 +67,14 @@ const KpiCard = memo(function KpiCard({
     info: "from-info/20 to-info/5 text-info",
     destructive: "from-destructive/20 to-destructive/5 text-destructive",
   };
+  const Comp = onClick ? "button" : "div";
   return (
-    <div className="glass-card rounded-2xl p-4 animate-in fade-in slide-in-from-bottom-1 duration-300">
+    <Comp
+      onClick={onClick}
+      className={`glass-card rounded-2xl p-4 animate-in fade-in slide-in-from-bottom-1 duration-300 text-left w-full ${
+        onClick ? "cursor-pointer transition-all hover:scale-[1.02] hover:shadow-lg hover:border-primary/40" : ""
+      }`}
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="truncate text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
@@ -89,7 +98,7 @@ const KpiCard = memo(function KpiCard({
           <Icon className="h-5 w-5" />
         </div>
       </div>
-    </div>
+    </Comp>
   );
 });
 
@@ -182,31 +191,106 @@ function Dashboard() {
   const actionActive = actions.filter((a) => a.status === "onprogress").length;
   const actionDone = actions.filter((a) => a.status === "done").length;
 
+  const [drill, setDrill] = useState<DrilldownState>(null);
+
+  const maxTicket = Math.max(...clusters.map((c) => c.ticket), 1);
+  const priorities = clusters.map((c) => ({ ...c, ...computePriority(c, maxTicket) }));
+
+  const colClusterBasic = [
+    { key: "cluster", label: "Cluster" },
+    { key: "kabupaten", label: "Kabupaten" },
+    { key: "provinsi", label: "Provinsi" },
+    { key: "pic", label: "PIC" },
+    { key: "juni", label: "HC Juni", align: "right" as const, format: (v: unknown) => Number(v).toLocaleString("id-ID") },
+    { key: "ticket", label: "Ticket", align: "right" as const, format: (v: unknown) => Number(v).toLocaleString("id-ID") },
+  ];
+
+  const openTop = (title: string, sortKey: "juni" | "mei" | "ticket" | "deltaMeiJuni", desc = true) => {
+    const rows = [...clusters].sort((a, b) => (desc ? Number(b[sortKey]) - Number(a[sortKey]) : Number(a[sortKey]) - Number(b[sortKey]))).slice(0, 50);
+    setDrill({ title, description: "Menampilkan hingga 50 cluster teratas", columns: colClusterBasic, rows: rows as unknown as Record<string, unknown>[] });
+  };
+
+  const openGrouped = (title: string, key: "kabupaten" | "provinsi" | "pic") => {
+    const map = new Map<string, { name: string; clusters: number; hc: number; ticket: number }>();
+    clusters.forEach((c) => {
+      const k = (c[key] as string) || "N/A";
+      const cur = map.get(k) ?? { name: k, clusters: 0, hc: 0, ticket: 0 };
+      cur.clusters += 1;
+      cur.hc += c.juni;
+      cur.ticket += c.ticket;
+      map.set(k, cur);
+    });
+    const rows = [...map.values()].sort((a, b) => b.hc - a.hc);
+    setDrill({
+      title,
+      columns: [
+        { key: "name", label: key.charAt(0).toUpperCase() + key.slice(1) },
+        { key: "clusters", label: "Cluster", align: "right", format: (v) => Number(v).toLocaleString("id-ID") },
+        { key: "hc", label: "Total HC", align: "right", format: (v) => Number(v).toLocaleString("id-ID") },
+        { key: "ticket", label: "Ticket", align: "right", format: (v) => Number(v).toLocaleString("id-ID") },
+      ],
+      rows: rows as unknown as Record<string, unknown>[],
+    });
+  };
+
+  const openHighRisk = () => {
+    const rows = priorities
+      .filter((p) => p.level === "Tinggi")
+      .sort((a, b) => b.score - a.score);
+    setDrill({
+      title: "High Risk / Prioritas Tinggi",
+      description: "Cluster dengan score prioritas tinggi berdasarkan HC growth, ticket, dan potensi.",
+      columns: [
+        { key: "cluster", label: "Cluster" },
+        { key: "kabupaten", label: "Kabupaten" },
+        { key: "pic", label: "PIC" },
+        { key: "juni", label: "HC", align: "right", format: (v) => Number(v).toLocaleString("id-ID") },
+        { key: "ticket", label: "Ticket", align: "right" },
+        { key: "score", label: "Score", align: "right", format: (v) => Number(v).toFixed(1) },
+      ],
+      rows: rows as unknown as Record<string, unknown>[],
+    });
+  };
+
+  const openActions = (status: "belum" | "onprogress" | "done", title: string) => {
+    const rows = actions.filter((a) => a.status === status);
+    setDrill({
+      title,
+      columns: [
+        { key: "title", label: "Judul" },
+        { key: "cluster", label: "Cluster" },
+        { key: "priority", label: "Prioritas" },
+        { key: "assignee", label: "Assignee" },
+      ],
+      rows: rows as unknown as Record<string, unknown>[],
+    });
+  };
+
   return (
     <>
       <AppHeader title="Dashboard" subtitle="Executive Overview — Cluster Intelligence" />
       <div className="space-y-6 p-4 sm:p-6">
         {/* KPI Row 1 - Cluster */}
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-4">
-          <KpiCard label="Total Cluster" value={s.totalCluster} icon={Target} tint="primary" />
-          <KpiCard label="Total Kabupaten" value={s.totalKab} icon={MapPin} tint="info" />
-          <KpiCard label="Total Provinsi" value={s.totalProv} icon={Building2} tint="info" />
-          <KpiCard label="Total HC (Juni)" value={s.sumJun.toLocaleString("id-ID")} icon={Users} tint="success" delta={{ value: s.hcGrowth }} />
+          <KpiCard label="Total Cluster" value={s.totalCluster} icon={Target} tint="primary" onClick={() => openTop("Semua Cluster", "juni")} />
+          <KpiCard label="Total Kabupaten" value={s.totalKab} icon={MapPin} tint="info" onClick={() => openGrouped("Distribusi per Kabupaten", "kabupaten")} />
+          <KpiCard label="Total Provinsi" value={s.totalProv} icon={Building2} tint="info" onClick={() => openGrouped("Distribusi per Provinsi", "provinsi")} />
+          <KpiCard label="Total HC (Juni)" value={s.sumJun.toLocaleString("id-ID")} icon={Users} tint="success" delta={{ value: s.hcGrowth }} onClick={() => openTop("Top HC (Juni)", "juni")} />
         </div>
 
         {/* KPI Row 2 */}
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          <KpiCard label="HC Bulan Ini" value={s.sumJun.toLocaleString("id-ID")} icon={Activity} tint="success" />
-          <KpiCard label="HC Bulan Lalu" value={s.sumMei.toLocaleString("id-ID")} icon={Activity} tint="info" />
-          <KpiCard label="Total Ticket" value={s.totalTicket.toLocaleString("id-ID")} icon={Ticket} tint="warning" delta={{ value: s.ticketGrowth }} />
-          <KpiCard label="High Risk Cluster" value={s.highRisk} icon={AlertTriangle} tint="destructive" />
+          <KpiCard label="HC Bulan Ini" value={s.sumJun.toLocaleString("id-ID")} icon={Activity} tint="success" onClick={() => openTop("HC Bulan Ini (Juni)", "juni")} />
+          <KpiCard label="HC Bulan Lalu" value={s.sumMei.toLocaleString("id-ID")} icon={Activity} tint="info" onClick={() => openTop("HC Bulan Lalu (Mei)", "mei")} />
+          <KpiCard label="Total Ticket" value={s.totalTicket.toLocaleString("id-ID")} icon={Ticket} tint="warning" delta={{ value: s.ticketGrowth }} onClick={() => openTop("Top Ticket", "ticket")} />
+          <KpiCard label="High Risk Cluster" value={s.highRisk} icon={AlertTriangle} tint="destructive" onClick={openHighRisk} />
         </div>
 
         {/* KPI Row 3 - Progress */}
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-          <KpiCard label="Cluster Prioritas" value={s.highPriority} icon={Target} tint="warning" />
-          <KpiCard label="Action Plan Aktif" value={actionActive} icon={Activity} tint="info" />
-          <KpiCard label="Cycle Completed" value={actionDone} icon={TrendingUp} tint="success" />
+          <KpiCard label="Cluster Prioritas" value={s.highPriority} icon={Target} tint="warning" onClick={openHighRisk} />
+          <KpiCard label="Action Plan Aktif" value={actionActive} icon={Activity} tint="info" onClick={() => openActions("onprogress", "Action Plan — On Progress")} />
+          <KpiCard label="Cycle Completed" value={actionDone} icon={TrendingUp} tint="success" onClick={() => openActions("done", "Action Plan — Done")} />
         </div>
 
         {/* Executive Summary */}
@@ -268,7 +352,52 @@ function Dashboard() {
           </TabsList>
           <TabsContent value="charts" className="mt-0">
             <Suspense fallback={<ChartFallback />}>
-              <DashboardCharts stats={s} />
+              <DashboardCharts
+                stats={s}
+                onSelect={(kind, d) => {
+                  if (kind === "cluster") {
+                    const name = d.cluster as string;
+                    const row = clusters.find((c) => c.cluster === name);
+                    if (row) {
+                      setDrill({
+                        title: `Detail Cluster — ${name}`,
+                        columns: [
+                          { key: "field", label: "Field" },
+                          { key: "val", label: "Nilai", align: "right" },
+                        ],
+                        rows: [
+                          { field: "Kabupaten", val: row.kabupaten },
+                          { field: "Provinsi", val: row.provinsi },
+                          { field: "PIC", val: row.pic },
+                          { field: "HC Januari", val: row.januari.toLocaleString("id-ID") },
+                          { field: "HC Februari", val: row.februari.toLocaleString("id-ID") },
+                          { field: "HC Maret", val: row.maret.toLocaleString("id-ID") },
+                          { field: "HC April", val: row.april.toLocaleString("id-ID") },
+                          { field: "HC Mei", val: row.mei.toLocaleString("id-ID") },
+                          { field: "HC Juni", val: row.juni.toLocaleString("id-ID") },
+                          { field: "Delta Mei-Juni", val: row.deltaMeiJuni },
+                          { field: "Ticket", val: row.ticket.toLocaleString("id-ID") },
+                        ],
+                      });
+                    }
+                  } else if (kind === "province") {
+                    const name = d.name as string;
+                    const rows = clusters.filter((c) => (c.provinsi || "N/A") === name);
+                    setDrill({
+                      title: `Provinsi — ${name}`,
+                      description: `${rows.length} cluster di provinsi ini.`,
+                      columns: colClusterBasic,
+                      rows: rows as unknown as Record<string, unknown>[],
+                    });
+                  } else if (kind === "month") {
+                    setDrill({
+                      title: `HC Bulan ${d.month}`,
+                      columns: colClusterBasic,
+                      rows: [...clusters].sort((a, b) => b.juni - a.juni).slice(0, 50) as unknown as Record<string, unknown>[],
+                    });
+                  }
+                }}
+              />
             </Suspense>
           </TabsContent>
           <TabsContent value="pic" className="mt-0">
@@ -312,6 +441,7 @@ function Dashboard() {
           </Link>
         </div>
       </div>
+      <DrilldownDialog state={drill} onClose={() => setDrill(null)} />
     </>
   );
 }
