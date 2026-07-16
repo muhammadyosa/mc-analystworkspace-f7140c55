@@ -356,7 +356,7 @@ function UploadPage() {
   const [errors, setErrors] = useState<{ name: string; message: string }[]>([]);
 
   const hasData =
-    clusters.length > 0 || tickets.length > 0 || analyst.length > 0 || competitorData.length > 0;
+    clusters.length > 0 || tickets.length > 0 || analyst.length > 0 || competitorData.length > 0 || actionPlans.length > 0;
   const knownChecksums = useMemo(
     () => new Set(history.map((h) => h.checksum).filter(Boolean) as string[]),
     [history],
