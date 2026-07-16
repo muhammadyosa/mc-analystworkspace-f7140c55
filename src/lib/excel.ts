@@ -774,6 +774,7 @@ export function downloadTemplate(kind: ImportKind) {
       "CLUSTER", "KABUPATEN", "PROVINSI", "NAMA KOMPETITOR",
       "HARGA KOMPETITOR TERMURAH", "PROMO COMPETITOR",
     ],
+    actionplan: ["NAMA", "CLUSTER", "PROGRAM", "START DATE", "END DATE", "KETERANGAN"],
   };
   const headers = templates[kind];
   const ws = XLSX.utils.aoa_to_sheet([headers]);
@@ -782,6 +783,7 @@ export function downloadTemplate(kind: ImportKind) {
     kind === "cluster" ? "DATA CLUSTER"
       : kind === "analyst" ? "HASIL PROFILING"
       : kind === "competitor" ? "KOMPETITOR"
+      : kind === "actionplan" ? "ACTION PLAN"
       : "TICKET";
   XLSX.utils.book_append_sheet(wb, ws, sheetName);
   XLSX.writeFile(wb, `template-${kind}.xlsx`);
