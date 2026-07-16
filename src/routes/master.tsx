@@ -91,9 +91,9 @@ function MasterPage() {
     <>
       <AppHeader title="Master Cluster" subtitle={`${clusters.length} cluster tersedia`} />
       <div className="space-y-4 p-4 sm:p-6">
-        <Card className="glass-card border-0 p-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="relative min-w-[220px] flex-1">
+        <Card className="glass-card border-0 p-3 sm:p-4">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            <div className="relative w-full sm:min-w-[220px] sm:flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 value={q}
@@ -106,7 +106,7 @@ function MasterPage() {
               />
             </div>
             <Select value={prov} onValueChange={(v) => { setProv(v); setPage(1); }}>
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-full sm:w-[180px]">
                 <SelectValue placeholder="Provinsi" />
               </SelectTrigger>
               <SelectContent>
@@ -116,14 +116,16 @@ function MasterPage() {
                 ))}
               </SelectContent>
             </Select>
-            <Button variant="outline" onClick={handleExport}>
+            <Button variant="outline" onClick={handleExport} className="w-full sm:w-auto">
               <Download className="mr-1 h-4 w-4" /> Export
             </Button>
           </div>
         </Card>
 
         <Card className="glass-card overflow-hidden border-0">
-          <Table>
+          <div className="scroll-x">
+          <Table className="min-w-[960px]">
+
             <TableHeader>
               <TableRow>
                 <TableHead>
@@ -198,11 +200,12 @@ function MasterPage() {
               })}
             </TableBody>
           </Table>
-          <div className="flex items-center justify-between border-t border-border/60 px-4 py-3 text-xs text-muted-foreground">
+          </div>
+          <div className="flex flex-col gap-2 border-t border-border/60 px-4 py-3 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
             <div>
               {filtered.length} hasil · Halaman {page} / {totalPages}
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 self-end sm:self-auto">
               <Button size="sm" variant="outline" disabled={page === 1} onClick={() => setPage((p) => p - 1)}>
                 Prev
               </Button>
@@ -212,6 +215,7 @@ function MasterPage() {
             </div>
           </div>
         </Card>
+
       </div>
     </>
   );

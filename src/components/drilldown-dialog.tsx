@@ -26,22 +26,24 @@ export function DrilldownDialog({
   const open = state !== null;
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
-      <DialogContent className="max-w-4xl">
+      <DialogContent className="w-[calc(100vw-1.5rem)] max-w-[calc(100vw-1.5rem)] p-4 sm:max-w-2xl sm:p-6 lg:max-w-4xl">
         <DialogHeader>
-          <DialogTitle className="font-display flex items-center gap-2">
-            {state?.title}
-            {state && <Badge variant="secondary" className="ml-2">{state.rows.length} data</Badge>}
+          <DialogTitle className="font-display flex flex-wrap items-center gap-2 text-base sm:text-lg">
+            <span className="min-w-0 truncate">{state?.title}</span>
+            {state && <Badge variant="secondary" className="shrink-0">{state.rows.length} data</Badge>}
           </DialogTitle>
           {state?.description && (
             <DialogDescription>{state.description}</DialogDescription>
           )}
         </DialogHeader>
         {state && (
-          <ScrollArea className="max-h-[60vh] pr-2">
+          <ScrollArea className="max-h-[65vh] pr-2">
             {state.rows.length === 0 ? (
               <div className="py-10 text-center text-sm text-muted-foreground">Tidak ada data.</div>
             ) : (
-              <table className="w-full text-xs">
+              <div className="scroll-x">
+              <table className="w-full min-w-[520px] text-xs">
+
                 <thead className="sticky top-0 bg-background/95 backdrop-blur">
                   <tr className="border-b border-border/60">
                     {state.columns.map((c) => (
@@ -80,6 +82,7 @@ export function DrilldownDialog({
                   ))}
                 </tbody>
               </table>
+              </div>
             )}
           </ScrollArea>
         )}
