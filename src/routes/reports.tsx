@@ -2,10 +2,14 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useRef } from "react";
 import { Printer, FileText, Calendar, Radar as RadarIcon } from "lucide-react";
 import {
+  Area,
+  AreaChart,
   Bar,
   BarChart,
   CartesianGrid,
   Cell,
+  Line,
+  LineChart,
   Pie,
   PieChart,
   ResponsiveContainer,
