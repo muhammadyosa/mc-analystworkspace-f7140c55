@@ -10,7 +10,7 @@ import {
   FileText,
   UserSearch,
 } from "lucide-react";
-import iconnetLogo from "@/assets/iconnet-logo.png.asset.json";
+import coniLogo from "@/assets/coni-logo.png";
 import {
   Sidebar,
   SidebarContent,

@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import indonesiaMap from "@/assets/indonesia-map.png.asset.json";
 import danantaraLight from "@/assets/danantara-dark.svg.asset.json";
 import plnLogo from "@/assets/pln-iconplus.png.asset.json";
-import iconnetLogo from "@/assets/iconnet-logo.png.asset.json";
+import coniLogo from "@/assets/coni-logo.png";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
