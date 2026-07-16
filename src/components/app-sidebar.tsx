@@ -8,9 +8,9 @@ import {
   Users,
   Swords,
   FileText,
-  Sparkles,
   UserSearch,
 } from "lucide-react";
+import iconnetLogo from "@/assets/iconnet-logo.png.asset.json";
 import {
   Sidebar,
   SidebarContent,
@@ -59,8 +59,8 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border">
         <div className="flex items-center gap-3 px-2 py-3">
-          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl gradient-primary shadow-lg">
-            <Sparkles className="h-5 w-5 text-white" />
+          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white shadow-lg overflow-hidden">
+            <img src={iconnetLogo.url} alt="Iconnet" className="h-8 w-8 object-contain" />
           </div>
           <div className="min-w-0 group-data-[collapsible=icon]:hidden">
             <div className="truncate font-display text-sm font-bold">MCA Workspace</div>
