@@ -712,18 +712,10 @@ export async function smartImport(file: File): Promise<SmartResult> {
   const buf = await file.arrayBuffer();
   const wb = XLSX.read(buf, { type: "array" });
   const kind = detectKind(wb, file.name);
-  if (kind === "cluster") {
-    const r = await parseClusterFile(file);
-    return { kind, ...r };
-  }
-  if (kind === "analyst") {
-    const r = await parseAnalystFile(file);
-    return { kind, ...r };
-  }
-  if (kind === "competitor") {
-    const r = await parseCompetitorFile(file);
-    return { kind, ...r };
-  }
+  if (kind === "cluster") { const r = await parseClusterFile(file); return { kind, ...r }; }
+  if (kind === "analyst") { const r = await parseAnalystFile(file); return { kind, ...r }; }
+  if (kind === "competitor") { const r = await parseCompetitorFile(file); return { kind, ...r }; }
+  if (kind === "actionplan") { const r = await parseActionPlanFile(file); return { kind, ...r }; }
   const r = await parseTicketFile(file);
   return { kind: "ticket", ...r };
 }
@@ -735,13 +727,11 @@ export async function classifyFile(
   const wb = XLSX.read(buf, { type: "array" });
   const kind = detectKind(wb, file.name);
   const preferred =
-    kind === "cluster"
-      ? ["DATA CLUSTER", "CLUSTER", "PEMBAGIAN"]
-      : kind === "analyst"
-        ? ["HASIL PROFILING", "PROFILING", "ANALYST"]
-        : kind === "competitor"
-          ? ["KOMPETITOR", "COMPETITOR", "DATA"]
-          : ["TICKET", "DATA", "PIVOT"];
+    kind === "cluster" ? ["DATA CLUSTER", "CLUSTER", "PEMBAGIAN"]
+      : kind === "analyst" ? ["HASIL PROFILING", "PROFILING", "ANALYST"]
+        : kind === "competitor" ? ["KOMPETITOR", "COMPETITOR", "DATA"]
+          : kind === "actionplan" ? ["ACTION PLAN", "ACTIONPLAN", "PROGRAM", "DATA"]
+            : ["TICKET", "DATA", "PIVOT"];
   const { name } = pickSheet(wb, preferred);
   return { kind, fileName: file.name, sheetName: name, sheetCount: wb.SheetNames.length, size: file.size };
 }
