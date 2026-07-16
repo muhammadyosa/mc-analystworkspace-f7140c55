@@ -262,7 +262,7 @@ function Dashboard() {
               </div>
             </CardContent>
           </Card>
-        </motion.div>
+        </div>
 
         {/* Charts */}
         <div className="grid gap-4 lg:grid-cols-2">
