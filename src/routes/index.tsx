@@ -288,9 +288,9 @@ function Dashboard() {
 
         {/* KPI Row 3 - Progress */}
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-          <KpiCard label="Cluster Prioritas" value={s.highPriority} icon={Target} tint="warning" />
-          <KpiCard label="Action Plan Aktif" value={actionActive} icon={Activity} tint="info" />
-          <KpiCard label="Cycle Completed" value={actionDone} icon={TrendingUp} tint="success" />
+          <KpiCard label="Cluster Prioritas" value={s.highPriority} icon={Target} tint="warning" onClick={openHighRisk} />
+          <KpiCard label="Action Plan Aktif" value={actionActive} icon={Activity} tint="info" onClick={() => openActions("onprogress", "Action Plan — On Progress")} />
+          <KpiCard label="Cycle Completed" value={actionDone} icon={TrendingUp} tint="success" onClick={() => openActions("done", "Action Plan — Done")} />
         </div>
 
         {/* Executive Summary */}
