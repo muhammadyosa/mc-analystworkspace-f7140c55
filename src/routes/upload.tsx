@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useState } from "react";
-import { Upload, FileSpreadsheet, CheckCircle2, Trash2, Download, History } from "lucide-react";
+import { Upload, FileSpreadsheet, CheckCircle2, Trash2, Download, History, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { AppHeader } from "@/components/app-header";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,9 @@ import {
   parseAnalystFile,
   exportToExcel,
   downloadTemplate,
+  smartImport,
   type UploadMeta,
+  type ImportKind,
 } from "@/lib/excel";
 import { useDataStore, type UploadHistoryEntry } from "@/lib/store";
 
