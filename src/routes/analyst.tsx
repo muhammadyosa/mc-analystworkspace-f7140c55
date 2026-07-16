@@ -288,7 +288,28 @@ function AnalystPage() {
           </TabsList>
           <TabsContent value="charts" className="mt-0">
             <Suspense fallback={<ChartFallback />}>
-              <AnalystCharts stats={s} />
+              <AnalystCharts
+                stats={s}
+                onSelect={(kind, d) => {
+                  const name = (d.name as string) || "";
+                  if (kind === "competitor") {
+                    openAll(`Kompetitor — ${name}`, (a) => a.competitor.toLowerCase().includes(name.toLowerCase()));
+                  } else if (kind === "potensi") {
+                    const key = name.toLowerCase();
+                    if (key === "tinggi") openAll("Potensi Tinggi", (a) => /tinggi|potensial/i.test(a.potential));
+                    else if (key === "sedang") openAll("Potensi Sedang", (a) => /sedang/i.test(a.potential));
+                    else openAll("Potensi Rendah", (a) => !!a.potential && !/tinggi|potensial|sedang/i.test(a.potential));
+                  } else if (kind === "promo") {
+                    openAll(`Promo — ${name}`, (a) => a.competitorPromo === name);
+                  } else if (kind === "segment") {
+                    openAll(`Segmen — ${name}`, (a) => a.customerSegment === name);
+                  } else if (kind === "strategy") {
+                    openAll(`Strategi — ${name}`, (a) => a.marketingStrategy.toLowerCase().includes(name.toLowerCase()));
+                  } else if (kind === "dayaBeli") {
+                    openAll(`Daya Beli — ${name}`, (a) => a.purchasingPower === name);
+                  }
+                }}
+              />
             </Suspense>
           </TabsContent>
           <TabsContent value="detail" className="mt-0">
