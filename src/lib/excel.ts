@@ -119,6 +119,53 @@ const toNum = (v: unknown): number => {
 };
 const toStr = (v: unknown): string => (v === null || v === undefined ? "" : String(v).trim());
 
+function toISODate(v: unknown): string {
+  if (v === null || v === undefined || v === "") return "";
+  if (typeof v === "number" && isFinite(v)) {
+    try {
+      const parsed = XLSX.SSF.parse_date_code(v);
+      if (parsed) {
+        return `${parsed.y}-${String(parsed.m).padStart(2, "0")}-${String(parsed.d).padStart(2, "0")}`;
+      }
+    } catch { /* fall through */ }
+  }
+  const s = String(v).trim();
+  if (!s) return "";
+  const m = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
+  if (m) {
+    const y = m[3].length === 2 ? `20${m[3]}` : m[3];
+    return `${y}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`;
+  }
+  const iso = s.match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})/);
+  if (iso) return `${iso[1]}-${iso[2].padStart(2, "0")}-${iso[3].padStart(2, "0")}`;
+  const d = new Date(s);
+  if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+  return "";
+}
+
+export function computeActionStatus(startISO: string, endISO: string): ActionPlanStatus {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const s = startISO ? new Date(startISO) : null;
+  const e = endISO ? new Date(endISO) : null;
+  if (e && e < today) return "completed";
+  if (s && s > today) return "planned";
+  if (s && e && s <= today && today <= e) return "onprogress";
+  if (e && e < today) return "overdue";
+  return "planned";
+}
+
+function statusWithOverdue(startISO: string, endISO: string): ActionPlanStatus {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const e = endISO ? new Date(endISO) : null;
+  const s = startISO ? new Date(startISO) : null;
+  if (s && s > today) return "planned";
+  if (s && e && s <= today && today <= e) return "onprogress";
+  if (e && e < today) return "overdue"; // will be flipped to completed only via kanban manual override in UI
+  return "planned";
+}
+
 const norm = (s: string) => s.toLowerCase().replace(/[\s._\-\/]/g, "");
 
 // Find a value by fuzzy header match; supports duplicate-column suffixes (.1, _2)
