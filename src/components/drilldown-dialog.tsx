@@ -82,9 +82,15 @@ export function DrilldownDialog({
                   ))}
                 </tbody>
               </table>
+              </div>
             )}
           </ScrollArea>
         )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
       </DialogContent>
     </Dialog>
   );
