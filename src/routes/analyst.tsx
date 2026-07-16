@@ -152,11 +152,7 @@ function AnalystPage() {
   }
 
   const s = stats!;
-  const potensiData = [
-    { name: "Tinggi", value: s.potensi.tinggi },
-    { name: "Sedang", value: s.potensi.sedang },
-    { name: "Rendah", value: s.potensi.rendah },
-  ];
+
 
   return (
     <>
