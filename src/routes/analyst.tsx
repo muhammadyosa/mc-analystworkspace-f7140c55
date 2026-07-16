@@ -168,25 +168,105 @@ function AnalystPage() {
   }
 
   const s = stats!;
+  const [drill, setDrill] = useState<DrilldownState>(null);
 
+  const analystCols = [
+    { key: "cluster", label: "Cluster" },
+    { key: "aeName", label: "AE" },
+    { key: "competitor", label: "Kompetitor" },
+    { key: "potential", label: "Potensi" },
+    { key: "customerSegment", label: "Segmen" },
+    {
+      key: "competitorPrice",
+      label: "Harga",
+      align: "right" as const,
+      format: (v: unknown) => (Number(v) > 0 ? `Rp${Number(v).toLocaleString("id-ID")}` : "—"),
+    },
+  ];
+
+  const openAll = (title: string, filter?: (a: (typeof analyst)[number]) => boolean, description?: string) => {
+    const rows = (filter ? analyst.filter(filter) : analyst) as unknown as Record<string, unknown>[];
+    setDrill({ title, description, columns: analystCols, rows });
+  };
+
+  const openAE = () => {
+    const map = new Map<string, { name: string; profiling: number; closeWon: number; sfmi: number; clusters: Set<string> }>();
+    analyst.forEach((a) => {
+      const k = a.aeName || "N/A";
+      const cur = map.get(k) ?? { name: k, profiling: 0, closeWon: 0, sfmi: 0, clusters: new Set<string>() };
+      cur.profiling += 1;
+      cur.closeWon += a.closewonToday;
+      cur.sfmi += a.sfToday;
+      if (a.cluster) cur.clusters.add(a.cluster);
+      map.set(k, cur);
+    });
+    const rows = [...map.values()]
+      .map((v) => ({ name: v.name, profiling: v.profiling, clusters: v.clusters.size, closeWon: v.closeWon, sfmi: v.sfmi }))
+      .sort((a, b) => b.profiling - a.profiling);
+    setDrill({
+      title: "Daftar Account Executive",
+      columns: [
+        { key: "name", label: "AE" },
+        { key: "profiling", label: "Profiling", align: "right", format: (v) => Number(v).toLocaleString("id-ID") },
+        { key: "clusters", label: "Cluster", align: "right", format: (v) => Number(v).toLocaleString("id-ID") },
+        { key: "closeWon", label: "Close Won", align: "right", format: (v) => Number(v).toLocaleString("id-ID") },
+        { key: "sfmi", label: "SF/MI", align: "right", format: (v) => Number(v).toLocaleString("id-ID") },
+      ],
+      rows: rows as unknown as Record<string, unknown>[],
+    });
+  };
+
+  const openCompetitor = () => {
+    setDrill({
+      title: "Daftar Kompetitor",
+      columns: [
+        { key: "name", label: "Kompetitor" },
+        { key: "count", label: "Frekuensi", align: "right", format: (v) => Number(v).toLocaleString("id-ID") },
+        { key: "avgPrice", label: "Rata Harga", align: "right", format: (v) => (Number(v) > 0 ? `Rp${Number(v).toLocaleString("id-ID")}` : "—") },
+      ],
+      rows: s.topCompetitors as unknown as Record<string, unknown>[],
+    });
+  };
+
+  const openClusters = () => {
+    const set = new Map<string, { cluster: string; profiling: number; ae: Set<string> }>();
+    analyst.forEach((a) => {
+      if (!a.cluster) return;
+      const cur = set.get(a.cluster) ?? { cluster: a.cluster, profiling: 0, ae: new Set<string>() };
+      cur.profiling += 1;
+      if (a.aeName) cur.ae.add(a.aeName);
+      set.set(a.cluster, cur);
+    });
+    const rows = [...set.values()].map((v) => ({ cluster: v.cluster, profiling: v.profiling, ae: v.ae.size })).sort((a, b) => b.profiling - a.profiling);
+    setDrill({
+      title: "Cluster Profiled",
+      description: `${rows.length} cluster terprofil (${profilingPct}% dari master).`,
+      columns: [
+        { key: "cluster", label: "Cluster" },
+        { key: "profiling", label: "Profiling", align: "right" },
+        { key: "ae", label: "AE Terlibat", align: "right" },
+      ],
+      rows: rows as unknown as Record<string, unknown>[],
+    });
+  };
 
   return (
     <>
       <AppHeader title="Analyst Market" subtitle="Executive dashboard profiling & kompetitor" />
       <div className="space-y-6 p-4 sm:p-6">
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-6">
-          <KpiCard label="Total Profiling" value={s.totalProfiling} icon={Target} />
-          <KpiCard label="Total AE" value={s.totalAE} icon={Users} />
-          <KpiCard label="Cluster Profiled" value={`${s.profCluster}`} icon={Award} hint={`${profilingPct}% coverage`} />
-          <KpiCard label="Close Won" value={s.closeWon} icon={TrendingUp} />
-          <KpiCard label="SF/MI" value={s.sfmi} icon={TrendingUp} />
-          <KpiCard label="Kompetitor" value={s.totalCompetitor} icon={Sparkles} />
-          <KpiCard label="Potensi Tinggi" value={s.potensi.tinggi} icon={Target} />
-          <KpiCard label="Potensi Sedang" value={s.potensi.sedang} icon={Target} />
-          <KpiCard label="Potensi Rendah" value={s.potensi.rendah} icon={Target} />
-          <KpiCard label="FAT Perlu Relokasi" value={s.fatRelocation} icon={AlertTriangle} />
-          <KpiCard label="Butuh Toolkit" value={s.toolkitNeed} icon={AlertTriangle} />
-          <KpiCard label="Profiling Coverage" value={`${profilingPct}%`} icon={Award} />
+          <KpiCard label="Total Profiling" value={s.totalProfiling} icon={Target} onClick={() => openAll("Semua Profiling")} />
+          <KpiCard label="Total AE" value={s.totalAE} icon={Users} onClick={openAE} />
+          <KpiCard label="Cluster Profiled" value={`${s.profCluster}`} icon={Award} hint={`${profilingPct}% coverage`} onClick={openClusters} />
+          <KpiCard label="Close Won" value={s.closeWon} icon={TrendingUp} onClick={() => openAll("Close Won Highlights", (a) => a.closewonToday > 0, "Profiling dengan Close Won > 0")} />
+          <KpiCard label="SF/MI" value={s.sfmi} icon={TrendingUp} onClick={() => openAll("SF/MI Highlights", (a) => a.sfToday > 0)} />
+          <KpiCard label="Kompetitor" value={s.totalCompetitor} icon={Sparkles} onClick={openCompetitor} />
+          <KpiCard label="Potensi Tinggi" value={s.potensi.tinggi} icon={Target} onClick={() => openAll("Potensi Tinggi", (a) => /tinggi|potensial/i.test(a.potential))} />
+          <KpiCard label="Potensi Sedang" value={s.potensi.sedang} icon={Target} onClick={() => openAll("Potensi Sedang", (a) => /sedang/i.test(a.potential))} />
+          <KpiCard label="Potensi Rendah" value={s.potensi.rendah} icon={Target} onClick={() => openAll("Potensi Rendah", (a) => !!a.potential && !/tinggi|potensial|sedang/i.test(a.potential))} />
+          <KpiCard label="FAT Perlu Relokasi" value={s.fatRelocation} icon={AlertTriangle} onClick={() => openAll("FAT Perlu Relokasi", (a) => /ya|perlu|butuh/i.test(a.fatRelocation))} />
+          <KpiCard label="Butuh Toolkit" value={s.toolkitNeed} icon={AlertTriangle} onClick={() => openAll("Butuh Toolkit", (a) => /ya|butuh/i.test(a.toolkitRequest))} />
+          <KpiCard label="Profiling Coverage" value={`${profilingPct}%`} icon={Award} onClick={openClusters} />
         </div>
 
         <Card className="glass-card border-0">
