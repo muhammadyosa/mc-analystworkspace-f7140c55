@@ -2,6 +2,7 @@ import { Moon, Sun, RefreshCw, LogOut } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useTheme } from "@/hooks/use-theme";
 import { useDataStore } from "@/lib/store";
 import { formatDistanceToNow } from "date-fns";
