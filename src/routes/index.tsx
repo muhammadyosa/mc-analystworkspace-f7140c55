@@ -179,7 +179,6 @@ function Dashboard() {
   }
 
   const s = stats!;
-  const chartColors = ["var(--color-chart-1)", "var(--color-chart-2)", "var(--color-chart-3)", "var(--color-chart-4)", "var(--color-chart-5)"];
   const actionActive = actions.filter((a) => a.status === "onprogress").length;
   const actionDone = actions.filter((a) => a.status === "done").length;
 
