@@ -125,6 +125,7 @@ function UploadPage() {
   const [append, setAppend] = useState(false);
   const [progress, setProgress] = useState<Record<Kind, number>>({ cluster: 0, ticket: 0, analyst: 0 });
   const [metas, setMetas] = useState<Partial<Record<Kind, UploadMeta>>>({});
+  const [smart, setSmart] = useState<{ running: boolean; log: { name: string; kind: ImportKind; count: number; ok: boolean; error?: string }[] }>({ running: false, log: [] });
 
   const runImport = async (kind: Kind, file: File) => {
     setProgress((p) => ({ ...p, [kind]: 20 }));
