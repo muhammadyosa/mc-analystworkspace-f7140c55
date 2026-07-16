@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import indonesiaMap from "@/assets/indonesia-map.png.asset.json";
 import danantaraLight from "@/assets/danantara-dark.svg.asset.json";
 import plnLogo from "@/assets/pln-iconplus.png.asset.json";
-import coniLogo from "@/assets/coni-logo.png";
+import iconnetLogo from "@/assets/iconnet-logo.png.asset.json";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -140,7 +140,7 @@ function AuthPage() {
 
             <div className="relative flex flex-col items-center text-center">
               <div className="grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-br from-cyan-400/20 to-blue-500/20 ring-1 ring-white/15 backdrop-blur-md">
-                <img src={coniLogo} alt="CONI" className="h-12 w-12 object-contain" />
+                <img src={iconnetLogo.url} alt="Iconnet" className="h-12 w-12 object-contain" />
               </div>
               <h2 className="mt-5 font-display text-2xl font-bold tracking-tight">
                 {pending ? "Menunggu Persetujuan" : "Selamat Datang"}
