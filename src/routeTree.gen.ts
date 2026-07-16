@@ -9,38 +9,195 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as UploadRouteImport } from './routes/upload'
+import { Route as ReportsRouteImport } from './routes/reports'
+import { Route as PriorityRouteImport } from './routes/priority'
+import { Route as MasterRouteImport } from './routes/master'
+import { Route as LoyaltyRouteImport } from './routes/loyalty'
+import { Route as CompetitorRouteImport } from './routes/competitor'
+import { Route as ActionPlanRouteImport } from './routes/action-plan'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ClusterNameRouteImport } from './routes/cluster.$name'
 
+const UploadRoute = UploadRouteImport.update({
+  id: '/upload',
+  path: '/upload',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReportsRoute = ReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PriorityRoute = PriorityRouteImport.update({
+  id: '/priority',
+  path: '/priority',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MasterRoute = MasterRouteImport.update({
+  id: '/master',
+  path: '/master',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoyaltyRoute = LoyaltyRouteImport.update({
+  id: '/loyalty',
+  path: '/loyalty',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CompetitorRoute = CompetitorRouteImport.update({
+  id: '/competitor',
+  path: '/competitor',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ActionPlanRoute = ActionPlanRouteImport.update({
+  id: '/action-plan',
+  path: '/action-plan',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ClusterNameRoute = ClusterNameRouteImport.update({
+  id: '/cluster/$name',
+  path: '/cluster/$name',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/action-plan': typeof ActionPlanRoute
+  '/competitor': typeof CompetitorRoute
+  '/loyalty': typeof LoyaltyRoute
+  '/master': typeof MasterRoute
+  '/priority': typeof PriorityRoute
+  '/reports': typeof ReportsRoute
+  '/upload': typeof UploadRoute
+  '/cluster/$name': typeof ClusterNameRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/action-plan': typeof ActionPlanRoute
+  '/competitor': typeof CompetitorRoute
+  '/loyalty': typeof LoyaltyRoute
+  '/master': typeof MasterRoute
+  '/priority': typeof PriorityRoute
+  '/reports': typeof ReportsRoute
+  '/upload': typeof UploadRoute
+  '/cluster/$name': typeof ClusterNameRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/action-plan': typeof ActionPlanRoute
+  '/competitor': typeof CompetitorRoute
+  '/loyalty': typeof LoyaltyRoute
+  '/master': typeof MasterRoute
+  '/priority': typeof PriorityRoute
+  '/reports': typeof ReportsRoute
+  '/upload': typeof UploadRoute
+  '/cluster/$name': typeof ClusterNameRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/action-plan'
+    | '/competitor'
+    | '/loyalty'
+    | '/master'
+    | '/priority'
+    | '/reports'
+    | '/upload'
+    | '/cluster/$name'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/action-plan'
+    | '/competitor'
+    | '/loyalty'
+    | '/master'
+    | '/priority'
+    | '/reports'
+    | '/upload'
+    | '/cluster/$name'
+  id:
+    | '__root__'
+    | '/'
+    | '/action-plan'
+    | '/competitor'
+    | '/loyalty'
+    | '/master'
+    | '/priority'
+    | '/reports'
+    | '/upload'
+    | '/cluster/$name'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ActionPlanRoute: typeof ActionPlanRoute
+  CompetitorRoute: typeof CompetitorRoute
+  LoyaltyRoute: typeof LoyaltyRoute
+  MasterRoute: typeof MasterRoute
+  PriorityRoute: typeof PriorityRoute
+  ReportsRoute: typeof ReportsRoute
+  UploadRoute: typeof UploadRoute
+  ClusterNameRoute: typeof ClusterNameRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/upload': {
+      id: '/upload'
+      path: '/upload'
+      fullPath: '/upload'
+      preLoaderRoute: typeof UploadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reports': {
+      id: '/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof ReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/priority': {
+      id: '/priority'
+      path: '/priority'
+      fullPath: '/priority'
+      preLoaderRoute: typeof PriorityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/master': {
+      id: '/master'
+      path: '/master'
+      fullPath: '/master'
+      preLoaderRoute: typeof MasterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/loyalty': {
+      id: '/loyalty'
+      path: '/loyalty'
+      fullPath: '/loyalty'
+      preLoaderRoute: typeof LoyaltyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/competitor': {
+      id: '/competitor'
+      path: '/competitor'
+      fullPath: '/competitor'
+      preLoaderRoute: typeof CompetitorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/action-plan': {
+      id: '/action-plan'
+      path: '/action-plan'
+      fullPath: '/action-plan'
+      preLoaderRoute: typeof ActionPlanRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,22 +205,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/cluster/$name': {
+      id: '/cluster/$name'
+      path: '/cluster/$name'
+      fullPath: '/cluster/$name'
+      preLoaderRoute: typeof ClusterNameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ActionPlanRoute: ActionPlanRoute,
+  CompetitorRoute: CompetitorRoute,
+  LoyaltyRoute: LoyaltyRoute,
+  MasterRoute: MasterRoute,
+  PriorityRoute: PriorityRoute,
+  ReportsRoute: ReportsRoute,
+  UploadRoute: UploadRoute,
+  ClusterNameRoute: ClusterNameRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
