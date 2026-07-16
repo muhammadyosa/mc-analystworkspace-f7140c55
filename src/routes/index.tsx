@@ -352,7 +352,52 @@ function Dashboard() {
           </TabsList>
           <TabsContent value="charts" className="mt-0">
             <Suspense fallback={<ChartFallback />}>
-              <DashboardCharts stats={s} />
+              <DashboardCharts
+                stats={s}
+                onSelect={(kind, d) => {
+                  if (kind === "cluster") {
+                    const name = d.cluster as string;
+                    const row = clusters.find((c) => c.cluster === name);
+                    if (row) {
+                      setDrill({
+                        title: `Detail Cluster — ${name}`,
+                        columns: [
+                          { key: "field", label: "Field" },
+                          { key: "val", label: "Nilai", align: "right" },
+                        ],
+                        rows: [
+                          { field: "Kabupaten", val: row.kabupaten },
+                          { field: "Provinsi", val: row.provinsi },
+                          { field: "PIC", val: row.pic },
+                          { field: "HC Januari", val: row.januari.toLocaleString("id-ID") },
+                          { field: "HC Februari", val: row.februari.toLocaleString("id-ID") },
+                          { field: "HC Maret", val: row.maret.toLocaleString("id-ID") },
+                          { field: "HC April", val: row.april.toLocaleString("id-ID") },
+                          { field: "HC Mei", val: row.mei.toLocaleString("id-ID") },
+                          { field: "HC Juni", val: row.juni.toLocaleString("id-ID") },
+                          { field: "Delta Mei-Juni", val: row.deltaMeiJuni },
+                          { field: "Ticket", val: row.ticket.toLocaleString("id-ID") },
+                        ],
+                      });
+                    }
+                  } else if (kind === "province") {
+                    const name = d.name as string;
+                    const rows = clusters.filter((c) => (c.provinsi || "N/A") === name);
+                    setDrill({
+                      title: `Provinsi — ${name}`,
+                      description: `${rows.length} cluster di provinsi ini.`,
+                      columns: colClusterBasic,
+                      rows: rows as unknown as Record<string, unknown>[],
+                    });
+                  } else if (kind === "month") {
+                    setDrill({
+                      title: `HC Bulan ${d.month}`,
+                      columns: colClusterBasic,
+                      rows: [...clusters].sort((a, b) => b.juni - a.juni).slice(0, 50) as unknown as Record<string, unknown>[],
+                    });
+                  }
+                }}
+              />
             </Suspense>
           </TabsContent>
           <TabsContent value="pic" className="mt-0">
