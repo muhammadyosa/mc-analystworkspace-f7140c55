@@ -574,13 +574,76 @@ export async function parseCompetitorFile(
   return { rows: deduped, meta };
 }
 
+// ---------- Action Plan parser ----------
+
+export async function parseActionPlanFile(
+  file: File,
+): Promise<{ rows: ActionPlanRow[]; meta: UploadMeta }> {
+  const buf = await file.arrayBuffer();
+  const wb = XLSX.read(buf, { type: "array" });
+  const { name: sheetName, ws } = pickSheet(wb, ["ACTION PLAN", "ACTIONPLAN", "PROGRAM", "DATA"]);
+  const raw = sheetToCleanJson(ws);
+  let mapped = 0;
+  const seen = new Set<string>();
+  const rows: ActionPlanRow[] = [];
+  raw.forEach((r, idx) => {
+    const pic = toStr(pick(r, ["NAMA", "PIC", "NAMA PIC"]));
+    const cluster = toStr(pick(r, ["CLUSTER"]));
+    const program = toStr(pick(r, ["PROGRAM", "NAMA PROGRAM"]));
+    if (!program && !cluster) return;
+    const startDate = toISODate(pick(r, ["START DATE", "TANGGAL MULAI", "START"]));
+    const endDate = toISODate(pick(r, ["END DATE", "TANGGAL SELESAI", "END"]));
+    const description = toStr(pick(r, ["KETERANGAN", "DESKRIPSI", "CATATAN"]));
+    const key = `${pic}|${cluster}|${program}|${startDate}|${endDate}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    mapped++;
+    const durationDays =
+      startDate && endDate
+        ? Math.max(1, Math.round((new Date(endDate).getTime() - new Date(startDate).getTime()) / 86400000) + 1)
+        : 0;
+    rows.push({
+      id: `${idx}-${cluster}-${program}`.slice(0, 120),
+      pic,
+      cluster,
+      program,
+      startDate,
+      endDate,
+      description,
+      status: statusWithOverdue(startDate, endDate),
+      durationDays,
+    });
+  });
+  const pics = new Set(rows.map((r) => r.pic).filter(Boolean));
+  const clusters = new Set(rows.map((r) => r.cluster).filter(Boolean));
+  const meta: UploadMeta = {
+    fileName: file.name,
+    sheetCount: wb.SheetNames.length,
+    sheetPicked: sheetName,
+    rowCount: rows.length,
+    extra: {
+      Program: rows.length,
+      PIC: pics.size,
+      Cluster: clusters.size,
+      Aktif: rows.filter((r) => r.status === "onprogress").length,
+      Selesai: rows.filter((r) => r.status === "completed").length,
+      Mendatang: rows.filter((r) => r.status === "planned").length,
+      Terlambat: rows.filter((r) => r.status === "overdue").length,
+    },
+    mappingPct: raw.length ? Math.round((mapped / raw.length) * 100) : 100,
+    timestamp: Date.now(),
+  };
+  return { rows, meta };
+}
+
 // ---------- Smart Import: auto-detect kind ----------
-export type ImportKind = "cluster" | "ticket" | "analyst" | "competitor";
+export type ImportKind = "cluster" | "ticket" | "analyst" | "competitor" | "actionplan";
 export type SmartResult =
   | { kind: "cluster"; rows: ClusterRow[]; meta: UploadMeta }
   | { kind: "ticket"; rows: TicketRow[]; meta: UploadMeta }
   | { kind: "analyst"; rows: AnalystRow[]; meta: UploadMeta }
-  | { kind: "competitor"; rows: CompetitorRow[]; meta: UploadMeta };
+  | { kind: "competitor"; rows: CompetitorRow[]; meta: UploadMeta }
+  | { kind: "actionplan"; rows: ActionPlanRow[]; meta: UploadMeta };
 
 function collectHeaders(wb: XLSX.WorkBook): string[] {
   const out: string[] = [];
