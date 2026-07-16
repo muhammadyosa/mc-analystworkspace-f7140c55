@@ -4,16 +4,19 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
+  useNavigate,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { Toaster } from "@/components/ui/sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 function NotFoundComponent() {
   return (
@@ -127,17 +130,65 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+function AuthGate({ children }: { children: ReactNode }) {
+  const pathname = useRouterState({ select: (r) => r.location.pathname });
+  const navigate = useNavigate();
+  const [status, setStatus] = useState<"loading" | "in" | "out">("loading");
+
+  useEffect(() => {
+    let mounted = true;
+    supabase.auth.getSession().then(({ data }) => {
+      if (!mounted) return;
+      setStatus(data.session ? "in" : "out");
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED" || event === "INITIAL_SESSION") {
+        setStatus(session ? "in" : "out");
+      }
+    });
+    return () => {
+      mounted = false;
+      sub.subscription.unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (status === "out" && pathname !== "/auth") {
+      navigate({ to: "/auth", replace: true });
+    }
+    if (status === "in" && pathname === "/auth") {
+      navigate({ to: "/", replace: true });
+    }
+  }, [status, pathname, navigate]);
+
+  if (pathname === "/auth") return <>{children}</>;
+
+  if (status === "loading") {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      </div>
+    );
+  }
+
+  if (status === "out") return null;
+
+  return (
+    <SidebarProvider>
+      <AppSidebar />
+      <SidebarInset className="min-w-0">{children}</SidebarInset>
+    </SidebarProvider>
+  );
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
   return (
     <QueryClientProvider client={queryClient}>
-      <SidebarProvider>
-        <AppSidebar />
-        <SidebarInset className="min-w-0">
-          <Outlet />
-        </SidebarInset>
-      </SidebarProvider>
+      <AuthGate>
+        <Outlet />
+      </AuthGate>
       <Toaster richColors position="top-right" />
     </QueryClientProvider>
   );

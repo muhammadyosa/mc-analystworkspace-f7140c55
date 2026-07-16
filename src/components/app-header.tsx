@@ -1,9 +1,14 @@
-import { Moon, Sun, RefreshCw } from "lucide-react";
+import { Moon, Sun, RefreshCw, LogOut } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useTheme } from "@/hooks/use-theme";
 import { useDataStore } from "@/lib/store";
 import { formatDistanceToNow } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import plnLogo from "@/assets/pln-iconplus.png.asset.json";
 import danantaraLight from "@/assets/danantara-light.png.asset.json";
 import danantaraDark from "@/assets/danantara-dark.svg.asset.json";
@@ -11,6 +16,21 @@ import danantaraDark from "@/assets/danantara-dark.svg.asset.json";
 export function AppHeader({ title, subtitle }: { title: string; subtitle?: string }) {
   const { theme, toggle } = useTheme();
   const lastUpdated = useDataStore((s) => s.lastUpdated);
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+  const [email, setEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? null));
+  }, []);
+
+  async function handleSignOut() {
+    await qc.cancelQueries();
+    qc.clear();
+    await supabase.auth.signOut();
+    toast.success("Berhasil keluar");
+    navigate({ to: "/auth", replace: true });
+  }
 
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border/60 bg-background/70 px-4 backdrop-blur-xl">
@@ -35,9 +55,18 @@ export function AppHeader({ title, subtitle }: { title: string; subtitle?: strin
           Updated {formatDistanceToNow(lastUpdated, { addSuffix: true })}
         </div>
       )}
+      {email && (
+        <span className="hidden max-w-[180px] truncate text-xs text-muted-foreground md:inline" title={email}>
+          {email}
+        </span>
+      )}
       <Button variant="ghost" size="icon" onClick={toggle} aria-label="Toggle theme">
         {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+      </Button>
+      <Button variant="ghost" size="icon" onClick={handleSignOut} aria-label="Sign out" title="Keluar">
+        <LogOut className="h-4 w-4" />
       </Button>
     </header>
   );
 }
+
