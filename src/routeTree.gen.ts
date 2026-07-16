@@ -15,7 +15,6 @@ import { Route as PriorityRouteImport } from './routes/priority'
 import { Route as MasterRouteImport } from './routes/master'
 import { Route as LoyaltyRouteImport } from './routes/loyalty'
 import { Route as CompetitorIntelRouteImport } from './routes/competitor-intel'
-import { Route as CompetitorRouteImport } from './routes/competitor'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AnalystRouteImport } from './routes/analyst'
 import { Route as ActionPlanRouteImport } from './routes/action-plan'
@@ -53,11 +52,6 @@ const LoyaltyRoute = LoyaltyRouteImport.update({
 const CompetitorIntelRoute = CompetitorIntelRouteImport.update({
   id: '/competitor-intel',
   path: '/competitor-intel',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CompetitorRoute = CompetitorRouteImport.update({
-  id: '/competitor',
-  path: '/competitor',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -106,7 +100,6 @@ export interface FileRoutesByFullPath {
   '/action-plan': typeof ActionPlanRoute
   '/analyst': typeof AnalystRoute
   '/auth': typeof AuthRoute
-  '/competitor': typeof CompetitorRoute
   '/competitor-intel': typeof CompetitorIntelRoute
   '/loyalty': typeof LoyaltyRoute
   '/master': typeof MasterRoute
@@ -123,7 +116,6 @@ export interface FileRoutesByTo {
   '/action-plan': typeof ActionPlanRoute
   '/analyst': typeof AnalystRoute
   '/auth': typeof AuthRoute
-  '/competitor': typeof CompetitorRoute
   '/competitor-intel': typeof CompetitorIntelRoute
   '/loyalty': typeof LoyaltyRoute
   '/master': typeof MasterRoute
@@ -140,7 +132,6 @@ export interface FileRoutesById {
   '/action-plan': typeof ActionPlanRoute
   '/analyst': typeof AnalystRoute
   '/auth': typeof AuthRoute
-  '/competitor': typeof CompetitorRoute
   '/competitor-intel': typeof CompetitorIntelRoute
   '/loyalty': typeof LoyaltyRoute
   '/master': typeof MasterRoute
@@ -159,7 +150,6 @@ export interface FileRouteTypes {
     | '/action-plan'
     | '/analyst'
     | '/auth'
-    | '/competitor'
     | '/competitor-intel'
     | '/loyalty'
     | '/master'
@@ -176,7 +166,6 @@ export interface FileRouteTypes {
     | '/action-plan'
     | '/analyst'
     | '/auth'
-    | '/competitor'
     | '/competitor-intel'
     | '/loyalty'
     | '/master'
@@ -192,7 +181,6 @@ export interface FileRouteTypes {
     | '/action-plan'
     | '/analyst'
     | '/auth'
-    | '/competitor'
     | '/competitor-intel'
     | '/loyalty'
     | '/master'
@@ -210,7 +198,6 @@ export interface RootRouteChildren {
   ActionPlanRoute: typeof ActionPlanRoute
   AnalystRoute: typeof AnalystRoute
   AuthRoute: typeof AuthRoute
-  CompetitorRoute: typeof CompetitorRoute
   CompetitorIntelRoute: typeof CompetitorIntelRoute
   LoyaltyRoute: typeof LoyaltyRoute
   MasterRoute: typeof MasterRoute
@@ -262,13 +249,6 @@ declare module '@tanstack/react-router' {
       path: '/competitor-intel'
       fullPath: '/competitor-intel'
       preLoaderRoute: typeof CompetitorIntelRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/competitor': {
-      id: '/competitor'
-      path: '/competitor'
-      fullPath: '/competitor'
-      preLoaderRoute: typeof CompetitorRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -351,7 +331,6 @@ const rootRouteChildren: RootRouteChildren = {
   ActionPlanRoute: ActionPlanRoute,
   AnalystRoute: AnalystRoute,
   AuthRoute: AuthRoute,
-  CompetitorRoute: CompetitorRoute,
   CompetitorIntelRoute: CompetitorIntelRoute,
   LoyaltyRoute: LoyaltyRoute,
   MasterRoute: MasterRoute,
