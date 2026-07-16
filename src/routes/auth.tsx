@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { lovable } from "@/integrations/lovable/index";
 import { supabase } from "@/integrations/supabase/client";
 import indonesiaMap from "@/assets/indonesia-map.png.asset.json";
-import danantaraLight from "@/assets/danantara-light.png.asset.json";
+import danantaraLight from "@/assets/danantara-dark.svg.asset.json";
 import plnLogo from "@/assets/pln-iconplus.png.asset.json";
 import iconnetLogo from "@/assets/iconnet-logo.png.asset.json";
 
@@ -83,7 +83,7 @@ function AuthPage() {
         <img
           src={danantaraLight.url}
           alt="Danantara Indonesia"
-          className="h-8 w-auto object-contain drop-shadow-[0_2px_8px_rgba(0,0,0,0.4)] [filter:brightness(0)_invert(1)] sm:h-9"
+          className="h-8 w-auto object-contain drop-shadow-[0_2px_8px_rgba(0,0,0,0.4)] sm:h-9"
         />
         <img
           src={plnLogo.url}
