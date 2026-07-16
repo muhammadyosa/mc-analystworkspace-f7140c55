@@ -600,10 +600,14 @@ function UploadPage() {
               <Button size="sm" variant="outline" onClick={() => downloadTemplate("analyst")}>
                 <Download className="mr-1 h-4 w-4" /> Template Analyst
               </Button>
+              <Button size="sm" variant="outline" onClick={() => downloadTemplate("competitor")}>
+                <Download className="mr-1 h-4 w-4" /> Template Competitor
+              </Button>
               <div className="ml-auto text-xs text-muted-foreground">
                 {clusters.length.toLocaleString("id-ID")} cluster ·{" "}
                 {tickets.length.toLocaleString("id-ID")} ticket ·{" "}
-                {analyst.length.toLocaleString("id-ID")} profiling
+                {analyst.length.toLocaleString("id-ID")} profiling ·{" "}
+                {competitorData.length.toLocaleString("id-ID")} competitor
               </div>
               <Button
                 variant="outline"
