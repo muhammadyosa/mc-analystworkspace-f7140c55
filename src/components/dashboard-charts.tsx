@@ -62,7 +62,7 @@ export default function DashboardCharts({
         </CardHeader>
         <CardContent className="h-64">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={s.trend}>
+            <LineChart data={s.trend} onClick={handleBar("month")} {...cursor}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
               <XAxis dataKey="month" stroke="var(--color-muted-foreground)" fontSize={12} />
               <YAxis stroke="var(--color-muted-foreground)" fontSize={12} />
@@ -79,7 +79,7 @@ export default function DashboardCharts({
         </CardHeader>
         <CardContent className="h-64">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={s.topHc} layout="vertical" margin={{ left: 60 }}>
+            <BarChart data={s.topHc} layout="vertical" margin={{ left: 60 }} onClick={handleBar("cluster")} {...cursor}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
               <XAxis type="number" stroke="var(--color-muted-foreground)" fontSize={11} />
               <YAxis type="category" dataKey="cluster" stroke="var(--color-muted-foreground)" fontSize={11} width={90} />
@@ -96,7 +96,7 @@ export default function DashboardCharts({
         </CardHeader>
         <CardContent className="h-64">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={s.growth}>
+            <BarChart data={s.growth} onClick={handleBar("cluster")} {...cursor}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
               <XAxis dataKey="cluster" stroke="var(--color-muted-foreground)" fontSize={10} angle={-30} textAnchor="end" height={60} />
               <YAxis stroke="var(--color-muted-foreground)" fontSize={11} />
@@ -117,7 +117,7 @@ export default function DashboardCharts({
         </CardHeader>
         <CardContent className="h-64">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={s.topTicket}>
+            <BarChart data={s.topTicket} onClick={handleBar("cluster")} {...cursor}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
               <XAxis dataKey="cluster" stroke="var(--color-muted-foreground)" fontSize={10} angle={-30} textAnchor="end" height={60} />
               <YAxis stroke="var(--color-muted-foreground)" fontSize={11} />
@@ -135,7 +135,7 @@ export default function DashboardCharts({
         <CardContent className="h-72">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
-              <Pie data={s.provDist} dataKey="value" nameKey="name" outerRadius={100} label isAnimationActive={false}>
+              <Pie data={s.provDist} dataKey="value" nameKey="name" outerRadius={100} label isAnimationActive={false} onClick={handlePie("province")} {...cursor}>
                 {s.provDist.map((_, i) => (
                   <Cell key={i} fill={chartColors[i % chartColors.length]} />
                 ))}
