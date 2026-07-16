@@ -27,6 +27,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { AppHeader } from "@/components/app-header";
 import { useDataStore } from "@/lib/store";
 import type { CompetitorRow, PromoCategory } from "@/lib/excel";
 
@@ -221,20 +222,23 @@ function CompetitorIntelPage() {
 
   if (!competitorData.length) {
     return (
-      <div className="p-6">
-        <Card className="glass-card border-0">
-          <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
-            <div className="grid h-14 w-14 place-items-center rounded-2xl gradient-primary">
-              <RadarIcon className="h-7 w-7 text-white" />
-            </div>
-            <div className="font-display text-lg font-semibold">Belum ada data Competitor</div>
-            <div className="max-w-md text-sm text-muted-foreground">
-              Upload file KOMPETITOR.xlsx melalui menu Settings → Data Management. Sistem akan
-              otomatis mendeteksi dataset berdasarkan struktur kolom.
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <>
+        <AppHeader title="Competitor Intelligence" subtitle="Analisa persaingan otomatis dari KOMPETITOR.xlsx" />
+        <div className="p-6">
+          <Card className="glass-card border-0">
+            <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
+              <div className="grid h-14 w-14 place-items-center rounded-2xl gradient-primary">
+                <RadarIcon className="h-7 w-7 text-white" />
+              </div>
+              <div className="font-display text-lg font-semibold">Belum ada data Competitor</div>
+              <div className="max-w-md text-sm text-muted-foreground">
+                Upload file KOMPETITOR.xlsx melalui menu Settings → Data Management. Sistem akan
+                otomatis mendeteksi dataset berdasarkan struktur kolom.
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </>
     );
   }
 
@@ -249,30 +253,22 @@ function CompetitorIntelPage() {
   ];
 
   return (
-    <div className="space-y-6 p-4 md:p-6">
-      {/* Header */}
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div className="flex items-center gap-3">
-          <div className="grid h-11 w-11 place-items-center rounded-xl gradient-primary shadow-lg">
-            <RadarIcon className="h-6 w-6 text-white" />
-          </div>
-          <div>
-            <h1 className="font-display text-xl font-bold">Competitor Intelligence</h1>
-            <p className="text-xs text-muted-foreground">
-              Persaingan otomatis dari KOMPETITOR.xlsx · terhubung ke Cluster, Ticket, dan Analyst Market
-            </p>
+    <>
+      <AppHeader title="Competitor Intelligence" subtitle="Analisa persaingan otomatis dari KOMPETITOR.xlsx" />
+      <div className="space-y-6 p-4 md:p-6">
+        {/* Search bar */}
+        <div className="flex items-center justify-end">
+          <div className="relative w-full md:w-96">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Cari cluster, kompetitor, kabupaten…"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              className="pl-9"
+            />
           </div>
         </div>
-        <div className="relative w-full md:w-80">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Cari cluster, kompetitor, kabupaten…"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            className="pl-9"
-          />
-        </div>
-      </div>
+
 
       {/* KPIs */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-7">
@@ -564,6 +560,7 @@ function CompetitorIntelPage() {
           </div>
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </>
   );
 }
