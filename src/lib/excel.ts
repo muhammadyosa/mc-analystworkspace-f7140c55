@@ -345,6 +345,70 @@ export async function parseAnalystFile(
   return { rows, meta };
 }
 
+// ---------- Smart Import: auto-detect kind ----------
+export type ImportKind = "cluster" | "ticket" | "analyst";
+export type SmartResult =
+  | { kind: "cluster"; rows: ClusterRow[]; meta: UploadMeta }
+  | { kind: "ticket"; rows: TicketRow[]; meta: UploadMeta }
+  | { kind: "analyst"; rows: AnalystRow[]; meta: UploadMeta };
+
+function collectHeaders(wb: XLSX.WorkBook): string[] {
+  const out: string[] = [];
+  for (const n of wb.SheetNames) {
+    const ws = wb.Sheets[n];
+    const aoa: unknown[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "", blankrows: false });
+    for (let i = 0; i < Math.min(aoa.length, 5); i++) {
+      for (const c of aoa[i] ?? []) out.push(norm(toStr(c)));
+    }
+    out.push(norm(n));
+  }
+  return out;
+}
+
+export function detectKind(wb: XLSX.WorkBook, fileName: string): ImportKind {
+  const sheets = wb.SheetNames.map((s) => norm(s));
+  const hs = collectHeaders(wb);
+  const has = (needle: string) => hs.some((h) => h.includes(needle));
+
+  // Analyst: HASIL PROFILING sheet or profiling-specific columns
+  if (sheets.some((s) => s.includes("hasilprofiling") || s.includes("profiling"))) return "analyst";
+  if (has("namaae") || has("insightae") || has("relokasifat") || has("tingkatpotensicluster")) return "analyst";
+
+  // Cluster: DATA CLUSTER sheet or PROV/KAB/CLUSTER header + PIC
+  if (sheets.some((s) => s.includes("datacluster"))) return "cluster";
+  if (has("provkabcluster") && (has("pic") || has("statusketersediaan"))) return "cluster";
+  if (has("totalhc2026") || has("statusketersediaantimserpo") || has("statusketersediaantimikr")) return "cluster";
+
+  // Ticket: pivot / list ticketing / has cluster+bulan and no PIC
+  if (sheets.some((s) => s.includes("listticketing") || s.includes("ticket") || s.includes("pivot"))) return "ticket";
+  if ((has("cluster") || has("wilayah") || has("kabupaten")) && (has("januari") || has("februari") || has("bulan"))) {
+    return "ticket";
+  }
+
+  // Filename fallback
+  const fn = norm(fileName);
+  if (fn.includes("analyst")) return "analyst";
+  if (fn.includes("cluster") || fn.includes("pembagian") || fn.includes("sibt")) return "cluster";
+  return "ticket";
+}
+
+export async function smartImport(file: File): Promise<SmartResult> {
+  const buf = await file.arrayBuffer();
+  const wb = XLSX.read(buf, { type: "array" });
+  const kind = detectKind(wb, file.name);
+  // Re-parse via existing typed parsers (they re-read the file, negligible cost)
+  if (kind === "cluster") {
+    const r = await parseClusterFile(file);
+    return { kind, ...r };
+  }
+  if (kind === "analyst") {
+    const r = await parseAnalystFile(file);
+    return { kind, ...r };
+  }
+  const r = await parseTicketFile(file);
+  return { kind: "ticket", ...r };
+}
+
 export function exportToExcel<T extends Record<string, unknown>>(rows: T[], filename: string) {
   const ws = XLSX.utils.json_to_sheet(rows);
   const wb = XLSX.utils.book_new();
