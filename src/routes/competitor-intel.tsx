@@ -369,20 +369,7 @@ function CompetitorIntelPage() {
                 dataKey="size"
                 stroke="#fff"
                 fill="#6366f1"
-                content={(props: any) => {
-                  const { x, y, width, height, index, name } = props;
-                  const color = COLORS[index % COLORS.length];
-                  return (
-                    <g>
-                      <rect x={x} y={y} width={width} height={height} fill={color} opacity={0.85} />
-                      {width > 50 && height > 20 && (
-                        <text x={x + 6} y={y + 16} fill="#fff" fontSize={10}>
-                          {name}
-                        </text>
-                      )}
-                    </g>
-                  );
-                }}
+                content={<TreemapCell />}
               />
             </ResponsiveContainer>
           </CardContent>
