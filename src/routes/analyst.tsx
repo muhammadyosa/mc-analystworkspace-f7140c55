@@ -136,9 +136,7 @@ function AnalystPage() {
         <div className="p-6">
           <EmptyState
             title="Belum ada data profiling"
-            description="Upload file ANALYST MARKET.xlsx untuk melihat dashboard."
-            actionLabel="Ke Data Management"
-            actionHref="/upload"
+            desc="Upload file ANALYST MARKET.xlsx (sheet HASIL PROFILING) di Data Management."
           />
         </div>
       </>
