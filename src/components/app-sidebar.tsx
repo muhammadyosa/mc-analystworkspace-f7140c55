@@ -1,7 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard,
-  Upload,
   Database,
   Target,
   ListTodo,
@@ -9,6 +8,7 @@ import {
   Wrench,
   FileText,
   UserSearch,
+  Settings,
 } from "lucide-react";
 import coniLogo from "@/assets/coni-logo.png";
 import {
@@ -30,8 +30,8 @@ const nav = [
   { title: "Action Plan", url: "/action-plan", icon: ListTodo },
   { title: "Customer Loyalty", url: "/loyalty", icon: Users },
   { title: "Competitor", url: "/competitor", icon: Wrench },
-  { title: "Data Management", url: "/upload", icon: Upload },
   { title: "Reports", url: "/reports", icon: FileText },
+  { title: "Settings", url: "/settings", icon: Settings },
 ];
 
 export function AppSidebar() {

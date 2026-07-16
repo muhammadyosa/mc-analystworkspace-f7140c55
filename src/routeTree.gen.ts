@@ -20,6 +20,7 @@ import { Route as AnalystRouteImport } from './routes/analyst'
 import { Route as ActionPlanRouteImport } from './routes/action-plan'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SettingsIndexRouteImport } from './routes/settings.index'
+import { Route as SettingsUsersRouteImport } from './routes/settings.users'
 import { Route as SettingsDataRouteImport } from './routes/settings.data'
 import { Route as ClusterNameRouteImport } from './routes/cluster.$name'
 
@@ -78,6 +79,11 @@ const SettingsIndexRoute = SettingsIndexRouteImport.update({
   path: '/',
   getParentRoute: () => SettingsRoute,
 } as any)
+const SettingsUsersRoute = SettingsUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => SettingsRoute,
+} as any)
 const SettingsDataRoute = SettingsDataRouteImport.update({
   id: '/data',
   path: '/data',
@@ -102,6 +108,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRouteWithChildren
   '/cluster/$name': typeof ClusterNameRoute
   '/settings/data': typeof SettingsDataRoute
+  '/settings/users': typeof SettingsUsersRoute
   '/settings/': typeof SettingsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -116,6 +123,7 @@ export interface FileRoutesByTo {
   '/reports': typeof ReportsRoute
   '/cluster/$name': typeof ClusterNameRoute
   '/settings/data': typeof SettingsDataRoute
+  '/settings/users': typeof SettingsUsersRoute
   '/settings': typeof SettingsIndexRoute
 }
 export interface FileRoutesById {
@@ -132,6 +140,7 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRouteWithChildren
   '/cluster/$name': typeof ClusterNameRoute
   '/settings/data': typeof SettingsDataRoute
+  '/settings/users': typeof SettingsUsersRoute
   '/settings/': typeof SettingsIndexRoute
 }
 export interface FileRouteTypes {
@@ -149,6 +158,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/cluster/$name'
     | '/settings/data'
+    | '/settings/users'
     | '/settings/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -163,6 +173,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/cluster/$name'
     | '/settings/data'
+    | '/settings/users'
     | '/settings'
   id:
     | '__root__'
@@ -178,6 +189,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/cluster/$name'
     | '/settings/data'
+    | '/settings/users'
     | '/settings/'
   fileRoutesById: FileRoutesById
 }
@@ -274,6 +286,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsIndexRouteImport
       parentRoute: typeof SettingsRoute
     }
+    '/settings/users': {
+      id: '/settings/users'
+      path: '/users'
+      fullPath: '/settings/users'
+      preLoaderRoute: typeof SettingsUsersRouteImport
+      parentRoute: typeof SettingsRoute
+    }
     '/settings/data': {
       id: '/settings/data'
       path: '/data'
@@ -293,11 +312,13 @@ declare module '@tanstack/react-router' {
 
 interface SettingsRouteChildren {
   SettingsDataRoute: typeof SettingsDataRoute
+  SettingsUsersRoute: typeof SettingsUsersRoute
   SettingsIndexRoute: typeof SettingsIndexRoute
 }
 
 const SettingsRouteChildren: SettingsRouteChildren = {
   SettingsDataRoute: SettingsDataRoute,
+  SettingsUsersRoute: SettingsUsersRoute,
   SettingsIndexRoute: SettingsIndexRoute,
 }
 
