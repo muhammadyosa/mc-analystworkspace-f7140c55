@@ -144,26 +144,20 @@ function toISODate(v: unknown): string {
   return "";
 }
 
-export function computeActionStatus(startISO: string, endISO: string): ActionPlanStatus {
+export function computeActionStatus(
+  startISO: string,
+  endISO: string,
+  result?: string,
+): ActionPlanStatus {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const s = startISO ? new Date(startISO) : null;
   const e = endISO ? new Date(endISO) : null;
-  if (e && e < today) return "completed";
+  const hasResult = !!(result && result.trim());
   if (s && s > today) return "planned";
+  if (e && e < today) return hasResult ? "completed" : "overdue";
   if (s && e && s <= today && today <= e) return "onprogress";
-  if (e && e < today) return "overdue";
-  return "planned";
-}
-
-function statusWithOverdue(startISO: string, endISO: string): ActionPlanStatus {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const e = endISO ? new Date(endISO) : null;
-  const s = startISO ? new Date(startISO) : null;
-  if (s && s > today) return "planned";
-  if (s && e && s <= today && today <= e) return "onprogress";
-  if (e && e < today) return "overdue"; // will be flipped to completed only via kanban manual override in UI
+  if (hasResult) return "completed";
   return "planned";
 }
 
