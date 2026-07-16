@@ -40,9 +40,13 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className="border-b border-sidebar-border">
-        <div className="flex items-center gap-3 px-3 py-3 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-2">
-          <img src={iconnetLogo.url} alt="Iconnet" className="h-9 w-9 object-contain" />
+      <SidebarHeader>
+        <div className="flex items-center gap-3 px-3 py-4 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-2 group-data-[collapsible=icon]:py-3">
+          <img
+            src={iconnetLogo.url}
+            alt="Iconnet"
+            className="h-9 w-9 object-contain group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:w-8"
+          />
           <div className="min-w-0 group-data-[collapsible=icon]:hidden">
             <div className="truncate font-display text-sm font-bold leading-tight">Iconnet</div>
             <div className="truncate text-[10px] text-muted-foreground">MCA Workspace</div>
