@@ -170,6 +170,49 @@ function UploadPage() {
     toast.success("Data diekspor");
   };
 
+  const runSmartImport = async (files: File[]) => {
+    if (!files.length) return;
+    setSmart({ running: true, log: [] });
+    // Group results so we can apply per-kind replace/append semantics once
+    const buckets: Record<ImportKind, { rows: unknown[]; metas: UploadMeta[] }> = {
+      cluster: { rows: [], metas: [] },
+      ticket: { rows: [], metas: [] },
+      analyst: { rows: [], metas: [] },
+    };
+    const log: { name: string; kind: ImportKind; count: number; ok: boolean; error?: string }[] = [];
+    for (const f of files) {
+      try {
+        const r = await smartImport(f);
+        buckets[r.kind].rows.push(...(r.rows as unknown[]));
+        buckets[r.kind].metas.push(r.meta);
+        log.push({ name: f.name, kind: r.kind, count: r.rows.length, ok: true });
+      } catch (e) {
+        log.push({ name: f.name, kind: "cluster", count: 0, ok: false, error: (e as Error).message });
+      }
+      setSmart({ running: true, log: [...log] });
+    }
+    // Apply
+    const mode: "append" | "replace" = append ? "append" : "replace";
+    if (buckets.cluster.rows.length) {
+      setClusters(buckets.cluster.rows as never, mode);
+      buckets.cluster.metas.forEach((m) => pushHistory({ ...m, kind: "cluster", mode }));
+      setMetas((prev) => ({ ...prev, cluster: buckets.cluster.metas[buckets.cluster.metas.length - 1] }));
+    }
+    if (buckets.ticket.rows.length) {
+      setTickets(buckets.ticket.rows as never, mode);
+      buckets.ticket.metas.forEach((m) => pushHistory({ ...m, kind: "ticket", mode }));
+      setMetas((prev) => ({ ...prev, ticket: buckets.ticket.metas[buckets.ticket.metas.length - 1] }));
+    }
+    if (buckets.analyst.rows.length) {
+      setAnalyst(buckets.analyst.rows as never, mode);
+      buckets.analyst.metas.forEach((m) => pushHistory({ ...m, kind: "analyst", mode }));
+      setMetas((prev) => ({ ...prev, analyst: buckets.analyst.metas[buckets.analyst.metas.length - 1] }));
+    }
+    setSmart({ running: false, log });
+    const ok = log.filter((l) => l.ok).length;
+    toast.success(`Smart Import selesai · ${ok}/${files.length} file · dashboard diperbarui`);
+  };
+
   return (
     <>
       <AppHeader title="Data Management" subtitle="Import Excel, kelola dataset, riwayat upload" />
