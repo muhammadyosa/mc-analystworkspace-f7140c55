@@ -165,7 +165,7 @@ function ClassifiedList({
   onRemove: (idx: number) => void;
 }) {
   const groups = useMemo(() => {
-    const g: Record<ImportKind, Classified[]> = { cluster: [], ticket: [], analyst: [], competitor: [] };
+    const g: Record<ImportKind, Classified[]> = { cluster: [], ticket: [], analyst: [], competitor: [], actionplan: [] };
     items.forEach((it) => g[it.kind].push(it));
     return g;
   }, [items]);
