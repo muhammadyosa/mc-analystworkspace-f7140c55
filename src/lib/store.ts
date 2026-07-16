@@ -98,6 +98,7 @@ export const useDataStore = create<DataState>()(
       clusters: [],
       tickets: [],
       analyst: [],
+      competitorData: [],
       actions: [],
       competitors: [],
       history: [],
@@ -117,6 +118,11 @@ export const useDataStore = create<DataState>()(
           analyst: mode === "append" ? [...s.analyst, ...rows] : rows,
           lastUpdated: Date.now(),
         })),
+      setCompetitorData: (rows, mode = "replace") =>
+        set((s) => ({
+          competitorData: mode === "append" ? [...s.competitorData, ...rows] : rows,
+          lastUpdated: Date.now(),
+        })),
       pushHistory: (h) => set((s) => ({ history: [h, ...s.history].slice(0, 20) })),
       addAction: (a) => set((s) => ({ actions: [...s.actions, a] })),
       updateActionStatus: (id, status) =>
@@ -125,7 +131,7 @@ export const useDataStore = create<DataState>()(
       addCompetitor: (c) => set((s) => ({ competitors: [...s.competitors, c] })),
       deleteCompetitor: (id) => set((s) => ({ competitors: s.competitors.filter((c) => c.id !== id) })),
       clearAll: () =>
-        set({ clusters: [], tickets: [], analyst: [], actions: [], competitors: [], history: [], lastUpdated: null }),
+        set({ clusters: [], tickets: [], analyst: [], competitorData: [], actions: [], competitors: [], history: [], lastUpdated: null }),
     }),
     { name: "mcaw-store", storage: createJSONStorage(() => debouncedLocalStorage) },
   ),
