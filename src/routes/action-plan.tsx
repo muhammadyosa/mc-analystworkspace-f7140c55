@@ -822,7 +822,7 @@ function DetailDialog({
                 <Info label="Growth (Jan→Jun)" value={`${growth}%`} />
                 <Info label="Potensi Realisasi" value={`${potensi}%`} />
                 <Info label="Total Ticket" value={tickets.toLocaleString()} />
-                <Info label="Kompetitor" value={comps.length ? comps.map((c) => c.name).slice(0, 3).join(", ") : "-"} />
+                <Info label="Kompetitor" value={comps.length ? Array.from(new Set(comps.map((c) => c.competitor))).slice(0, 3).join(", ") : "-"} />
                 {a && (
                   <>
                     <Info label="AE" value={a.ae || "-"} />
