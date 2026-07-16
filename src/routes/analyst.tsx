@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { lazy, Suspense, useMemo } from "react";
+import { lazy, Suspense, useMemo, useState } from "react";
 import { Users, Target, TrendingUp, Award, Sparkles, ExternalLink, AlertTriangle } from "lucide-react";
 import { AppHeader } from "@/components/app-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EmptyState } from "@/components/empty-state";
 import { useDataStore } from "@/lib/store";
+import { DrilldownDialog, type DrilldownState } from "@/components/drilldown-dialog";
 
 const AnalystCharts = lazy(() => import("@/components/analyst-charts"));
 
@@ -26,21 +27,36 @@ function ChartFallback() {
   );
 }
 
-function KpiCard({ label, value, icon: Icon, hint }: { label: string; value: string | number; icon: React.ElementType; hint?: string }) {
+function KpiCard({
+  label,
+  value,
+  icon: Icon,
+  hint,
+  onClick,
+}: {
+  label: string;
+  value: string | number;
+  icon: React.ElementType;
+  hint?: string;
+  onClick?: () => void;
+}) {
+  const Comp = onClick ? "button" : "div";
   return (
-    <Card className="glass-card border-0">
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between gap-2">
-          <div>
-            <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
-            <div className="mt-1 font-display text-2xl font-bold tabular-nums">{value}</div>
-            {hint && <div className="text-[10px] text-muted-foreground">{hint}</div>}
+    <Card className={`glass-card border-0 ${onClick ? "cursor-pointer transition-all hover:scale-[1.02] hover:shadow-lg hover:border-primary/40" : ""}`}>
+      <Comp onClick={onClick} className="block w-full text-left">
+        <CardContent className="p-4">
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
+              <div className="mt-1 font-display text-2xl font-bold tabular-nums">{value}</div>
+              {hint && <div className="text-[10px] text-muted-foreground">{hint}</div>}
+            </div>
+            <div className="grid h-9 w-9 place-items-center rounded-xl gradient-primary">
+              <Icon className="h-4 w-4 text-white" />
+            </div>
           </div>
-          <div className="grid h-9 w-9 place-items-center rounded-xl gradient-primary">
-            <Icon className="h-4 w-4 text-white" />
-          </div>
-        </div>
-      </CardContent>
+        </CardContent>
+      </Comp>
     </Card>
   );
 }
