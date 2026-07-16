@@ -73,6 +73,7 @@ const KIND_LABEL: Record<ImportKind, string> = {
   ticket: "Ticket",
   analyst: "Analyst Market",
   competitor: "Competitor",
+  actionplan: "Action Plan",
 };
 
 type ImportSummary = {
@@ -80,6 +81,7 @@ type ImportSummary = {
   ticket?: { rows: number; bulan: number };
   analyst?: { rows: number; ae: number };
   competitor?: { rows: number; unique: number; hargaMin: number; hargaMax: number; promo: number };
+  actionplan?: { rows: number; pic: number; cluster: number; aktif: number; selesai: number; mendatang: number };
 };
 
 function formatBytes(n: number) {
