@@ -96,6 +96,7 @@ export type ActionPlanRow = {
   startDate: string; // ISO YYYY-MM-DD
   endDate: string; // ISO YYYY-MM-DD
   description: string;
+  result: string;
   status: ActionPlanStatus;
   durationDays: number;
 };
