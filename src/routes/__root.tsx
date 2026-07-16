@@ -133,17 +133,40 @@ function RootShell({ children }: { children: ReactNode }) {
 function AuthGate({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const navigate = useNavigate();
-  const [status, setStatus] = useState<"loading" | "in" | "out">("loading");
+  const [status, setStatus] = useState<"loading" | "in" | "pending" | "out">("loading");
+
+  async function resolve(session: unknown) {
+    if (!session) {
+      setStatus("out");
+      return;
+    }
+    const { data: u } = await supabase.auth.getUser();
+    if (!u.user) {
+      setStatus("out");
+      return;
+    }
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("approved")
+      .eq("id", u.user.id)
+      .maybeSingle();
+    setStatus(profile?.approved ? "in" : "pending");
+  }
 
   useEffect(() => {
     let mounted = true;
     supabase.auth.getSession().then(({ data }) => {
       if (!mounted) return;
-      setStatus(data.session ? "in" : "out");
+      resolve(data.session);
     });
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED" || event === "INITIAL_SESSION") {
-        setStatus(session ? "in" : "out");
+      if (
+        event === "SIGNED_IN" ||
+        event === "SIGNED_OUT" ||
+        event === "USER_UPDATED" ||
+        event === "INITIAL_SESSION"
+      ) {
+        resolve(session);
       }
     });
     return () => {
@@ -153,7 +176,7 @@ function AuthGate({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (status === "out" && pathname !== "/auth") {
+    if ((status === "out" || status === "pending") && pathname !== "/auth") {
       navigate({ to: "/auth", replace: true });
     }
     if (status === "in" && pathname === "/auth") {
@@ -171,7 +194,7 @@ function AuthGate({ children }: { children: ReactNode }) {
     );
   }
 
-  if (status === "out") return null;
+  if (status !== "in") return null;
 
   return (
     <SidebarProvider>
