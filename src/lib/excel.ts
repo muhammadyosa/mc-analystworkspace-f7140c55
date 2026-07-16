@@ -589,6 +589,7 @@ export async function parseActionPlanFile(
     const startDate = toISODate(pick(r, ["START DATE", "TANGGAL MULAI", "START"]));
     const endDate = toISODate(pick(r, ["END DATE", "TANGGAL SELESAI", "END"]));
     const description = toStr(pick(r, ["KETERANGAN", "DESKRIPSI", "CATATAN"]));
+    const result = toStr(pick(r, ["HASIL", "OUTCOME", "RESULT", "HASIL PROGRAM"]));
     const key = `${pic}|${cluster}|${program}|${startDate}|${endDate}`;
     if (seen.has(key)) return;
     seen.add(key);
@@ -605,7 +606,8 @@ export async function parseActionPlanFile(
       startDate,
       endDate,
       description,
-      status: statusWithOverdue(startDate, endDate),
+      result,
+      status: computeActionStatus(startDate, endDate, result),
       durationDays,
     });
   });
