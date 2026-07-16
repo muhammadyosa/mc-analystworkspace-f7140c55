@@ -214,7 +214,7 @@ function Dashboard() {
         </div>
 
         {/* Executive Summary */}
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }}>
+        <div className="animate-in fade-in duration-500">
           <Card className="glass-card border-0 overflow-hidden">
             <div className="absolute inset-0 gradient-primary opacity-[0.03] pointer-events-none" />
             <CardHeader className="flex-row items-center gap-2 space-y-0">
