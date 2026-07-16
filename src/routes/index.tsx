@@ -47,7 +47,7 @@ export const Route = createFileRoute("/")({
 const MONTHS = ["januari", "februari", "maret", "april", "mei", "juni"] as const;
 const MONTH_LABEL = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun"];
 
-function KpiCard({
+const KpiCard = memo(function KpiCard({
   label,
   value,
   delta,
@@ -68,12 +68,7 @@ function KpiCard({
     destructive: "from-destructive/20 to-destructive/5 text-destructive",
   };
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35 }}
-      className="glass-card rounded-2xl p-4"
-    >
+    <div className="glass-card rounded-2xl p-4 animate-in fade-in slide-in-from-bottom-1 duration-300">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="truncate text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
@@ -97,9 +92,10 @@ function KpiCard({
           <Icon className="h-5 w-5" />
         </div>
       </div>
-    </motion.div>
+    </div>
   );
-}
+});
+
 
 function Dashboard() {
   const clusters = useDataStore((s) => s.clusters);
