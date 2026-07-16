@@ -70,6 +70,21 @@ function threatFromRows(rows: CompetitorRow[]): { level: "Rendah" | "Sedang" | "
   };
 }
 
+function TreemapCell(props: any) {
+  const { x, y, width, height, index, name } = props;
+  const color = COLORS[(index ?? 0) % COLORS.length];
+  return (
+    <g>
+      <rect x={x} y={y} width={width} height={height} fill={color} opacity={0.85} />
+      {width > 50 && height > 20 && (
+        <text x={x + 6} y={y + 16} fill="#fff" fontSize={10}>
+          {name}
+        </text>
+      )}
+    </g>
+  );
+}
+
 function CompetitorIntelPage() {
   const competitorData = useDataStore((s) => s.competitorData);
   const clusters = useDataStore((s) => s.clusters);
