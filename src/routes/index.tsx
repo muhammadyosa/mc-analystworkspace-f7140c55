@@ -396,6 +396,7 @@ function Dashboard() {
           </Link>
         </div>
       </div>
+      <DrilldownDialog state={drill} onClose={() => setDrill(null)} />
     </>
   );
 }
