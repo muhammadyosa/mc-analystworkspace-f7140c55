@@ -1,21 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { memo, useMemo } from "react";
-
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Legend,
-  Line,
-  LineChart,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { lazy, memo, Suspense, useMemo } from "react";
 import {
   Users,
   TrendingUp,
@@ -32,7 +16,20 @@ import { AppHeader } from "@/components/app-header";
 import { EmptyState } from "@/components/empty-state";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDataStore, computePriority } from "@/lib/store";
+
+const DashboardCharts = lazy(() => import("@/components/dashboard-charts"));
+
+function ChartFallback() {
+  return (
+    <div className="grid gap-4 lg:grid-cols-2">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div key={i} className="glass-card h-64 animate-pulse rounded-2xl" />
+      ))}
+    </div>
+  );
+}
 
 export const Route = createFileRoute("/")({
   head: () => ({
