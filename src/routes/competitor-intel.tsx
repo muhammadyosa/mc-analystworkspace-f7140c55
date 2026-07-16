@@ -560,6 +560,7 @@ function CompetitorIntelPage() {
           </div>
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </>
   );
 }
