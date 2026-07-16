@@ -771,7 +771,7 @@ export function downloadTemplate(kind: ImportKind) {
       "CLUSTER", "KABUPATEN", "PROVINSI", "NAMA KOMPETITOR",
       "HARGA KOMPETITOR TERMURAH", "PROMO COMPETITOR",
     ],
-    actionplan: ["NAMA", "CLUSTER", "PROGRAM", "START DATE", "END DATE", "KETERANGAN"],
+    actionplan: ["NAMA", "CLUSTER", "PROGRAM", "START DATE", "END DATE", "KETERANGAN", "Hasil"],
   };
   const headers = templates[kind];
   const ws = XLSX.utils.aoa_to_sheet([headers]);
