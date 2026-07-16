@@ -9,7 +9,9 @@ import {
   ListChecks,
   Sparkles,
   Target,
+  Trophy,
   Users,
+  Link2,
 } from "lucide-react";
 import {
   DndContext,
@@ -29,6 +31,13 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useDataStore } from "@/lib/store";
 import { computeActionStatus, type ActionPlanRow, type ActionPlanStatus } from "@/lib/excel";
 
