@@ -31,6 +31,7 @@ import {
   exportToExcel,
   downloadTemplate,
   fileChecksum,
+  parseActionPlanFile,
   parseAnalystFile,
   parseClusterFile,
   parseCompetitorFile,
@@ -72,6 +73,7 @@ const KIND_LABEL: Record<ImportKind, string> = {
   ticket: "Ticket",
   analyst: "Analyst Market",
   competitor: "Competitor",
+  actionplan: "Action Plan",
 };
 
 type ImportSummary = {
@@ -79,6 +81,7 @@ type ImportSummary = {
   ticket?: { rows: number; bulan: number };
   analyst?: { rows: number; ae: number };
   competitor?: { rows: number; unique: number; hargaMin: number; hargaMax: number; promo: number };
+  actionplan?: { rows: number; pic: number; cluster: number; aktif: number; selesai: number; mendatang: number };
 };
 
 function formatBytes(n: number) {
@@ -162,13 +165,13 @@ function ClassifiedList({
   onRemove: (idx: number) => void;
 }) {
   const groups = useMemo(() => {
-    const g: Record<ImportKind, Classified[]> = { cluster: [], ticket: [], analyst: [], competitor: [] };
+    const g: Record<ImportKind, Classified[]> = { cluster: [], ticket: [], analyst: [], competitor: [], actionplan: [] };
     items.forEach((it) => g[it.kind].push(it));
     return g;
   }, [items]);
 
   return (
-    <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-5">
       {(Object.keys(groups) as ImportKind[]).map((k) => (
         <div key={k} className="rounded-xl border border-border/60 bg-muted/20 p-3">
           <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide">
@@ -295,6 +298,12 @@ function SummaryResult({ summary }: { summary: ImportSummary }) {
       value: summary.competitor.rows.toLocaleString("id-ID"),
       sub: `${summary.competitor.unique} Kompetitor · Rp${summary.competitor.hargaMin.toLocaleString("id-ID")}–${summary.competitor.hargaMax.toLocaleString("id-ID")} · ${summary.competitor.promo} promo`,
     });
+  if (summary.actionplan)
+    items.push({
+      label: "Action Plan",
+      value: summary.actionplan.rows.toLocaleString("id-ID"),
+      sub: `${summary.actionplan.pic} PIC · ${summary.actionplan.cluster} Cluster · ${summary.actionplan.aktif} Aktif · ${summary.actionplan.selesai} Selesai · ${summary.actionplan.mendatang} Mendatang`,
+    });
   if (!items.length) return null;
   return (
     <motion.div
@@ -326,11 +335,13 @@ function UploadPage() {
     tickets,
     analyst,
     competitorData,
+    actionPlans,
     history,
     setClusters,
     setTickets,
     setAnalyst,
     setCompetitorData,
+    setActionPlans,
     pushHistory,
     clearAll,
   } = useDataStore();
@@ -345,7 +356,7 @@ function UploadPage() {
   const [errors, setErrors] = useState<{ name: string; message: string }[]>([]);
 
   const hasData =
-    clusters.length > 0 || tickets.length > 0 || analyst.length > 0 || competitorData.length > 0;
+    clusters.length > 0 || tickets.length > 0 || analyst.length > 0 || competitorData.length > 0 || actionPlans.length > 0;
   const knownChecksums = useMemo(
     () => new Set(history.map((h) => h.checksum).filter(Boolean) as string[]),
     [history],
@@ -428,6 +439,10 @@ function UploadPage() {
           const r = await parseCompetitorFile(q.file);
           return { q, kind: "competitor" as const, rows: r.rows, meta: r.meta };
         }
+        if (q.kind === "actionplan") {
+          const r = await parseActionPlanFile(q.file);
+          return { q, kind: "actionplan" as const, rows: r.rows, meta: r.meta };
+        }
         const r = await parseAnalystFile(q.file);
         return { q, kind: "analyst" as const, rows: r.rows, meta: r.meta };
       });
@@ -445,6 +460,7 @@ function UploadPage() {
         ticket: [] as Awaited<ReturnType<typeof parseTicketFile>>["rows"],
         analyst: [] as Awaited<ReturnType<typeof parseAnalystFile>>["rows"],
         competitor: [] as Awaited<ReturnType<typeof parseCompetitorFile>>["rows"],
+        actionplan: [] as Awaited<ReturnType<typeof parseActionPlanFile>>["rows"],
       };
       const metas: { kind: ImportKind; meta: UploadMeta; checksum: string }[] = [];
 
@@ -456,6 +472,7 @@ function UploadPage() {
         if (res.kind === "cluster") buckets.cluster.push(...res.rows);
         else if (res.kind === "ticket") buckets.ticket.push(...res.rows);
         else if (res.kind === "competitor") buckets.competitor.push(...res.rows);
+        else if (res.kind === "actionplan") buckets.actionplan.push(...res.rows);
         else buckets.analyst.push(...res.rows);
         metas.push({ kind: res.kind, meta: res.meta, checksum: queue[i].checksum });
       });
@@ -492,6 +509,19 @@ function UploadPage() {
           promo: promo.size,
         };
       }
+      if (buckets.actionplan.length) {
+        setActionPlans(buckets.actionplan, mode);
+        const pics = new Set(buckets.actionplan.map((r) => r.pic).filter(Boolean));
+        const cls = new Set(buckets.actionplan.map((r) => r.cluster).filter(Boolean));
+        sum.actionplan = {
+          rows: buckets.actionplan.length,
+          pic: pics.size,
+          cluster: cls.size,
+          aktif: buckets.actionplan.filter((r) => r.status === "onprogress").length,
+          selesai: buckets.actionplan.filter((r) => r.status === "completed").length,
+          mendatang: buckets.actionplan.filter((r) => r.status === "planned").length,
+        };
+      }
       metas.forEach((m) =>
         pushHistory({ ...m.meta, kind: m.kind, mode, checksum: m.checksum } as UploadHistoryEntry),
       );
@@ -516,6 +546,8 @@ function UploadPage() {
     if (analyst.length) exportToExcel(analyst as unknown as Record<string, unknown>[], "analyst.xlsx");
     if (competitorData.length)
       exportToExcel(competitorData as unknown as Record<string, unknown>[], "competitor.xlsx");
+    if (actionPlans.length)
+      exportToExcel(actionPlans as unknown as Record<string, unknown>[], "action-plan.xlsx");
     toast.success("Data diekspor");
   };
 
@@ -603,11 +635,15 @@ function UploadPage() {
               <Button size="sm" variant="outline" onClick={() => downloadTemplate("competitor")}>
                 <Download className="mr-1 h-4 w-4" /> Template Competitor
               </Button>
+              <Button size="sm" variant="outline" onClick={() => downloadTemplate("actionplan")}>
+                <Download className="mr-1 h-4 w-4" /> Template Action Plan
+              </Button>
               <div className="ml-auto text-xs text-muted-foreground">
                 {clusters.length.toLocaleString("id-ID")} cluster ·{" "}
                 {tickets.length.toLocaleString("id-ID")} ticket ·{" "}
                 {analyst.length.toLocaleString("id-ID")} profiling ·{" "}
-                {competitorData.length.toLocaleString("id-ID")} competitor
+                {competitorData.length.toLocaleString("id-ID")} competitor ·{" "}
+                {actionPlans.length.toLocaleString("id-ID")} action plan
               </div>
               <Button
                 variant="outline"

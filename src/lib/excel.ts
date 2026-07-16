@@ -87,6 +87,19 @@ export type PromoCategory =
   | "Tidak Ada Promo"
   | "Lainnya";
 
+export type ActionPlanStatus = "planned" | "onprogress" | "completed" | "overdue";
+export type ActionPlanRow = {
+  id: string;
+  pic: string;
+  cluster: string;
+  program: string;
+  startDate: string; // ISO YYYY-MM-DD
+  endDate: string; // ISO YYYY-MM-DD
+  description: string;
+  status: ActionPlanStatus;
+  durationDays: number;
+};
+
 export type UploadMeta = {
   fileName: string;
   sheetCount: number;
@@ -105,6 +118,53 @@ const toNum = (v: unknown): number => {
   return isFinite(n) ? n : 0;
 };
 const toStr = (v: unknown): string => (v === null || v === undefined ? "" : String(v).trim());
+
+function toISODate(v: unknown): string {
+  if (v === null || v === undefined || v === "") return "";
+  if (typeof v === "number" && isFinite(v)) {
+    try {
+      const parsed = XLSX.SSF.parse_date_code(v);
+      if (parsed) {
+        return `${parsed.y}-${String(parsed.m).padStart(2, "0")}-${String(parsed.d).padStart(2, "0")}`;
+      }
+    } catch { /* fall through */ }
+  }
+  const s = String(v).trim();
+  if (!s) return "";
+  const m = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
+  if (m) {
+    const y = m[3].length === 2 ? `20${m[3]}` : m[3];
+    return `${y}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`;
+  }
+  const iso = s.match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})/);
+  if (iso) return `${iso[1]}-${iso[2].padStart(2, "0")}-${iso[3].padStart(2, "0")}`;
+  const d = new Date(s);
+  if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+  return "";
+}
+
+export function computeActionStatus(startISO: string, endISO: string): ActionPlanStatus {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const s = startISO ? new Date(startISO) : null;
+  const e = endISO ? new Date(endISO) : null;
+  if (e && e < today) return "completed";
+  if (s && s > today) return "planned";
+  if (s && e && s <= today && today <= e) return "onprogress";
+  if (e && e < today) return "overdue";
+  return "planned";
+}
+
+function statusWithOverdue(startISO: string, endISO: string): ActionPlanStatus {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const e = endISO ? new Date(endISO) : null;
+  const s = startISO ? new Date(startISO) : null;
+  if (s && s > today) return "planned";
+  if (s && e && s <= today && today <= e) return "onprogress";
+  if (e && e < today) return "overdue"; // will be flipped to completed only via kanban manual override in UI
+  return "planned";
+}
 
 const norm = (s: string) => s.toLowerCase().replace(/[\s._\-\/]/g, "");
 
@@ -514,13 +574,76 @@ export async function parseCompetitorFile(
   return { rows: deduped, meta };
 }
 
+// ---------- Action Plan parser ----------
+
+export async function parseActionPlanFile(
+  file: File,
+): Promise<{ rows: ActionPlanRow[]; meta: UploadMeta }> {
+  const buf = await file.arrayBuffer();
+  const wb = XLSX.read(buf, { type: "array" });
+  const { name: sheetName, ws } = pickSheet(wb, ["ACTION PLAN", "ACTIONPLAN", "PROGRAM", "DATA"]);
+  const raw = sheetToCleanJson(ws);
+  let mapped = 0;
+  const seen = new Set<string>();
+  const rows: ActionPlanRow[] = [];
+  raw.forEach((r, idx) => {
+    const pic = toStr(pick(r, ["NAMA", "PIC", "NAMA PIC"]));
+    const cluster = toStr(pick(r, ["CLUSTER"]));
+    const program = toStr(pick(r, ["PROGRAM", "NAMA PROGRAM"]));
+    if (!program && !cluster) return;
+    const startDate = toISODate(pick(r, ["START DATE", "TANGGAL MULAI", "START"]));
+    const endDate = toISODate(pick(r, ["END DATE", "TANGGAL SELESAI", "END"]));
+    const description = toStr(pick(r, ["KETERANGAN", "DESKRIPSI", "CATATAN"]));
+    const key = `${pic}|${cluster}|${program}|${startDate}|${endDate}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    mapped++;
+    const durationDays =
+      startDate && endDate
+        ? Math.max(1, Math.round((new Date(endDate).getTime() - new Date(startDate).getTime()) / 86400000) + 1)
+        : 0;
+    rows.push({
+      id: `${idx}-${cluster}-${program}`.slice(0, 120),
+      pic,
+      cluster,
+      program,
+      startDate,
+      endDate,
+      description,
+      status: statusWithOverdue(startDate, endDate),
+      durationDays,
+    });
+  });
+  const pics = new Set(rows.map((r) => r.pic).filter(Boolean));
+  const clusters = new Set(rows.map((r) => r.cluster).filter(Boolean));
+  const meta: UploadMeta = {
+    fileName: file.name,
+    sheetCount: wb.SheetNames.length,
+    sheetPicked: sheetName,
+    rowCount: rows.length,
+    extra: {
+      Program: rows.length,
+      PIC: pics.size,
+      Cluster: clusters.size,
+      Aktif: rows.filter((r) => r.status === "onprogress").length,
+      Selesai: rows.filter((r) => r.status === "completed").length,
+      Mendatang: rows.filter((r) => r.status === "planned").length,
+      Terlambat: rows.filter((r) => r.status === "overdue").length,
+    },
+    mappingPct: raw.length ? Math.round((mapped / raw.length) * 100) : 100,
+    timestamp: Date.now(),
+  };
+  return { rows, meta };
+}
+
 // ---------- Smart Import: auto-detect kind ----------
-export type ImportKind = "cluster" | "ticket" | "analyst" | "competitor";
+export type ImportKind = "cluster" | "ticket" | "analyst" | "competitor" | "actionplan";
 export type SmartResult =
   | { kind: "cluster"; rows: ClusterRow[]; meta: UploadMeta }
   | { kind: "ticket"; rows: TicketRow[]; meta: UploadMeta }
   | { kind: "analyst"; rows: AnalystRow[]; meta: UploadMeta }
-  | { kind: "competitor"; rows: CompetitorRow[]; meta: UploadMeta };
+  | { kind: "competitor"; rows: CompetitorRow[]; meta: UploadMeta }
+  | { kind: "actionplan"; rows: ActionPlanRow[]; meta: UploadMeta };
 
 function collectHeaders(wb: XLSX.WorkBook): string[] {
   const out: string[] = [];
@@ -540,6 +663,15 @@ export function detectKind(wb: XLSX.WorkBook, fileName: string): ImportKind {
   const hs = collectHeaders(wb);
   const has = (needle: string) => hs.some((h) => h.includes(needle));
 
+  // Action Plan: NAMA + CLUSTER + PROGRAM + START DATE + END DATE + KETERANGAN
+  if (
+    (has("program") || sheets.some((s) => s.includes("actionplan") || s.includes("actionpla"))) &&
+    (has("startdate") || has("tanggalmulai")) &&
+    (has("enddate") || has("tanggalselesai"))
+  ) {
+    return "actionplan";
+  }
+
   // Competitor: NAMA KOMPETITOR + HARGA KOMPETITOR (TERMURAH) + PROMO
   if (
     has("namakompetitor") &&
@@ -549,20 +681,19 @@ export function detectKind(wb: XLSX.WorkBook, fileName: string): ImportKind {
     return "competitor";
   }
   if (sheets.some((s) => s.includes("kompetitor") || s.includes("competitor"))) {
-    // ambiguous with analyst sheet naming — only accept when cluster header exists too
     if (has("cluster") && (has("hargakompetitor") || has("namakompetitor"))) return "competitor";
   }
 
-  // Analyst: HASIL PROFILING sheet or profiling-specific columns
+  // Analyst
   if (sheets.some((s) => s.includes("hasilprofiling") || s.includes("profiling"))) return "analyst";
   if (has("namaae") || has("insightae") || has("relokasifat") || has("tingkatpotensicluster")) return "analyst";
 
-  // Cluster: DATA CLUSTER sheet or PROV/KAB/CLUSTER header + PIC
+  // Cluster
   if (sheets.some((s) => s.includes("datacluster"))) return "cluster";
   if (has("provkabcluster") && (has("pic") || has("statusketersediaan"))) return "cluster";
   if (has("totalhc2026") || has("statusketersediaantimserpo") || has("statusketersediaantimikr")) return "cluster";
 
-  // Ticket: pivot / list ticketing / has cluster+bulan and no PIC
+  // Ticket
   if (sheets.some((s) => s.includes("listticketing") || s.includes("ticket") || s.includes("pivot"))) return "ticket";
   if ((has("cluster") || has("wilayah") || has("kabupaten")) && (has("januari") || has("februari") || has("bulan"))) {
     return "ticket";
@@ -570,6 +701,7 @@ export function detectKind(wb: XLSX.WorkBook, fileName: string): ImportKind {
 
   // Filename fallback
   const fn = norm(fileName);
+  if (fn.includes("actionplan") || fn.includes("action")) return "actionplan";
   if (fn.includes("kompetitor") || fn.includes("competitor")) return "competitor";
   if (fn.includes("analyst")) return "analyst";
   if (fn.includes("cluster") || fn.includes("pembagian") || fn.includes("sibt")) return "cluster";
@@ -580,18 +712,10 @@ export async function smartImport(file: File): Promise<SmartResult> {
   const buf = await file.arrayBuffer();
   const wb = XLSX.read(buf, { type: "array" });
   const kind = detectKind(wb, file.name);
-  if (kind === "cluster") {
-    const r = await parseClusterFile(file);
-    return { kind, ...r };
-  }
-  if (kind === "analyst") {
-    const r = await parseAnalystFile(file);
-    return { kind, ...r };
-  }
-  if (kind === "competitor") {
-    const r = await parseCompetitorFile(file);
-    return { kind, ...r };
-  }
+  if (kind === "cluster") { const r = await parseClusterFile(file); return { kind, ...r }; }
+  if (kind === "analyst") { const r = await parseAnalystFile(file); return { kind, ...r }; }
+  if (kind === "competitor") { const r = await parseCompetitorFile(file); return { kind, ...r }; }
+  if (kind === "actionplan") { const r = await parseActionPlanFile(file); return { kind, ...r }; }
   const r = await parseTicketFile(file);
   return { kind: "ticket", ...r };
 }
@@ -603,13 +727,11 @@ export async function classifyFile(
   const wb = XLSX.read(buf, { type: "array" });
   const kind = detectKind(wb, file.name);
   const preferred =
-    kind === "cluster"
-      ? ["DATA CLUSTER", "CLUSTER", "PEMBAGIAN"]
-      : kind === "analyst"
-        ? ["HASIL PROFILING", "PROFILING", "ANALYST"]
-        : kind === "competitor"
-          ? ["KOMPETITOR", "COMPETITOR", "DATA"]
-          : ["TICKET", "DATA", "PIVOT"];
+    kind === "cluster" ? ["DATA CLUSTER", "CLUSTER", "PEMBAGIAN"]
+      : kind === "analyst" ? ["HASIL PROFILING", "PROFILING", "ANALYST"]
+        : kind === "competitor" ? ["KOMPETITOR", "COMPETITOR", "DATA"]
+          : kind === "actionplan" ? ["ACTION PLAN", "ACTIONPLAN", "PROGRAM", "DATA"]
+            : ["TICKET", "DATA", "PIVOT"];
   const { name } = pickSheet(wb, preferred);
   return { kind, fileName: file.name, sheetName: name, sheetCount: wb.SheetNames.length, size: file.size };
 }
@@ -652,6 +774,7 @@ export function downloadTemplate(kind: ImportKind) {
       "CLUSTER", "KABUPATEN", "PROVINSI", "NAMA KOMPETITOR",
       "HARGA KOMPETITOR TERMURAH", "PROMO COMPETITOR",
     ],
+    actionplan: ["NAMA", "CLUSTER", "PROGRAM", "START DATE", "END DATE", "KETERANGAN"],
   };
   const headers = templates[kind];
   const ws = XLSX.utils.aoa_to_sheet([headers]);
@@ -660,6 +783,7 @@ export function downloadTemplate(kind: ImportKind) {
     kind === "cluster" ? "DATA CLUSTER"
       : kind === "analyst" ? "HASIL PROFILING"
       : kind === "competitor" ? "KOMPETITOR"
+      : kind === "actionplan" ? "ACTION PLAN"
       : "TICKET";
   XLSX.utils.book_append_sheet(wb, ws, sheetName);
   XLSX.writeFile(wb, `template-${kind}.xlsx`);

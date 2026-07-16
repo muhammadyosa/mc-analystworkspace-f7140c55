@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage, type StateStorage } from "zustand/middleware";
-import type { AnalystRow, ClusterRow, CompetitorRow, TicketRow, UploadMeta } from "./excel";
+import type { ActionPlanRow, AnalystRow, ClusterRow, CompetitorRow, TicketRow, UploadMeta } from "./excel";
 
 // Debounced localStorage — sync reads keep hydration flash-free,
 // async writes prevent JSON.stringify on large datasets from blocking navigation.
@@ -65,7 +65,7 @@ export type Competitor = {
 };
 
 export type UploadHistoryEntry = UploadMeta & {
-  kind: "cluster" | "ticket" | "analyst" | "competitor";
+  kind: "cluster" | "ticket" | "analyst" | "competitor" | "actionplan";
   mode: "replace" | "append";
   checksum?: string;
 };
@@ -75,6 +75,7 @@ type DataState = {
   tickets: TicketRow[];
   analyst: AnalystRow[];
   competitorData: CompetitorRow[];
+  actionPlans: ActionPlanRow[];
   actions: ActionItem[];
   competitors: Competitor[];
   history: UploadHistoryEntry[];
@@ -83,6 +84,8 @@ type DataState = {
   setTickets: (t: TicketRow[], mode?: "replace" | "append") => void;
   setAnalyst: (a: AnalystRow[], mode?: "replace" | "append") => void;
   setCompetitorData: (c: CompetitorRow[], mode?: "replace" | "append") => void;
+  setActionPlans: (a: ActionPlanRow[], mode?: "replace" | "append") => void;
+  overrideActionPlanStatus: (id: string, status: ActionPlanRow["status"]) => void;
   pushHistory: (h: UploadHistoryEntry) => void;
   addAction: (a: ActionItem) => void;
   updateActionStatus: (id: string, status: ActionStatus) => void;
@@ -99,30 +102,23 @@ export const useDataStore = create<DataState>()(
       tickets: [],
       analyst: [],
       competitorData: [],
+      actionPlans: [],
       actions: [],
       competitors: [],
       history: [],
       lastUpdated: null,
       setClusters: (rows, mode = "replace") =>
-        set((s) => ({
-          clusters: mode === "append" ? [...s.clusters, ...rows] : rows,
-          lastUpdated: Date.now(),
-        })),
+        set((s) => ({ clusters: mode === "append" ? [...s.clusters, ...rows] : rows, lastUpdated: Date.now() })),
       setTickets: (rows, mode = "replace") =>
-        set((s) => ({
-          tickets: mode === "append" ? [...s.tickets, ...rows] : rows,
-          lastUpdated: Date.now(),
-        })),
+        set((s) => ({ tickets: mode === "append" ? [...s.tickets, ...rows] : rows, lastUpdated: Date.now() })),
       setAnalyst: (rows, mode = "replace") =>
-        set((s) => ({
-          analyst: mode === "append" ? [...s.analyst, ...rows] : rows,
-          lastUpdated: Date.now(),
-        })),
+        set((s) => ({ analyst: mode === "append" ? [...s.analyst, ...rows] : rows, lastUpdated: Date.now() })),
       setCompetitorData: (rows, mode = "replace") =>
-        set((s) => ({
-          competitorData: mode === "append" ? [...s.competitorData, ...rows] : rows,
-          lastUpdated: Date.now(),
-        })),
+        set((s) => ({ competitorData: mode === "append" ? [...s.competitorData, ...rows] : rows, lastUpdated: Date.now() })),
+      setActionPlans: (rows, mode = "replace") =>
+        set((s) => ({ actionPlans: mode === "append" ? [...s.actionPlans, ...rows] : rows, lastUpdated: Date.now() })),
+      overrideActionPlanStatus: (id, status) =>
+        set((s) => ({ actionPlans: s.actionPlans.map((a) => (a.id === id ? { ...a, status } : a)) })),
       pushHistory: (h) => set((s) => ({ history: [h, ...s.history].slice(0, 20) })),
       addAction: (a) => set((s) => ({ actions: [...s.actions, a] })),
       updateActionStatus: (id, status) =>
@@ -131,7 +127,7 @@ export const useDataStore = create<DataState>()(
       addCompetitor: (c) => set((s) => ({ competitors: [...s.competitors, c] })),
       deleteCompetitor: (id) => set((s) => ({ competitors: s.competitors.filter((c) => c.id !== id) })),
       clearAll: () =>
-        set({ clusters: [], tickets: [], analyst: [], competitorData: [], actions: [], competitors: [], history: [], lastUpdated: null }),
+        set({ clusters: [], tickets: [], analyst: [], competitorData: [], actionPlans: [], actions: [], competitors: [], history: [], lastUpdated: null }),
     }),
     { name: "mcaw-store", storage: createJSONStorage(() => debouncedLocalStorage) },
   ),
