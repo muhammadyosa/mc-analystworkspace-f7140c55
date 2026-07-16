@@ -1,22 +1,30 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo } from "react";
-import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell,
-} from "recharts";
+import { lazy, Suspense, useMemo } from "react";
 import { Users, Target, TrendingUp, Award, Sparkles, ExternalLink, AlertTriangle } from "lucide-react";
 import { AppHeader } from "@/components/app-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EmptyState } from "@/components/empty-state";
 import { useDataStore } from "@/lib/store";
+
+const AnalystCharts = lazy(() => import("@/components/analyst-charts"));
 
 export const Route = createFileRoute("/analyst")({
   head: () => ({ meta: [{ title: "Analyst Market — MCA Workspace" }] }),
   component: AnalystPage,
 });
 
-const COLORS = ["hsl(var(--primary))", "hsl(var(--success))", "hsl(var(--warning))", "hsl(var(--destructive))", "hsl(var(--accent))"];
+function ChartFallback() {
+  return (
+    <div className="grid gap-4 lg:grid-cols-2">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div key={i} className="glass-card h-72 animate-pulse rounded-2xl" />
+      ))}
+    </div>
+  );
+}
 
 function KpiCard({ label, value, icon: Icon, hint }: { label: string; value: string | number; icon: React.ElementType; hint?: string }) {
   return (
