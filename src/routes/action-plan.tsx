@@ -77,29 +77,39 @@ function fmtDate(iso: string) {
   }
 }
 
-function DraggableCard({ row }: { row: ActionPlanRow }) {
+function DraggableCard({ row, onOpen }: { row: ActionPlanRow; onOpen: (r: ActionPlanRow) => void }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: row.id });
   const style = transform
     ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`, opacity: isDragging ? 0.5 : 1 }
     : undefined;
   const meta = STATUS_META[row.status];
   const pct = progressOf(row);
+  const hasResult = !!row.result?.trim();
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className={`glass-card group rounded-xl border-0 p-3 shadow-sm ring-1 ${meta.ring}`}
+      className={`glass-card group cursor-pointer rounded-xl border-0 p-3 shadow-sm ring-1 ${meta.ring} hover:ring-primary/60`}
+      onClick={() => onOpen(row)}
     >
       <div className="flex items-start gap-2">
         <button
           {...attributes}
           {...listeners}
+          onClick={(e) => e.stopPropagation()}
           className="mt-1 cursor-grab text-muted-foreground hover:text-foreground"
         >
           <GripVertical className="h-4 w-4" />
         </button>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold">{row.cluster || "—"}</p>
+          <div className="flex items-start justify-between gap-2">
+            <p className="truncate text-sm font-semibold">{row.cluster || "—"}</p>
+            {hasResult && (
+              <Badge className="shrink-0 border-emerald-500/40 bg-emerald-500/10 text-[9px] text-emerald-600">
+                Hasil ✓
+              </Badge>
+            )}
+          </div>
           <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{row.program}</p>
           <div className="mt-2 flex items-center justify-between text-[10px] text-muted-foreground">
             <span className="truncate">PIC: {row.pic || "-"}</span>
@@ -116,7 +126,15 @@ function DraggableCard({ row }: { row: ActionPlanRow }) {
   );
 }
 
-function KanbanColumn({ status, rows }: { status: ActionPlanStatus; rows: ActionPlanRow[] }) {
+function KanbanColumn({
+  status,
+  rows,
+  onOpen,
+}: {
+  status: ActionPlanStatus;
+  rows: ActionPlanRow[];
+  onOpen: (r: ActionPlanRow) => void;
+}) {
   const { setNodeRef, isOver } = useDroppable({ id: status });
   const meta = STATUS_META[status];
   const Icon = meta.icon;
@@ -136,7 +154,7 @@ function KanbanColumn({ status, rows }: { status: ActionPlanStatus; rows: Action
       </div>
       <div className="space-y-2">
         {rows.map((r) => (
-          <DraggableCard key={r.id} row={r} />
+          <DraggableCard key={r.id} row={r} onOpen={onOpen} />
         ))}
         {!rows.length && (
           <p className="px-1 py-6 text-center text-xs text-muted-foreground">Kosong</p>
