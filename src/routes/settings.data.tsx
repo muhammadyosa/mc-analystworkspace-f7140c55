@@ -424,6 +424,10 @@ function UploadPage() {
           const r = await parseTicketFile(q.file);
           return { q, kind: "ticket" as const, rows: r.rows, meta: r.meta };
         }
+        if (q.kind === "competitor") {
+          const r = await parseCompetitorFile(q.file);
+          return { q, kind: "competitor" as const, rows: r.rows, meta: r.meta };
+        }
         const r = await parseAnalystFile(q.file);
         return { q, kind: "analyst" as const, rows: r.rows, meta: r.meta };
       });
@@ -440,6 +444,7 @@ function UploadPage() {
         cluster: [] as Awaited<ReturnType<typeof parseClusterFile>>["rows"],
         ticket: [] as Awaited<ReturnType<typeof parseTicketFile>>["rows"],
         analyst: [] as Awaited<ReturnType<typeof parseAnalystFile>>["rows"],
+        competitor: [] as Awaited<ReturnType<typeof parseCompetitorFile>>["rows"],
       };
       const metas: { kind: ImportKind; meta: UploadMeta; checksum: string }[] = [];
 
@@ -450,6 +455,7 @@ function UploadPage() {
         }
         if (res.kind === "cluster") buckets.cluster.push(...res.rows);
         else if (res.kind === "ticket") buckets.ticket.push(...res.rows);
+        else if (res.kind === "competitor") buckets.competitor.push(...res.rows);
         else buckets.analyst.push(...res.rows);
         metas.push({ kind: res.kind, meta: res.meta, checksum: queue[i].checksum });
       });
@@ -472,6 +478,19 @@ function UploadPage() {
         setAnalyst(buckets.analyst, mode);
         const ae = new Set(buckets.analyst.map((r) => r.aeName).filter(Boolean));
         sum.analyst = { rows: buckets.analyst.length, ae: ae.size };
+      }
+      if (buckets.competitor.length) {
+        setCompetitorData(buckets.competitor, mode);
+        const unique = new Set(buckets.competitor.map((r) => r.competitor));
+        const prices = buckets.competitor.map((r) => r.price).filter((p) => p > 0);
+        const promo = new Set(buckets.competitor.map((r) => r.promoCategory));
+        sum.competitor = {
+          rows: buckets.competitor.length,
+          unique: unique.size,
+          hargaMin: prices.length ? Math.min(...prices) : 0,
+          hargaMax: prices.length ? Math.max(...prices) : 0,
+          promo: promo.size,
+        };
       }
       metas.forEach((m) =>
         pushHistory({ ...m.meta, kind: m.kind, mode, checksum: m.checksum } as UploadHistoryEntry),
