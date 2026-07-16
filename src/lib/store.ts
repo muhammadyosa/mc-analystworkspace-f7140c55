@@ -65,7 +65,7 @@ export type Competitor = {
 };
 
 export type UploadHistoryEntry = UploadMeta & {
-  kind: "cluster" | "ticket" | "analyst";
+  kind: "cluster" | "ticket" | "analyst" | "competitor";
   mode: "replace" | "append";
   checksum?: string;
 };
@@ -74,6 +74,7 @@ type DataState = {
   clusters: ClusterRow[];
   tickets: TicketRow[];
   analyst: AnalystRow[];
+  competitorData: CompetitorRow[];
   actions: ActionItem[];
   competitors: Competitor[];
   history: UploadHistoryEntry[];
@@ -81,6 +82,7 @@ type DataState = {
   setClusters: (c: ClusterRow[], mode?: "replace" | "append") => void;
   setTickets: (t: TicketRow[], mode?: "replace" | "append") => void;
   setAnalyst: (a: AnalystRow[], mode?: "replace" | "append") => void;
+  setCompetitorData: (c: CompetitorRow[], mode?: "replace" | "append") => void;
   pushHistory: (h: UploadHistoryEntry) => void;
   addAction: (a: ActionItem) => void;
   updateActionStatus: (id: string, status: ActionStatus) => void;
