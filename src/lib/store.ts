@@ -1,17 +1,15 @@
 import { create } from "zustand";
 import { persist, createJSONStorage, type StateStorage } from "zustand/middleware";
-import { get as idbGet, set as idbSet, del as idbDel } from "idb-keyval";
 import type { AnalystRow, ClusterRow, TicketRow, UploadMeta } from "./excel";
 
-// Async IndexedDB storage — writes don't block the UI thread or navigation.
-// Debounced so bursts of updates coalesce into a single write.
+// Debounced localStorage — sync reads keep hydration flash-free,
+// async writes prevent JSON.stringify on large datasets from blocking navigation.
 const writeTimers = new Map<string, ReturnType<typeof setTimeout>>();
 const pending = new Map<string, string>();
-const idbStorage: StateStorage = {
-  getItem: async (name) => {
+const debouncedLocalStorage: StateStorage = {
+  getItem: (name) => {
     try {
-      const v = await idbGet(name);
-      return typeof v === "string" ? v : null;
+      return typeof window === "undefined" ? null : window.localStorage.getItem(name);
     } catch {
       return null;
     }
@@ -26,12 +24,24 @@ const idbStorage: StateStorage = {
         const v = pending.get(name);
         pending.delete(name);
         writeTimers.delete(name);
-        if (v !== undefined) void idbSet(name, v);
-      }, 350),
+        if (v === undefined) return;
+        try {
+          const write = () => window.localStorage.setItem(name, v);
+          const ric = (window as unknown as { requestIdleCallback?: (cb: () => void) => void }).requestIdleCallback;
+          if (typeof ric === "function") ric(write);
+          else write();
+        } catch {
+          /* quota / private mode — ignore */
+        }
+      }, 400),
     );
   },
   removeItem: (name) => {
-    void idbDel(name);
+    try {
+      window.localStorage.removeItem(name);
+    } catch {
+      /* ignore */
+    }
   },
 };
 
