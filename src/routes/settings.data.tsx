@@ -298,6 +298,12 @@ function SummaryResult({ summary }: { summary: ImportSummary }) {
       value: summary.competitor.rows.toLocaleString("id-ID"),
       sub: `${summary.competitor.unique} Kompetitor · Rp${summary.competitor.hargaMin.toLocaleString("id-ID")}–${summary.competitor.hargaMax.toLocaleString("id-ID")} · ${summary.competitor.promo} promo`,
     });
+  if (summary.actionplan)
+    items.push({
+      label: "Action Plan",
+      value: summary.actionplan.rows.toLocaleString("id-ID"),
+      sub: `${summary.actionplan.pic} PIC · ${summary.actionplan.cluster} Cluster · ${summary.actionplan.aktif} Aktif · ${summary.actionplan.selesai} Selesai · ${summary.actionplan.mendatang} Mendatang`,
+    });
   if (!items.length) return null;
   return (
     <motion.div
