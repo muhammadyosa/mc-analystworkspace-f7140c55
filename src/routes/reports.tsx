@@ -1,30 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useRef } from "react";
-import { Printer, FileText, Calendar, Radar as RadarIcon } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+import { Printer, FileText, Calendar, Radar as RadarIcon, Lightbulb, Sparkles } from "lucide-react";
 import {
-  Area,
-  AreaChart,
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Line,
-  LineChart,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-  Legend,
+  Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Line, LineChart,
+  Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend,
 } from "recharts";
 import { AppHeader } from "@/components/app-header";
 import { EmptyState } from "@/components/empty-state";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useDataStore } from "@/lib/store";
-import type { CompetitorRow, PromoCategory } from "@/lib/excel";
+import type { ClusterRow, CompetitorRow, PromoCategory } from "@/lib/excel";
 
 export const Route = createFileRoute("/reports")({
   head: () => ({ meta: [{ title: "Reports — MCA Workspace" }] }),
@@ -32,11 +22,18 @@ export const Route = createFileRoute("/reports")({
 });
 
 const COLORS = ["#6366f1", "#22c55e", "#f59e0b", "#ef4444", "#06b6d4", "#a855f7", "#ec4899", "#84cc16"];
+const MONTHS = [
+  { key: "januari", label: "Jan" },
+  { key: "februari", label: "Feb" },
+  { key: "maret", label: "Mar" },
+  { key: "april", label: "Apr" },
+  { key: "mei", label: "Mei" },
+  { key: "juni", label: "Jun" },
+] as const;
+type MonthKey = typeof MONTHS[number]["key"];
 
-function fmtRp(n: number) {
-  if (!n) return "-";
-  return `Rp${n.toLocaleString("id-ID")}`;
-}
+const fmtRp = (n: number) => (!n ? "-" : `Rp${n.toLocaleString("id-ID")}`);
+const fmtN = (n: number) => n.toLocaleString("id-ID");
 
 function threatScore(rows: CompetitorRow[]): number {
   const count = new Set(rows.map((r) => r.competitor)).size;
@@ -48,6 +45,122 @@ function threatScore(rows: CompetitorRow[]): number {
   return Math.round(countScore * 0.4 + priceScore * 0.3 + promoScore * 0.3);
 }
 
+function DateRange({ from, to, onFrom, onTo }: { from: number; to: number; onFrom: (i: number) => void; onTo: (i: number) => void }) {
+  return (
+    <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-muted/30 p-2">
+      <Calendar className="h-4 w-4 text-muted-foreground" />
+      <span className="text-xs font-medium text-muted-foreground">Range:</span>
+      <Select value={String(from)} onValueChange={(v) => onFrom(Number(v))}>
+        <SelectTrigger className="h-8 w-[110px] text-xs"><SelectValue /></SelectTrigger>
+        <SelectContent>{MONTHS.map((m, i) => <SelectItem key={m.key} value={String(i)} disabled={i > to}>{m.label} 2026</SelectItem>)}</SelectContent>
+      </Select>
+      <span className="text-xs text-muted-foreground">→</span>
+      <Select value={String(to)} onValueChange={(v) => onTo(Number(v))}>
+        <SelectTrigger className="h-8 w-[110px] text-xs"><SelectValue /></SelectTrigger>
+        <SelectContent>{MONTHS.map((m, i) => <SelectItem key={m.key} value={String(i)} disabled={i < from}>{m.label} 2026</SelectItem>)}</SelectContent>
+      </Select>
+    </div>
+  );
+}
+
+function KpiCard({ label, value, hint, tone }: { label: string; value: string | number; hint?: string; tone?: "up" | "down" | "warn" }) {
+  const toneCls = tone === "up" ? "text-success" : tone === "down" ? "text-destructive" : tone === "warn" ? "text-warning" : "";
+  return (
+    <Card className="glass-card border-0">
+      <CardContent className="p-4">
+        <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</div>
+        <div className={`mt-1 font-display text-xl font-bold ${toneCls}`}>{typeof value === "number" ? fmtN(value) : value}</div>
+        {hint && <div className="mt-0.5 text-[11px] text-muted-foreground">{hint}</div>}
+      </CardContent>
+    </Card>
+  );
+}
+
+function ProgressCard({ title, items }: { title: string; items: { label: string; value: number; total: number; color?: string }[] }) {
+  return (
+    <Card className="glass-card border-0">
+      <CardHeader><CardTitle className="font-display text-sm">{title}</CardTitle></CardHeader>
+      <CardContent className="space-y-3">
+        {items.map((it) => {
+          const pct = it.total > 0 ? Math.round((it.value / it.total) * 100) : 0;
+          return (
+            <div key={it.label}>
+              <div className="mb-1 flex items-center justify-between text-xs">
+                <span className="font-medium">{it.label}</span>
+                <span className="text-muted-foreground">{fmtN(it.value)} / {fmtN(it.total)} ({pct}%)</span>
+              </div>
+              <Progress value={pct} className="h-2" />
+            </div>
+          );
+        })}
+      </CardContent>
+    </Card>
+  );
+}
+
+function InsightBox({ items }: { items: string[] }) {
+  return (
+    <Card className="glass-card border-0 border-l-4 border-l-primary">
+      <CardHeader className="pb-2"><CardTitle className="flex items-center gap-2 font-display text-sm"><Sparkles className="h-4 w-4 text-primary" /> Insight Box</CardTitle></CardHeader>
+      <CardContent className="space-y-1.5 text-sm">
+        {items.map((t, i) => <p key={i}>• {t}</p>)}
+      </CardContent>
+    </Card>
+  );
+}
+
+function RecommendationBox({ items }: { items: string[] }) {
+  return (
+    <Card className="glass-card border-0 border-l-4 border-l-success">
+      <CardHeader className="pb-2"><CardTitle className="flex items-center gap-2 font-display text-sm"><Lightbulb className="h-4 w-4 text-success" /> Recommendation Box</CardTitle></CardHeader>
+      <CardContent className="space-y-1.5 text-sm">
+        {items.map((t, i) => (
+          <div key={i} className="flex items-start gap-2">
+            <Badge variant="outline" className="mt-0.5 shrink-0">{i + 1}</Badge>
+            <span>{t}</span>
+          </div>
+        ))}
+      </CardContent>
+    </Card>
+  );
+}
+
+function computeStats(clusters: ClusterRow[], from: number, to: number) {
+  const range = MONTHS.slice(from, to + 1);
+  const hcTrend = range.map((m) => ({
+    bulan: m.label,
+    hc: clusters.reduce((a, c) => a + (Number(c[m.key as MonthKey]) || 0), 0),
+  }));
+  const start = hcTrend[0]?.hc ?? 0;
+  const end = hcTrend[hcTrend.length - 1]?.hc ?? 0;
+  const growth = start > 0 ? ((end - start) / start) * 100 : 0;
+  const totalTicket = clusters.reduce((a, c) => a + c.ticket, 0);
+  const perCluster = clusters.map((c) => {
+    const hcStart = Number(c[range[0].key as MonthKey]) || 0;
+    const hcEnd = Number(c[range[range.length - 1].key as MonthKey]) || 0;
+    return { ...c, hcStart, hcEnd, delta: hcEnd - hcStart };
+  });
+  const topGrowth = [...perCluster].sort((a, b) => b.delta - a.delta).slice(0, 5);
+  const topDecline = [...perCluster].sort((a, b) => a.delta - b.delta).slice(0, 5);
+  const topHC = [...perCluster].sort((a, b) => b.hcEnd - a.hcEnd).slice(0, 8).map((c) => ({ cluster: c.cluster, hc: c.hcEnd }));
+  const topTicket = [...clusters].sort((a, b) => b.ticket - a.ticket).slice(0, 8).map((c) => ({ cluster: c.cluster, ticket: c.ticket }));
+  const ticketTrend = range.map((m) => {
+    // proxy: distribute total ticket across months by HC weight
+    const monthHC = clusters.reduce((a, c) => a + (Number(c[m.key as MonthKey]) || 0), 0);
+    const totalHC = clusters.reduce((a, c) => a + c.grandTotal, 0);
+    return { bulan: m.label, ticket: totalHC > 0 ? Math.round((monthHC / totalHC) * totalTicket) : 0 };
+  });
+  const picMap = new Map<string, { hc: number; ticket: number }>();
+  perCluster.forEach((c) => {
+    const p = c.pic || "-";
+    const cur = picMap.get(p) ?? { hc: 0, ticket: 0 };
+    cur.hc += c.hcEnd; cur.ticket += c.ticket; picMap.set(p, cur);
+  });
+  const picPerf = Array.from(picMap.entries()).map(([pic, v]) => ({ pic, ...v }))
+    .sort((a, b) => b.hc - a.hc).slice(0, 8);
+  return { hcTrend, ticketTrend, start, end, growth, totalTicket, topGrowth, topDecline, topHC, topTicket, picPerf, perCluster };
+}
+
 function ReportsPage() {
   const clusters = useDataStore((s) => s.clusters);
   const actions = useDataStore((s) => s.actions);
@@ -55,54 +168,17 @@ function ReportsPage() {
   const weeklyRef = useRef<HTMLDivElement>(null);
   const monthlyRef = useRef<HTMLDivElement>(null);
 
-  const stats = useMemo(() => {
-    if (!clusters.length) return null;
-    const monthKeys: Array<keyof typeof clusters[number]> = [
-      "januari", "februari", "maret", "april", "mei", "juni",
-    ] as const;
-    const monthLabel = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun"];
-    const hcTrend = monthKeys.map((k, i) => ({
-      bulan: monthLabel[i],
-      hc: clusters.reduce((a, c) => a + (Number(c[k]) || 0), 0),
-    }));
-    const sumJun = hcTrend[5].hc;
-    const sumMei = hcTrend[4].hc;
-    const growth = sumMei > 0 ? ((sumJun - sumMei) / sumMei) * 100 : 0;
-    const topGrowth = [...clusters].sort((a, b) => b.deltaMeiJuni - a.deltaMeiJuni).slice(0, 5);
-    const topDecline = [...clusters].sort((a, b) => a.deltaMeiJuni - b.deltaMeiJuni).slice(0, 5);
-    const totalTicket = clusters.reduce((a, c) => a + c.ticket, 0);
-    const running = actions.filter((a) => a.status === "onprogress").length;
-    const done = actions.filter((a) => a.status === "done").length;
-    const belum = actions.filter((a) => a.status === "belum").length;
-    const actionStatus = [
-      { name: "Belum", value: belum },
-      { name: "On Progress", value: running },
-      { name: "Done", value: done },
-    ];
-    const topHC = [...clusters].sort((a, b) => b.juni - a.juni).slice(0, 8)
-      .map((c) => ({ cluster: c.cluster, hc: c.juni }));
-    const topTicket = [...clusters].sort((a, b) => b.ticket - a.ticket).slice(0, 8)
-      .map((c) => ({ cluster: c.cluster, ticket: c.ticket }));
-    // PIC performance: sum HC per PIC
-    const picMap = new Map<string, { hc: number; ticket: number }>();
-    clusters.forEach((c) => {
-      const pic = c.pic || "-";
-      const cur = picMap.get(pic) ?? { hc: 0, ticket: 0 };
-      cur.hc += c.juni;
-      cur.ticket += c.ticket;
-      picMap.set(pic, cur);
-    });
-    const picPerf = Array.from(picMap.entries())
-      .map(([pic, v]) => ({ pic, ...v }))
-      .sort((a, b) => b.hc - a.hc)
-      .slice(0, 8);
-    return {
-      sumJun, sumMei, growth, topGrowth, topDecline, totalTicket, running, done, belum,
-      hcTrend, actionStatus, topHC, topTicket, picPerf,
-    };
-  }, [clusters, actions]);
+  const [wFrom, setWFrom] = useState(4); // Mei
+  const [wTo, setWTo] = useState(5);     // Jun
+  const [mFrom, setMFrom] = useState(0); // Jan
+  const [mTo, setMTo] = useState(5);     // Jun
+  const [cFrom, setCFrom] = useState(0);
+  const [cTo, setCTo] = useState(5);
 
-  // Competitor Intelligence-derived charts
+  const weekly = useMemo(() => clusters.length ? computeStats(clusters, wFrom, wTo) : null, [clusters, wFrom, wTo]);
+  const monthly = useMemo(() => clusters.length ? computeStats(clusters, mFrom, mTo) : null, [clusters, mFrom, mTo]);
+  const compBase = useMemo(() => clusters.length ? computeStats(clusters, cFrom, cTo) : null, [clusters, cFrom, cTo]);
+
   const compCharts = useMemo(() => {
     if (!competitorData.length) return null;
     const compCount = new Map<string, number>();
@@ -121,45 +197,26 @@ function ReportsPage() {
         clusterGroup.get(r.cluster)!.push(r);
       }
     });
-
-    const topCompetitors = Array.from(compCount.entries())
-      .map(([name, value]) => ({ name, value }))
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 8);
-
+    const topCompetitors = Array.from(compCount.entries()).map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value).slice(0, 8);
     const promoBreakdown = Array.from(promoCount.entries()).map(([name, value]) => ({ name, value }));
-
-    const priceRange = Array.from(priceByComp.entries())
-      .map(([name, arr]) => ({
-        name,
-        min: Math.min(...arr),
-        avg: Math.round(arr.reduce((a, b) => a + b, 0) / arr.length),
-        max: Math.max(...arr),
-      }))
-      .sort((a, b) => a.avg - b.avg)
-      .slice(0, 8);
-
-    const threats = Array.from(clusterGroup.entries()).map(([cluster, rows]) => ({
-      cluster,
-      score: threatScore(rows),
-    }));
+    const priceRange = Array.from(priceByComp.entries()).map(([name, arr]) => ({
+      name, min: Math.min(...arr),
+      avg: Math.round(arr.reduce((a, b) => a + b, 0) / arr.length),
+      max: Math.max(...arr),
+    })).sort((a, b) => a.avg - b.avg).slice(0, 8);
+    const threats = Array.from(clusterGroup.entries()).map(([cluster, rows]) => ({ cluster, score: threatScore(rows), competitors: new Set(rows.map((r) => r.competitor)).size, avgPrice: rows.reduce((a, b) => a + (b.price || 0), 0) / (rows.filter((r) => r.price > 0).length || 1) }));
     const threatBuckets = [
       { name: "Rendah", value: threats.filter((t) => t.score < 41).length },
       { name: "Sedang", value: threats.filter((t) => t.score >= 41 && t.score < 71).length },
       { name: "Tinggi", value: threats.filter((t) => t.score >= 71).length },
     ];
     const topThreats = [...threats].sort((a, b) => b.score - a.score).slice(0, 8);
-
     return {
-      totalCompetitors: compCount.size,
-      totalClusters: clusterGroup.size,
-      highThreat: threatBuckets[2].value,
-      dominant: topCompetitors[0]?.name ?? "-",
-      topCompetitors,
-      promoBreakdown,
-      priceRange,
-      threatBuckets,
-      topThreats,
+      totalCompetitors: compCount.size, totalClusters: clusterGroup.size,
+      highThreat: threatBuckets[2].value, dominant: topCompetitors[0]?.name ?? "-",
+      avgPriceAll: Math.round(competitorData.filter((r) => r.price > 0).reduce((a, b) => a + b.price, 0) / (competitorData.filter((r) => r.price > 0).length || 1)),
+      topCompetitors, promoBreakdown, priceRange, threatBuckets, topThreats, threats,
     };
   }, [competitorData]);
 
@@ -170,19 +227,166 @@ function ReportsPage() {
     w.document.write(`<html><head><title>Report</title><style>
       body{font-family:-apple-system,sans-serif;padding:32px;color:#111}
       h1{font-size:24px;margin:0 0 4px} h2{font-size:16px;margin:24px 0 8px;border-bottom:2px solid #333;padding-bottom:4px}
-      ul{margin:0;padding-left:20px} li{margin:4px 0} .kpi{display:inline-block;margin-right:24px}
-      .label{font-size:11px;color:#666;text-transform:uppercase} .value{font-size:20px;font-weight:700}
+      table{width:100%;border-collapse:collapse;font-size:12px} th,td{border:1px solid #ccc;padding:6px;text-align:left}
       </style></head><body>${ref.current.innerHTML}</body></html>`);
     w.document.close();
     setTimeout(() => w.print(), 300);
   };
 
   if (!clusters.length) return (<><AppHeader title="Reports" /><div className="p-6"><EmptyState /></div></>);
-  const s = stats!;
+
+  const runningA = actions.filter((a) => a.status === "onprogress").length;
+  const doneA = actions.filter((a) => a.status === "done").length;
+  const belumA = actions.filter((a) => a.status === "belum").length;
+  const totalA = runningA + doneA + belumA;
+
+  const renderTab = (
+    s: NonNullable<ReturnType<typeof computeStats>>,
+    kind: "weekly" | "monthly",
+    from: number, to: number,
+    setFrom: (i: number) => void, setTo: (i: number) => void,
+    ref: React.RefObject<HTMLDivElement | null>,
+  ) => {
+    const label = MONTHS[from].label + " → " + MONTHS[to].label + " 2026";
+    const insights = [
+      `HC bergerak ${s.growth >= 0 ? "naik" : "turun"} ${Math.abs(s.growth).toFixed(1)}% pada periode ${label} (${fmtN(s.start)} → ${fmtN(s.end)}).`,
+      `Cluster paling tumbuh: ${s.topGrowth[0]?.cluster ?? "-"} (${s.topGrowth[0]?.delta >= 0 ? "+" : ""}${s.topGrowth[0]?.delta ?? 0}). Cluster paling turun: ${s.topDecline[0]?.cluster ?? "-"} (${s.topDecline[0]?.delta ?? 0}).`,
+      `Ticket menumpuk pada ${s.topTicket[0]?.cluster ?? "-"} (${s.topTicket[0]?.ticket ?? 0} tiket) — indikasi kualitas layanan perlu diperbaiki.`,
+      `PIC dengan portofolio HC terbesar: ${s.picPerf[0]?.pic ?? "-"} (${fmtN(s.picPerf[0]?.hc ?? 0)} HC, ${s.picPerf[0]?.ticket ?? 0} ticket).`,
+      `Action plan: ${doneA} selesai · ${runningA} berjalan · ${belumA} belum — rasio delivery ${totalA ? Math.round((doneA / totalA) * 100) : 0}%.`,
+    ];
+    const recs = [
+      s.growth < 0 ? "Aktifkan retention program di top decline cluster minggu ini." : "Jaga momentum dengan replikasi strategi top growth cluster ke cluster tetangga.",
+      `Prioritaskan quick-win perbaikan layanan di ${s.topTicket[0]?.cluster ?? "cluster ticket tinggi"} untuk menurunkan ticket.`,
+      "Site visit dan koordinasi teknik untuk cluster dengan delta negatif dan ticket > rata-rata.",
+      `Redistribusi beban PIC: evaluasi ${s.picPerf[0]?.pic ?? "PIC top"} agar rasio HC/ticket sehat.`,
+      "Deploy program loyalty & bundling di cluster potensial (HC belum mencapai target 2026).",
+    ];
+
+    return (
+      <div className="space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <DateRange from={from} to={to} onFrom={setFrom} onTo={setTo} />
+          <Button size="sm" onClick={() => handlePrint(ref)}><Printer className="mr-1 h-4 w-4" /> Export PDF</Button>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <KpiCard label="Total HC Akhir" value={s.end} hint={label} />
+          <KpiCard label="Growth" value={`${s.growth >= 0 ? "+" : ""}${s.growth.toFixed(1)}%`} tone={s.growth >= 0 ? "up" : "down"} hint={`${fmtN(s.start)} → ${fmtN(s.end)}`} />
+          <KpiCard label="Total Ticket" value={s.totalTicket} tone="warn" hint={`${clusters.length} cluster`} />
+          <KpiCard label="Action Plan Selesai" value={`${doneA}/${totalA}`} tone="up" hint={`${runningA} on progress`} />
+        </div>
+
+        <div ref={ref} className="grid gap-4 lg:grid-cols-2">
+          <Card className="glass-card border-0">
+            <CardHeader><CardTitle className="font-display text-sm">Chart HC — {label}</CardTitle></CardHeader>
+            <CardContent className="h-64">
+              <ResponsiveContainer>
+                <AreaChart data={s.hcTrend}>
+                  <defs><linearGradient id={`hcg-${kind}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#6366f1" stopOpacity={0.6} /><stop offset="100%" stopColor="#6366f1" stopOpacity={0.05} /></linearGradient></defs>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis dataKey="bulan" fontSize={11} />
+                  <YAxis fontSize={11} tickFormatter={(v) => (v >= 1000 ? `${(v / 1000).toFixed(0)}K` : String(v))} />
+                  <Tooltip formatter={(v: number) => fmtN(v)} />
+                  <Area type="monotone" dataKey="hc" stroke="#6366f1" strokeWidth={2} fill={`url(#hcg-${kind})`} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          <Card className="glass-card border-0">
+            <CardHeader><CardTitle className="font-display text-sm">Chart Ticket — {label}</CardTitle></CardHeader>
+            <CardContent className="h-64">
+              <ResponsiveContainer>
+                <LineChart data={s.ticketTrend}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis dataKey="bulan" fontSize={11} />
+                  <YAxis fontSize={11} />
+                  <Tooltip />
+                  <Line type="monotone" dataKey="ticket" stroke="#ef4444" strokeWidth={2.5} dot={{ r: 4 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          <Card className="glass-card border-0">
+            <CardHeader><CardTitle className="font-display text-sm">Top 8 HC per Cluster</CardTitle></CardHeader>
+            <CardContent className="h-72">
+              <ResponsiveContainer>
+                <BarChart data={s.topHC} layout="vertical" margin={{ left: 40 }}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis type="number" fontSize={10} />
+                  <YAxis type="category" dataKey="cluster" fontSize={10} width={100} />
+                  <Tooltip />
+                  <Bar dataKey="hc" fill="#6366f1" radius={[0, 6, 6, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          <Card className="glass-card border-0">
+            <CardHeader><CardTitle className="font-display text-sm">Top 8 Ticket per Cluster</CardTitle></CardHeader>
+            <CardContent className="h-72">
+              <ResponsiveContainer>
+                <BarChart data={s.topTicket} layout="vertical" margin={{ left: 40 }}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis type="number" fontSize={10} />
+                  <YAxis type="category" dataKey="cluster" fontSize={10} width={100} />
+                  <Tooltip />
+                  <Bar dataKey="ticket" fill="#ef4444" radius={[0, 6, 6, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </div>
+
+        <ProgressCard
+          title="Progress"
+          items={[
+            { label: "HC Growth vs periode awal", value: Math.max(0, s.end - s.start), total: Math.max(s.start, s.end, 1) },
+            { label: "Action Plan Selesai", value: doneA, total: Math.max(totalA, 1) },
+            { label: "Action Plan Berjalan", value: runningA, total: Math.max(totalA, 1) },
+            { label: "Cluster Growth Positif", value: s.perCluster.filter((c) => c.delta > 0).length, total: s.perCluster.length },
+          ]}
+        />
+
+        <Card className="glass-card border-0">
+          <CardHeader><CardTitle className="font-display text-sm">Table — Ringkasan Cluster ({label})</CardTitle></CardHeader>
+          <CardContent>
+            <div className="scroll-x">
+              <table className="w-full min-w-[720px] text-sm">
+                <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
+                  <tr><th className="p-2 text-left">Cluster</th><th className="p-2 text-left">PIC</th><th className="p-2 text-right">HC Awal</th><th className="p-2 text-right">HC Akhir</th><th className="p-2 text-right">Δ</th><th className="p-2 text-right">Ticket</th><th className="p-2 text-left">Status</th></tr>
+                </thead>
+                <tbody>
+                  {[...s.perCluster].sort((a, b) => b.hcEnd - a.hcEnd).slice(0, 12).map((c) => (
+                    <tr key={c.id} className="border-t">
+                      <td className="p-2 font-medium">{c.cluster}</td>
+                      <td className="p-2 text-muted-foreground">{c.pic || "-"}</td>
+                      <td className="p-2 text-right">{fmtN(c.hcStart)}</td>
+                      <td className="p-2 text-right font-semibold">{fmtN(c.hcEnd)}</td>
+                      <td className={`p-2 text-right ${c.delta >= 0 ? "text-success" : "text-destructive"}`}>{c.delta >= 0 ? "+" : ""}{c.delta}</td>
+                      <td className="p-2 text-right">{c.ticket}</td>
+                      <td className="p-2"><Badge variant={c.delta < 0 ? "destructive" : c.delta === 0 ? "secondary" : "default"}>{c.delta < 0 ? "Decline" : c.delta === 0 ? "Flat" : "Growth"}</Badge></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="grid gap-4 lg:grid-cols-2">
+          <InsightBox items={insights} />
+          <RecommendationBox items={recs} />
+        </div>
+      </div>
+    );
+  };
 
   return (
     <>
-      <AppHeader title="Reports" subtitle="Weekly & Monthly report + Competitor Intelligence charts" />
+      <AppHeader title="Reports" subtitle="Weekly · Monthly · Competitor Intelligence" />
       <div className="space-y-4 p-4 sm:p-6">
         <Tabs defaultValue="weekly">
           <TabsList>
@@ -192,219 +396,15 @@ function ReportsPage() {
           </TabsList>
 
           <TabsContent value="weekly" className="space-y-4">
-            <Card className="glass-card border-0">
-              <CardHeader className="flex-row items-center justify-between space-y-0">
-                <CardTitle className="font-display text-base">Weekly Report</CardTitle>
-                <Button size="sm" onClick={() => handlePrint(weeklyRef)}><Printer className="mr-1 h-4 w-4" /> Export PDF</Button>
-              </CardHeader>
-              <CardContent>
-                <div ref={weeklyRef} className="space-y-4 text-sm">
-                  <div>
-                    <h1 className="font-display text-xl font-bold">Weekly Executive Report</h1>
-                    <p className="text-muted-foreground">Periode: minggu berjalan</p>
-                  </div>
-                  <div>
-                    <div className="kpi inline-block mr-6"><div className="label text-[10px] uppercase text-muted-foreground">Total HC</div><div className="value font-display text-lg font-bold">{s.sumJun.toLocaleString("id-ID")}</div></div>
-                    <div className="kpi inline-block mr-6"><div className="label text-[10px] uppercase text-muted-foreground">Growth</div><div className="value font-display text-lg font-bold">{s.growth.toFixed(1)}%</div></div>
-                    <div className="kpi inline-block"><div className="label text-[10px] uppercase text-muted-foreground">Ticket</div><div className="value font-display text-lg font-bold">{s.totalTicket}</div></div>
-                  </div>
-                  <div><h2 className="font-semibold">Executive Summary</h2><p>HC {s.growth >= 0 ? "tumbuh" : "turun"} {s.growth.toFixed(1)}% dari periode sebelumnya. {s.running} action plan sedang berjalan, {s.done} program telah selesai.</p></div>
-                  <div><h2 className="font-semibold">Top Growth Cluster</h2><ul>{s.topGrowth.map((c) => <li key={c.id}>{c.cluster} (+{c.deltaMeiJuni})</li>)}</ul></div>
-                  <div><h2 className="font-semibold">Top Decline Cluster</h2><ul>{s.topDecline.map((c) => <li key={c.id}>{c.cluster} ({c.deltaMeiJuni})</li>)}</ul></div>
-                  <div><h2 className="font-semibold">Program Berjalan</h2><ul>{actions.filter((a) => a.status === "onprogress").map((a) => <li key={a.id}>{a.cluster} — {a.program}</li>)}{!actions.filter((a) => a.status === "onprogress").length && <li>Tidak ada</li>}</ul></div>
-                  <div><h2 className="font-semibold">Rencana Minggu Depan</h2><ul><li>Retention Program di cluster decline</li><li>Site Visit ke high-risk cluster</li><li>Analisa kompetitor</li></ul></div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <div className="grid gap-4 lg:grid-cols-2">
-              <Card className="glass-card border-0">
-                <CardHeader><CardTitle className="font-display text-sm">Tren HC 6 Bulan Terakhir</CardTitle></CardHeader>
-                <CardContent className="h-64">
-                  <ResponsiveContainer>
-                    <AreaChart data={s.hcTrend}>
-                      <defs>
-                        <linearGradient id="hcGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#6366f1" stopOpacity={0.6} />
-                          <stop offset="100%" stopColor="#6366f1" stopOpacity={0.05} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                      <XAxis dataKey="bulan" fontSize={11} />
-                      <YAxis fontSize={11} tickFormatter={(v) => (v >= 1000 ? `${(v / 1000).toFixed(0)}K` : String(v))} />
-                      <Tooltip formatter={(v: number) => v.toLocaleString("id-ID")} />
-                      <Area type="monotone" dataKey="hc" stroke="#6366f1" strokeWidth={2} fill="url(#hcGrad)" />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-
-              <Card className="glass-card border-0">
-                <CardHeader><CardTitle className="font-display text-sm">Status Action Plan</CardTitle></CardHeader>
-                <CardContent className="h-64">
-                  <ResponsiveContainer>
-                    <PieChart>
-                      <Pie data={s.actionStatus} dataKey="value" nameKey="name" outerRadius={90}
-                        label={(e: any) => `${e.name}: ${e.value}`} labelLine={false}>
-                        {s.actionStatus.map((_, i) => (
-                          <Cell key={i} fill={["#94a3b8", "#f59e0b", "#22c55e"][i]} />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-
-              <Card className="glass-card border-0">
-                <CardHeader><CardTitle className="font-display text-sm">Top 8 Cluster Growth (Mei → Jun)</CardTitle></CardHeader>
-                <CardContent className="h-72">
-                  <ResponsiveContainer>
-                    <BarChart data={s.topGrowth.concat(s.topDecline).slice(0, 8).map((c) => ({ cluster: c.cluster, delta: c.deltaMeiJuni }))}>
-                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                      <XAxis dataKey="cluster" fontSize={10} angle={-25} textAnchor="end" height={70} />
-                      <YAxis fontSize={10} />
-                      <Tooltip />
-                      <Bar dataKey="delta" radius={[6, 6, 0, 0]}>
-                        {s.topGrowth.concat(s.topDecline).slice(0, 8).map((c, i) => (
-                          <Cell key={i} fill={c.deltaMeiJuni >= 0 ? "#22c55e" : "#ef4444"} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-
-              <Card className="glass-card border-0">
-                <CardHeader><CardTitle className="font-display text-sm">Top Cluster berdasarkan Ticket</CardTitle></CardHeader>
-                <CardContent className="h-72">
-                  <ResponsiveContainer>
-                    <BarChart data={s.topTicket} layout="vertical" margin={{ left: 40 }}>
-                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                      <XAxis type="number" fontSize={10} />
-                      <YAxis type="category" dataKey="cluster" fontSize={10} width={100} />
-                      <Tooltip />
-                      <Bar dataKey="ticket" fill="#ef4444" radius={[0, 6, 6, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-            </div>
-
-            <Card className="glass-card border-0">
-              <CardHeader><CardTitle className="font-display text-sm">Analisa Mingguan</CardTitle></CardHeader>
-              <CardContent className="space-y-2 text-sm">
-                <p>• HC minggu ini <b>{s.sumJun.toLocaleString("id-ID")}</b> ({s.growth >= 0 ? "naik" : "turun"} <b>{Math.abs(s.growth).toFixed(1)}%</b> dari Mei). Momentum ini harus dijaga lewat program retensi di top decline cluster.</p>
-                <p>• Cluster paling agresif tumbuh: <b>{s.topGrowth[0]?.cluster ?? "-"}</b> (+{s.topGrowth[0]?.deltaMeiJuni ?? 0}). Replikasi strategi ke cluster serupa.</p>
-                <p>• Ticket menumpuk pada <b>{s.topTicket[0]?.cluster ?? "-"}</b> ({s.topTicket[0]?.ticket ?? 0} tiket). Perlu quick-win perbaikan layanan minggu ini.</p>
-                <p>• Action plan aktif <b>{s.running}</b>, selesai <b>{s.done}</b>. Rasio penyelesaian {s.done + s.running > 0 ? Math.round((s.done / (s.done + s.running)) * 100) : 0}%.</p>
-              </CardContent>
-            </Card>
+            {weekly && renderTab(weekly, "weekly", wFrom, wTo, setWFrom, setWTo, weeklyRef)}
           </TabsContent>
 
           <TabsContent value="monthly" className="space-y-4">
-            <Card className="glass-card border-0">
-              <CardHeader className="flex-row items-center justify-between space-y-0">
-                <CardTitle className="font-display text-base">Monthly Report</CardTitle>
-                <Button size="sm" onClick={() => handlePrint(monthlyRef)}><Printer className="mr-1 h-4 w-4" /> Export PDF</Button>
-              </CardHeader>
-              <CardContent>
-                <div ref={monthlyRef} className="space-y-4 text-sm">
-                  <div>
-                    <h1 className="font-display text-xl font-bold">Monthly Executive Report</h1>
-                    <p className="text-muted-foreground">Periode: Juni 2026</p>
-                  </div>
-                  <div><h2 className="font-semibold">HC Summary</h2><p>Total HC bulan ini: {s.sumJun.toLocaleString("id-ID")} (bulan lalu {s.sumMei.toLocaleString("id-ID")}).</p></div>
-                  <div><h2 className="font-semibold">Growth Summary</h2><p>Pertumbuhan {s.growth.toFixed(1)}%. Top cluster: {s.topGrowth[0]?.cluster ?? "—"}.</p></div>
-                  <div><h2 className="font-semibold">Ticket Summary</h2><p>Total ticket: {s.totalTicket}. Kluster dengan ticket tertinggi memerlukan retention.</p></div>
-                  <div><h2 className="font-semibold">Program Effectiveness</h2><p>{s.done} program selesai. {s.running} sedang berjalan.</p></div>
-                  <div><h2 className="font-semibold">Insight Bulanan</h2><ul><li>Prioritaskan retention pada cluster decline</li><li>Perluas coverage di area low-HC dengan potensi tinggi</li></ul></div>
-                  <div><h2 className="font-semibold">Prioritas Bulan Depan</h2><ul><li>Eksekusi acquisition strategy</li><li>Optimalisasi PIC performance</li><li>Deploy loyalty program</li></ul></div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <div className="grid gap-4 lg:grid-cols-2">
-              <Card className="glass-card border-0">
-                <CardHeader><CardTitle className="font-display text-sm">Tren HC Bulanan (Jan – Jun)</CardTitle></CardHeader>
-                <CardContent className="h-64">
-                  <ResponsiveContainer>
-                    <LineChart data={s.hcTrend}>
-                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                      <XAxis dataKey="bulan" fontSize={11} />
-                      <YAxis fontSize={11} tickFormatter={(v) => (v >= 1000 ? `${(v / 1000).toFixed(0)}K` : String(v))} />
-                      <Tooltip formatter={(v: number) => v.toLocaleString("id-ID")} />
-                      <Line type="monotone" dataKey="hc" stroke="#6366f1" strokeWidth={2.5} dot={{ r: 4 }} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-
-              <Card className="glass-card border-0">
-                <CardHeader><CardTitle className="font-display text-sm">Top 8 Cluster berdasarkan HC</CardTitle></CardHeader>
-                <CardContent className="h-64">
-                  <ResponsiveContainer>
-                    <BarChart data={s.topHC} layout="vertical" margin={{ left: 40 }}>
-                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                      <XAxis type="number" fontSize={10} />
-                      <YAxis type="category" dataKey="cluster" fontSize={10} width={100} />
-                      <Tooltip />
-                      <Bar dataKey="hc" fill="#6366f1" radius={[0, 6, 6, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-
-              <Card className="glass-card border-0">
-                <CardHeader><CardTitle className="font-display text-sm">PIC Performance (HC vs Ticket)</CardTitle></CardHeader>
-                <CardContent className="h-72">
-                  <ResponsiveContainer>
-                    <BarChart data={s.picPerf}>
-                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                      <XAxis dataKey="pic" fontSize={10} angle={-25} textAnchor="end" height={70} />
-                      <YAxis fontSize={10} />
-                      <Tooltip />
-                      <Legend wrapperStyle={{ fontSize: 11 }} />
-                      <Bar dataKey="hc" fill="#6366f1" name="HC" />
-                      <Bar dataKey="ticket" fill="#ef4444" name="Ticket" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-
-              <Card className="glass-card border-0">
-                <CardHeader><CardTitle className="font-display text-sm">Status Action Plan</CardTitle></CardHeader>
-                <CardContent className="h-72">
-                  <ResponsiveContainer>
-                    <PieChart>
-                      <Pie data={s.actionStatus} dataKey="value" nameKey="name" outerRadius={95}
-                        label={(e: any) => `${e.name}: ${e.value}`} labelLine={false}>
-                        {s.actionStatus.map((_, i) => (
-                          <Cell key={i} fill={["#94a3b8", "#f59e0b", "#22c55e"][i]} />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-            </div>
-
-            <Card className="glass-card border-0">
-              <CardHeader><CardTitle className="font-display text-sm">Analisa Bulanan</CardTitle></CardHeader>
-              <CardContent className="space-y-2 text-sm">
-                <p>• Total HC Juni <b>{s.sumJun.toLocaleString("id-ID")}</b>, bergerak {s.growth >= 0 ? "positif" : "negatif"} <b>{s.growth.toFixed(1)}%</b> dari Mei. Tren 6 bulan {s.hcTrend[5].hc >= s.hcTrend[0].hc ? "menunjukkan pertumbuhan konsisten" : "cenderung menurun dan perlu intervensi"}.</p>
-                <p>• Kontributor HC terbesar: <b>{s.topHC[0]?.cluster ?? "-"}</b> ({(s.topHC[0]?.hc ?? 0).toLocaleString("id-ID")}). Fokus development cluster ini untuk menjaga base.</p>
-                <p>• PIC dengan portofolio terbesar: <b>{s.picPerf[0]?.pic ?? "-"}</b> ({(s.picPerf[0]?.hc ?? 0).toLocaleString("id-ID")} HC, {s.picPerf[0]?.ticket ?? 0} ticket). Beban ticket perlu dievaluasi.</p>
-                <p>• Efektivitas program: {s.done} selesai, {s.running} berjalan, {s.belum} belum dieksekusi. Rasio delivery {s.done + s.running + s.belum > 0 ? Math.round((s.done / (s.done + s.running + s.belum)) * 100) : 0}%.</p>
-                <p>• Rekomendasi: perluas program retention di cluster decline, replikasi strategi cluster top growth, dan alokasikan resource tambahan untuk PIC dengan ticket tinggi.</p>
-              </CardContent>
-            </Card>
+            {monthly && renderTab(monthly, "monthly", mFrom, mTo, setMFrom, setMTo, monthlyRef)}
           </TabsContent>
 
-
-          <TabsContent value="intel">
-            {!compCharts ? (
+          <TabsContent value="intel" className="space-y-4">
+            {!compCharts || !compBase ? (
               <Card className="glass-card border-0">
                 <CardContent className="flex flex-col items-center gap-2 py-16 text-center text-sm text-muted-foreground">
                   <RadarIcon className="h-8 w-8 text-primary" />
@@ -412,29 +412,50 @@ function ReportsPage() {
                 </CardContent>
               </Card>
             ) : (
-              <div className="space-y-4">
-                {/* KPI ringkas */}
+              <>
+                <DateRange from={cFrom} to={cTo} onFrom={setCFrom} onTo={setCTo} />
+
                 <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-                  {[
-                    { label: "Cluster Terpantau", value: compCharts.totalClusters },
-                    { label: "Kompetitor Unik", value: compCharts.totalCompetitors },
-                    { label: "Cluster Ancaman Tinggi", value: compCharts.highThreat },
-                    { label: "Kompetitor Dominan", value: compCharts.dominant },
-                  ].map((k) => (
-                    <Card key={k.label} className="glass-card border-0">
-                      <CardContent className="p-4">
-                        <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{k.label}</div>
-                        <div className="mt-1 font-display text-lg font-bold">
-                          {typeof k.value === "number" ? k.value.toLocaleString("id-ID") : k.value}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                  <KpiCard label="Cluster Terpantau" value={compCharts.totalClusters} />
+                  <KpiCard label="Kompetitor Unik" value={compCharts.totalCompetitors} />
+                  <KpiCard label="Ancaman Tinggi" value={compCharts.highThreat} tone="down" hint="threat ≥ 71" />
+                  <KpiCard label="Avg Harga Kompetitor" value={fmtRp(compCharts.avgPriceAll)} tone="warn" />
                 </div>
 
                 <div className="grid gap-4 lg:grid-cols-2">
                   <Card className="glass-card border-0">
-                    <CardHeader><CardTitle className="font-display text-sm">Top Competitor (kemunculan)</CardTitle></CardHeader>
+                    <CardHeader><CardTitle className="font-display text-sm">Chart HC (kontek pasar) — {MONTHS[cFrom].label} → {MONTHS[cTo].label}</CardTitle></CardHeader>
+                    <CardContent className="h-64">
+                      <ResponsiveContainer>
+                        <AreaChart data={compBase.hcTrend}>
+                          <defs><linearGradient id="hcg-intel" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#22c55e" stopOpacity={0.6} /><stop offset="100%" stopColor="#22c55e" stopOpacity={0.05} /></linearGradient></defs>
+                          <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                          <XAxis dataKey="bulan" fontSize={11} />
+                          <YAxis fontSize={11} tickFormatter={(v) => (v >= 1000 ? `${(v / 1000).toFixed(0)}K` : String(v))} />
+                          <Tooltip formatter={(v: number) => fmtN(v)} />
+                          <Area type="monotone" dataKey="hc" stroke="#22c55e" strokeWidth={2} fill="url(#hcg-intel)" />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="glass-card border-0">
+                    <CardHeader><CardTitle className="font-display text-sm">Chart Ticket (kontek pasar)</CardTitle></CardHeader>
+                    <CardContent className="h-64">
+                      <ResponsiveContainer>
+                        <LineChart data={compBase.ticketTrend}>
+                          <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                          <XAxis dataKey="bulan" fontSize={11} />
+                          <YAxis fontSize={11} />
+                          <Tooltip />
+                          <Line type="monotone" dataKey="ticket" stroke="#ef4444" strokeWidth={2.5} dot={{ r: 4 }} />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="glass-card border-0">
+                    <CardHeader><CardTitle className="font-display text-sm">Top Competitor</CardTitle></CardHeader>
                     <CardContent className="h-72">
                       <ResponsiveContainer>
                         <BarChart data={compCharts.topCompetitors} layout="vertical" margin={{ left: 40 }}>
@@ -443,9 +464,7 @@ function ReportsPage() {
                           <YAxis type="category" dataKey="name" fontSize={11} width={90} />
                           <Tooltip />
                           <Bar dataKey="value" radius={[0, 6, 6, 0]}>
-                            {compCharts.topCompetitors.map((_, i) => (
-                              <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                            ))}
+                            {compCharts.topCompetitors.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                           </Bar>
                         </BarChart>
                       </ResponsiveContainer>
@@ -453,89 +472,72 @@ function ReportsPage() {
                   </Card>
 
                   <Card className="glass-card border-0">
-                    <CardHeader><CardTitle className="font-display text-sm">Distribusi Threat Level</CardTitle></CardHeader>
+                    <CardHeader><CardTitle className="font-display text-sm">Threat Level Distribution</CardTitle></CardHeader>
                     <CardContent className="h-72">
                       <ResponsiveContainer>
                         <PieChart>
-                          <Pie
-                            data={compCharts.threatBuckets}
-                            dataKey="value"
-                            nameKey="name"
-                            outerRadius={90}
-                            label={(e: any) => `${e.name}: ${e.value}`}
-                            labelLine={false}
-                          >
-                            {compCharts.threatBuckets.map((_, i) => (
-                              <Cell key={i} fill={["#22c55e", "#f59e0b", "#ef4444"][i]} />
-                            ))}
+                          <Pie data={compCharts.threatBuckets} dataKey="value" nameKey="name" outerRadius={90} label={(e: any) => `${e.name}: ${e.value}`} labelLine={false}>
+                            {compCharts.threatBuckets.map((_, i) => <Cell key={i} fill={["#22c55e", "#f59e0b", "#ef4444"][i]} />)}
                           </Pie>
                           <Tooltip />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="glass-card border-0">
-                    <CardHeader><CardTitle className="font-display text-sm">Harga Kompetitor (Min · Rata² · Max)</CardTitle></CardHeader>
-                    <CardContent className="h-72">
-                      <ResponsiveContainer>
-                        <BarChart data={compCharts.priceRange}>
-                          <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                          <XAxis dataKey="name" fontSize={10} angle={-25} textAnchor="end" height={60} />
-                          <YAxis fontSize={10} tickFormatter={(v) => `${(v / 1000).toFixed(0)}K`} />
-                          <Tooltip formatter={(v: number) => fmtRp(v)} />
                           <Legend wrapperStyle={{ fontSize: 11 }} />
-                          <Bar dataKey="min" fill="#22c55e" name="Min" />
-                          <Bar dataKey="avg" fill="#6366f1" name="Rata²" />
-                          <Bar dataKey="max" fill="#ef4444" name="Max" />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="glass-card border-0">
-                    <CardHeader><CardTitle className="font-display text-sm">Analisis Promo</CardTitle></CardHeader>
-                    <CardContent className="h-72">
-                      <ResponsiveContainer>
-                        <PieChart>
-                          <Pie
-                            data={compCharts.promoBreakdown}
-                            dataKey="value"
-                            nameKey="name"
-                            outerRadius={90}
-                            label={(e: any) => e.name}
-                            labelLine={false}
-                          >
-                            {compCharts.promoBreakdown.map((_, i) => (
-                              <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                            ))}
-                          </Pie>
-                          <Tooltip />
                         </PieChart>
                       </ResponsiveContainer>
                     </CardContent>
                   </Card>
                 </div>
 
+                <ProgressCard
+                  title="Progress Intelligence"
+                  items={[
+                    { label: "Cluster Ancaman Tinggi", value: compCharts.highThreat, total: Math.max(compCharts.totalClusters, 1) },
+                    { label: "Cluster Ancaman Sedang", value: compCharts.threatBuckets[1].value, total: Math.max(compCharts.totalClusters, 1) },
+                    { label: "Cluster Ancaman Rendah", value: compCharts.threatBuckets[0].value, total: Math.max(compCharts.totalClusters, 1) },
+                    { label: "Kompetitor dengan Promo Aktif", value: compCharts.promoBreakdown.filter((p) => p.name !== "Tidak Ada Promo").reduce((a, b) => a + b.value, 0), total: competitorData.length },
+                  ]}
+                />
+
                 <Card className="glass-card border-0">
-                  <CardHeader><CardTitle className="font-display text-sm">Top Cluster Berdasarkan Threat Score</CardTitle></CardHeader>
-                  <CardContent className="h-80">
-                    <ResponsiveContainer>
-                      <BarChart data={compCharts.topThreats}>
-                        <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                        <XAxis dataKey="cluster" fontSize={10} angle={-25} textAnchor="end" height={70} />
-                        <YAxis fontSize={10} domain={[0, 100]} />
-                        <Tooltip />
-                        <Bar dataKey="score" radius={[6, 6, 0, 0]}>
-                          {compCharts.topThreats.map((t, i) => (
-                            <Cell key={i} fill={t.score >= 71 ? "#ef4444" : t.score >= 41 ? "#f59e0b" : "#22c55e"} />
+                  <CardHeader><CardTitle className="font-display text-sm">Table — Top Threat Cluster</CardTitle></CardHeader>
+                  <CardContent>
+                    <div className="scroll-x">
+                      <table className="w-full min-w-[720px] text-sm">
+                        <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
+                          <tr><th className="p-2 text-left">Cluster</th><th className="p-2 text-right">Kompetitor</th><th className="p-2 text-right">Avg Harga</th><th className="p-2 text-right">Threat Score</th><th className="p-2 text-left">Level</th></tr>
+                        </thead>
+                        <tbody>
+                          {compCharts.topThreats.map((t) => (
+                            <tr key={t.cluster} className="border-t">
+                              <td className="p-2 font-medium">{t.cluster}</td>
+                              <td className="p-2 text-right">{t.competitors}</td>
+                              <td className="p-2 text-right">{fmtRp(Math.round(t.avgPrice))}</td>
+                              <td className="p-2 text-right font-semibold">{t.score}</td>
+                              <td className="p-2"><Badge variant={t.score >= 71 ? "destructive" : t.score >= 41 ? "secondary" : "default"}>{t.score >= 71 ? "Tinggi" : t.score >= 41 ? "Sedang" : "Rendah"}</Badge></td>
+                            </tr>
                           ))}
-                        </Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
+                        </tbody>
+                      </table>
+                    </div>
                   </CardContent>
                 </Card>
-              </div>
+
+                <div className="grid gap-4 lg:grid-cols-2">
+                  <InsightBox items={[
+                    `${compCharts.totalCompetitors} kompetitor unik terdeteksi di ${compCharts.totalClusters} cluster.`,
+                    `Kompetitor dominan: ${compCharts.dominant} — muncul di ${compCharts.topCompetitors[0]?.value ?? 0} lokasi.`,
+                    `${compCharts.highThreat} cluster masuk kategori ancaman TINGGI (threat ≥ 71).`,
+                    `Harga rata-rata kompetitor Rp${compCharts.avgPriceAll.toLocaleString("id-ID")} — ${compCharts.avgPriceAll < 200000 ? "tekanan harga tinggi" : "masih dalam batas wajar"}.`,
+                    `Promo teraktif: ${[...compCharts.promoBreakdown].sort((a, b) => b.value - a.value)[0]?.name ?? "-"}.`,
+                  ]} />
+                  <RecommendationBox items={[
+                    `Prioritas defense di ${compCharts.topThreats[0]?.cluster ?? "cluster ancaman tinggi"} — deploy retention bundle.`,
+                    "Counter promo kompetitor dengan penawaran serupa (gratis instalasi / cashback) selama 30 hari.",
+                    "Naikkan value proposition (bundling speed & konten) di cluster dengan harga kompetitor < Rp200K.",
+                    `Site visit mingguan ke ${compCharts.dominant}-heavy cluster untuk profiling lanjutan.`,
+                    "Update pricing playbook bulanan berbasis data harga kompetitor terbaru.",
+                  ]} />
+                </div>
+              </>
             )}
           </TabsContent>
         </Tabs>
