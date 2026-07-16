@@ -9,6 +9,7 @@ import {
   Swords,
   FileText,
   Sparkles,
+  UserSearch,
 } from "lucide-react";
 import {
   Sidebar,
@@ -29,6 +30,7 @@ const nav = [
     items: [
       { title: "Dashboard", url: "/", icon: LayoutDashboard },
       { title: "Master Cluster", url: "/master", icon: Database },
+      { title: "Analyst Market", url: "/analyst", icon: UserSearch },
       { title: "Priority Engine", url: "/priority", icon: Target },
     ],
   },
@@ -43,7 +45,7 @@ const nav = [
   {
     label: "Data & Reports",
     items: [
-      { title: "Data Upload", url: "/upload", icon: Upload },
+      { title: "Data Management", url: "/upload", icon: Upload },
       { title: "Reports", url: "/reports", icon: FileText },
     ],
   },

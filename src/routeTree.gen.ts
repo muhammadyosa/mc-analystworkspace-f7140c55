@@ -15,6 +15,7 @@ import { Route as PriorityRouteImport } from './routes/priority'
 import { Route as MasterRouteImport } from './routes/master'
 import { Route as LoyaltyRouteImport } from './routes/loyalty'
 import { Route as CompetitorRouteImport } from './routes/competitor'
+import { Route as AnalystRouteImport } from './routes/analyst'
 import { Route as ActionPlanRouteImport } from './routes/action-plan'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ClusterNameRouteImport } from './routes/cluster.$name'
@@ -49,6 +50,11 @@ const CompetitorRoute = CompetitorRouteImport.update({
   path: '/competitor',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AnalystRoute = AnalystRouteImport.update({
+  id: '/analyst',
+  path: '/analyst',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ActionPlanRoute = ActionPlanRouteImport.update({
   id: '/action-plan',
   path: '/action-plan',
@@ -68,6 +74,7 @@ const ClusterNameRoute = ClusterNameRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/action-plan': typeof ActionPlanRoute
+  '/analyst': typeof AnalystRoute
   '/competitor': typeof CompetitorRoute
   '/loyalty': typeof LoyaltyRoute
   '/master': typeof MasterRoute
@@ -79,6 +86,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/action-plan': typeof ActionPlanRoute
+  '/analyst': typeof AnalystRoute
   '/competitor': typeof CompetitorRoute
   '/loyalty': typeof LoyaltyRoute
   '/master': typeof MasterRoute
@@ -91,6 +99,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/action-plan': typeof ActionPlanRoute
+  '/analyst': typeof AnalystRoute
   '/competitor': typeof CompetitorRoute
   '/loyalty': typeof LoyaltyRoute
   '/master': typeof MasterRoute
@@ -104,6 +113,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/action-plan'
+    | '/analyst'
     | '/competitor'
     | '/loyalty'
     | '/master'
@@ -115,6 +125,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/action-plan'
+    | '/analyst'
     | '/competitor'
     | '/loyalty'
     | '/master'
@@ -126,6 +137,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/action-plan'
+    | '/analyst'
     | '/competitor'
     | '/loyalty'
     | '/master'
@@ -138,6 +150,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ActionPlanRoute: typeof ActionPlanRoute
+  AnalystRoute: typeof AnalystRoute
   CompetitorRoute: typeof CompetitorRoute
   LoyaltyRoute: typeof LoyaltyRoute
   MasterRoute: typeof MasterRoute
@@ -191,6 +204,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CompetitorRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/analyst': {
+      id: '/analyst'
+      path: '/analyst'
+      fullPath: '/analyst'
+      preLoaderRoute: typeof AnalystRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/action-plan': {
       id: '/action-plan'
       path: '/action-plan'
@@ -218,6 +238,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ActionPlanRoute: ActionPlanRoute,
+  AnalystRoute: AnalystRoute,
   CompetitorRoute: CompetitorRoute,
   LoyaltyRoute: LoyaltyRoute,
   MasterRoute: MasterRoute,
@@ -229,13 +250,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
