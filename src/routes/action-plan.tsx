@@ -543,57 +543,64 @@ function ActionPlanPage() {
 
         {/* Toolbar */}
         <Card className="glass-card border-0">
-          <CardContent className="flex flex-wrap items-center gap-2 p-3">
-            <Input
-              placeholder="Cari cluster / program / PIC / hasil…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="h-8 max-w-xs"
-            />
-            <FilterSelect value={filterPic} onChange={setFilterPic} placeholder="Semua PIC" options={pics} />
-            <FilterSelect value={filterCluster} onChange={setFilterCluster} placeholder="Semua Cluster" options={clusterOpts} />
-            <FilterSelect value={filterKab} onChange={setFilterKab} placeholder="Semua Kabupaten" options={kabOpts} />
-            <FilterSelect value={filterProv} onChange={setFilterProv} placeholder="Semua Provinsi" options={provOpts} />
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value as "" | ActionPlanStatus)}
-              className="h-8 rounded-md border border-input bg-background px-2 text-xs"
-            >
-              <option value="">Semua Status</option>
-              <option value="planned">Planned</option>
-              <option value="onprogress">On Progress</option>
-              <option value="completed">Completed</option>
-              <option value="overdue">Overdue</option>
-            </select>
-            <input
-              type="month"
-              value={filterMonth}
-              onChange={(e) => setFilterMonth(e.target.value)}
-              className="h-8 rounded-md border border-input bg-background px-2 text-xs"
-            />
-            {(search || filterPic || filterCluster || filterKab || filterProv || filterStatus || filterMonth) && (
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-8"
-                onClick={() => {
-                  setSearch("");
-                  setFilterPic("");
-                  setFilterCluster("");
-                  setFilterKab("");
-                  setFilterProv("");
-                  setFilterStatus("");
-                  setFilterMonth("");
-                }}
-              >
-                Reset
-              </Button>
-            )}
-            <div className="ml-auto text-[11px] text-muted-foreground">
-              {filtered.length} dari {rows.length} program
+          <CardContent className="p-3">
+            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+              <Input
+                placeholder="Cari cluster / program / PIC / hasil…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="h-8 w-full sm:max-w-xs"
+              />
+              <div className="scroll-x -mx-3 px-3 sm:mx-0 sm:px-0 sm:contents">
+                <div className="flex min-w-max gap-2 sm:min-w-0 sm:flex-wrap">
+                  <FilterSelect value={filterPic} onChange={setFilterPic} placeholder="Semua PIC" options={pics} />
+                  <FilterSelect value={filterCluster} onChange={setFilterCluster} placeholder="Semua Cluster" options={clusterOpts} />
+                  <FilterSelect value={filterKab} onChange={setFilterKab} placeholder="Semua Kabupaten" options={kabOpts} />
+                  <FilterSelect value={filterProv} onChange={setFilterProv} placeholder="Semua Provinsi" options={provOpts} />
+                  <select
+                    value={filterStatus}
+                    onChange={(e) => setFilterStatus(e.target.value as "" | ActionPlanStatus)}
+                    className="h-8 shrink-0 rounded-md border border-input bg-background px-2 text-xs"
+                  >
+                    <option value="">Semua Status</option>
+                    <option value="planned">Planned</option>
+                    <option value="onprogress">On Progress</option>
+                    <option value="completed">Completed</option>
+                    <option value="overdue">Overdue</option>
+                  </select>
+                  <input
+                    type="month"
+                    value={filterMonth}
+                    onChange={(e) => setFilterMonth(e.target.value)}
+                    className="h-8 shrink-0 rounded-md border border-input bg-background px-2 text-xs"
+                  />
+                  {(search || filterPic || filterCluster || filterKab || filterProv || filterStatus || filterMonth) && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 shrink-0"
+                      onClick={() => {
+                        setSearch("");
+                        setFilterPic("");
+                        setFilterCluster("");
+                        setFilterKab("");
+                        setFilterProv("");
+                        setFilterStatus("");
+                        setFilterMonth("");
+                      }}
+                    >
+                      Reset
+                    </Button>
+                  )}
+                </div>
+              </div>
+              <div className="text-[11px] text-muted-foreground sm:ml-auto">
+                {filtered.length} dari {rows.length} program
+              </div>
             </div>
           </CardContent>
         </Card>
+
 
         <Tabs defaultValue="kanban" className="space-y-4">
           <TabsList>
