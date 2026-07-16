@@ -514,6 +514,8 @@ function UploadPage() {
     if (clusters.length) exportToExcel(clusters as unknown as Record<string, unknown>[], "clusters.xlsx");
     if (tickets.length) exportToExcel(tickets as unknown as Record<string, unknown>[], "tickets.xlsx");
     if (analyst.length) exportToExcel(analyst as unknown as Record<string, unknown>[], "analyst.xlsx");
+    if (competitorData.length)
+      exportToExcel(competitorData as unknown as Record<string, unknown>[], "competitor.xlsx");
     toast.success("Data diekspor");
   };
 
