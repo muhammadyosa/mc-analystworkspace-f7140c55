@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage, type StateStorage } from "zustand/middleware";
-import type { AnalystRow, ClusterRow, TicketRow, UploadMeta } from "./excel";
+import type { AnalystRow, ClusterRow, CompetitorRow, TicketRow, UploadMeta } from "./excel";
 
 // Debounced localStorage — sync reads keep hydration flash-free,
 // async writes prevent JSON.stringify on large datasets from blocking navigation.
@@ -65,7 +65,7 @@ export type Competitor = {
 };
 
 export type UploadHistoryEntry = UploadMeta & {
-  kind: "cluster" | "ticket" | "analyst";
+  kind: "cluster" | "ticket" | "analyst" | "competitor";
   mode: "replace" | "append";
   checksum?: string;
 };
@@ -74,6 +74,7 @@ type DataState = {
   clusters: ClusterRow[];
   tickets: TicketRow[];
   analyst: AnalystRow[];
+  competitorData: CompetitorRow[];
   actions: ActionItem[];
   competitors: Competitor[];
   history: UploadHistoryEntry[];
@@ -81,6 +82,7 @@ type DataState = {
   setClusters: (c: ClusterRow[], mode?: "replace" | "append") => void;
   setTickets: (t: TicketRow[], mode?: "replace" | "append") => void;
   setAnalyst: (a: AnalystRow[], mode?: "replace" | "append") => void;
+  setCompetitorData: (c: CompetitorRow[], mode?: "replace" | "append") => void;
   pushHistory: (h: UploadHistoryEntry) => void;
   addAction: (a: ActionItem) => void;
   updateActionStatus: (id: string, status: ActionStatus) => void;
@@ -96,6 +98,7 @@ export const useDataStore = create<DataState>()(
       clusters: [],
       tickets: [],
       analyst: [],
+      competitorData: [],
       actions: [],
       competitors: [],
       history: [],
@@ -115,6 +118,11 @@ export const useDataStore = create<DataState>()(
           analyst: mode === "append" ? [...s.analyst, ...rows] : rows,
           lastUpdated: Date.now(),
         })),
+      setCompetitorData: (rows, mode = "replace") =>
+        set((s) => ({
+          competitorData: mode === "append" ? [...s.competitorData, ...rows] : rows,
+          lastUpdated: Date.now(),
+        })),
       pushHistory: (h) => set((s) => ({ history: [h, ...s.history].slice(0, 20) })),
       addAction: (a) => set((s) => ({ actions: [...s.actions, a] })),
       updateActionStatus: (id, status) =>
@@ -123,7 +131,7 @@ export const useDataStore = create<DataState>()(
       addCompetitor: (c) => set((s) => ({ competitors: [...s.competitors, c] })),
       deleteCompetitor: (id) => set((s) => ({ competitors: s.competitors.filter((c) => c.id !== id) })),
       clearAll: () =>
-        set({ clusters: [], tickets: [], analyst: [], actions: [], competitors: [], history: [], lastUpdated: null }),
+        set({ clusters: [], tickets: [], analyst: [], competitorData: [], actions: [], competitors: [], history: [], lastUpdated: null }),
     }),
     { name: "mcaw-store", storage: createJSONStorage(() => debouncedLocalStorage) },
   ),

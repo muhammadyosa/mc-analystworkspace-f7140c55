@@ -33,6 +33,7 @@ import {
   fileChecksum,
   parseAnalystFile,
   parseClusterFile,
+  parseCompetitorFile,
   parseTicketFile,
   type ImportKind,
   type UploadMeta,
@@ -70,12 +71,14 @@ const KIND_LABEL: Record<ImportKind, string> = {
   cluster: "Master Cluster",
   ticket: "Ticket",
   analyst: "Analyst Market",
+  competitor: "Competitor",
 };
 
 type ImportSummary = {
   cluster?: { rows: number; kab: number; prov: number };
   ticket?: { rows: number; bulan: number };
   analyst?: { rows: number; ae: number };
+  competitor?: { rows: number; unique: number; hargaMin: number; hargaMax: number; promo: number };
 };
 
 function formatBytes(n: number) {
@@ -132,8 +135,8 @@ function BulkImportZone({
         <div>
           <div className="font-display text-lg font-semibold">Bulk Excel Import</div>
           <div className="mt-1 text-sm text-muted-foreground">
-            Drag &amp; Drop banyak file .xlsx sekaligus — Cluster, Ticket, Analyst Market
-            terdeteksi otomatis (no config)
+            Drag &amp; Drop banyak file .xlsx sekaligus — Cluster, Ticket, Analyst Market,
+            Competitor terdeteksi otomatis (no config)
           </div>
         </div>
         <Button
@@ -159,13 +162,13 @@ function ClassifiedList({
   onRemove: (idx: number) => void;
 }) {
   const groups = useMemo(() => {
-    const g: Record<ImportKind, Classified[]> = { cluster: [], ticket: [], analyst: [] };
+    const g: Record<ImportKind, Classified[]> = { cluster: [], ticket: [], analyst: [], competitor: [] };
     items.forEach((it) => g[it.kind].push(it));
     return g;
   }, [items]);
 
   return (
-    <div className="grid gap-3 md:grid-cols-3">
+    <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
       {(Object.keys(groups) as ImportKind[]).map((k) => (
         <div key={k} className="rounded-xl border border-border/60 bg-muted/20 p-3">
           <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide">
@@ -286,6 +289,12 @@ function SummaryResult({ summary }: { summary: ImportSummary }) {
       value: summary.analyst.rows.toLocaleString("id-ID"),
       sub: `${summary.analyst.ae} AE`,
     });
+  if (summary.competitor)
+    items.push({
+      label: "Competitor",
+      value: summary.competitor.rows.toLocaleString("id-ID"),
+      sub: `${summary.competitor.unique} Kompetitor · Rp${summary.competitor.hargaMin.toLocaleString("id-ID")}–${summary.competitor.hargaMax.toLocaleString("id-ID")} · ${summary.competitor.promo} promo`,
+    });
   if (!items.length) return null;
   return (
     <motion.div
@@ -296,7 +305,7 @@ function SummaryResult({ summary }: { summary: ImportSummary }) {
       <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-success">
         <CheckCircle2 className="h-4 w-4" /> Import Completed · Dashboard diperbarui
       </div>
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {items.map((it) => (
           <div key={it.label} className="rounded-lg bg-background/70 p-3">
             <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
@@ -316,10 +325,12 @@ function UploadPage() {
     clusters,
     tickets,
     analyst,
+    competitorData,
     history,
     setClusters,
     setTickets,
     setAnalyst,
+    setCompetitorData,
     pushHistory,
     clearAll,
   } = useDataStore();
@@ -333,7 +344,8 @@ function UploadPage() {
   const [confirmMode, setConfirmMode] = useState<null | "prompt">(null);
   const [errors, setErrors] = useState<{ name: string; message: string }[]>([]);
 
-  const hasData = clusters.length > 0 || tickets.length > 0 || analyst.length > 0;
+  const hasData =
+    clusters.length > 0 || tickets.length > 0 || analyst.length > 0 || competitorData.length > 0;
   const knownChecksums = useMemo(
     () => new Set(history.map((h) => h.checksum).filter(Boolean) as string[]),
     [history],
@@ -412,6 +424,10 @@ function UploadPage() {
           const r = await parseTicketFile(q.file);
           return { q, kind: "ticket" as const, rows: r.rows, meta: r.meta };
         }
+        if (q.kind === "competitor") {
+          const r = await parseCompetitorFile(q.file);
+          return { q, kind: "competitor" as const, rows: r.rows, meta: r.meta };
+        }
         const r = await parseAnalystFile(q.file);
         return { q, kind: "analyst" as const, rows: r.rows, meta: r.meta };
       });
@@ -428,6 +444,7 @@ function UploadPage() {
         cluster: [] as Awaited<ReturnType<typeof parseClusterFile>>["rows"],
         ticket: [] as Awaited<ReturnType<typeof parseTicketFile>>["rows"],
         analyst: [] as Awaited<ReturnType<typeof parseAnalystFile>>["rows"],
+        competitor: [] as Awaited<ReturnType<typeof parseCompetitorFile>>["rows"],
       };
       const metas: { kind: ImportKind; meta: UploadMeta; checksum: string }[] = [];
 
@@ -438,6 +455,7 @@ function UploadPage() {
         }
         if (res.kind === "cluster") buckets.cluster.push(...res.rows);
         else if (res.kind === "ticket") buckets.ticket.push(...res.rows);
+        else if (res.kind === "competitor") buckets.competitor.push(...res.rows);
         else buckets.analyst.push(...res.rows);
         metas.push({ kind: res.kind, meta: res.meta, checksum: queue[i].checksum });
       });
@@ -461,6 +479,19 @@ function UploadPage() {
         const ae = new Set(buckets.analyst.map((r) => r.aeName).filter(Boolean));
         sum.analyst = { rows: buckets.analyst.length, ae: ae.size };
       }
+      if (buckets.competitor.length) {
+        setCompetitorData(buckets.competitor, mode);
+        const unique = new Set(buckets.competitor.map((r) => r.competitor));
+        const prices = buckets.competitor.map((r) => r.price).filter((p) => p > 0);
+        const promo = new Set(buckets.competitor.map((r) => r.promoCategory));
+        sum.competitor = {
+          rows: buckets.competitor.length,
+          unique: unique.size,
+          hargaMin: prices.length ? Math.min(...prices) : 0,
+          hargaMax: prices.length ? Math.max(...prices) : 0,
+          promo: promo.size,
+        };
+      }
       metas.forEach((m) =>
         pushHistory({ ...m.meta, kind: m.kind, mode, checksum: m.checksum } as UploadHistoryEntry),
       );
@@ -483,6 +514,8 @@ function UploadPage() {
     if (clusters.length) exportToExcel(clusters as unknown as Record<string, unknown>[], "clusters.xlsx");
     if (tickets.length) exportToExcel(tickets as unknown as Record<string, unknown>[], "tickets.xlsx");
     if (analyst.length) exportToExcel(analyst as unknown as Record<string, unknown>[], "analyst.xlsx");
+    if (competitorData.length)
+      exportToExcel(competitorData as unknown as Record<string, unknown>[], "competitor.xlsx");
     toast.success("Data diekspor");
   };
 
@@ -567,10 +600,14 @@ function UploadPage() {
               <Button size="sm" variant="outline" onClick={() => downloadTemplate("analyst")}>
                 <Download className="mr-1 h-4 w-4" /> Template Analyst
               </Button>
+              <Button size="sm" variant="outline" onClick={() => downloadTemplate("competitor")}>
+                <Download className="mr-1 h-4 w-4" /> Template Competitor
+              </Button>
               <div className="ml-auto text-xs text-muted-foreground">
                 {clusters.length.toLocaleString("id-ID")} cluster ·{" "}
                 {tickets.length.toLocaleString("id-ID")} ticket ·{" "}
-                {analyst.length.toLocaleString("id-ID")} profiling
+                {analyst.length.toLocaleString("id-ID")} profiling ·{" "}
+                {competitorData.length.toLocaleString("id-ID")} competitor
               </div>
               <Button
                 variant="outline"

@@ -66,6 +66,27 @@ export type AnalystRow = {
   evidence: string;
 };
 
+export type CompetitorRow = {
+  id: string;
+  cluster: string;
+  kabupaten: string;
+  provinsi: string;
+  competitor: string;
+  competitorRaw: string;
+  price: number;
+  promo: string;
+  promoCategory: PromoCategory;
+};
+
+export type PromoCategory =
+  | "Gratis Instalasi"
+  | "Diskon Instalasi"
+  | "Upgrade Kecepatan"
+  | "Cashback"
+  | "Bundling"
+  | "Tidak Ada Promo"
+  | "Lainnya";
+
 export type UploadMeta = {
   fileName: string;
   sheetCount: number;
@@ -345,12 +366,161 @@ export async function parseAnalystFile(
   return { rows, meta };
 }
 
+// ---------- Competitor parser ----------
+
+const COMPETITOR_ALIASES: Record<string, string> = {
+  indihome: "IndiHome",
+  indihom: "IndiHome",
+  ihome: "IndiHome",
+  xlhome: "XL Home",
+  xl: "XL Home",
+  myrepublik: "MyRepublic",
+  myrepublic: "MyRepublic",
+  republik: "MyRepublic",
+  rtrwnet: "RT/RW Net",
+  rtrwn: "RT/RW Net",
+  rtrw: "RT/RW Net",
+  biznet: "Biznet",
+  biznethome: "Biznet",
+  cbn: "CBN",
+  cbnfiber: "CBN",
+  mncplay: "MNC Play",
+  mnc: "MNC Play",
+  firstmedia: "First Media",
+  first: "First Media",
+  oxygen: "Oxygen",
+  moratelindo: "Moratelindo",
+  megavision: "Megavision",
+  iforte: "iForte",
+  netciti: "Netciti",
+  transvision: "Transvision",
+  useetv: "UseeTV",
+};
+
+export function normalizeCompetitorName(raw: string): string {
+  // strip weird superscript/control chars, keep letters+digits+slash+space
+  const cleaned = raw
+    .replace(/[\u00B2\u00B3\u00B9\u2070-\u209F\u2000-\u200F\uFEFF]/g, "")
+    .replace(/[^\p{L}\p{N}\/\s.\-&]/gu, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!cleaned) return "";
+  const key = cleaned.toLowerCase().replace(/[\s.\-\/&]/g, "");
+  if (COMPETITOR_ALIASES[key]) return COMPETITOR_ALIASES[key];
+  // Title case fallback
+  return cleaned
+    .split(" ")
+    .map((w) => (w.length > 3 ? w[0].toUpperCase() + w.slice(1).toLowerCase() : w.toUpperCase()))
+    .join(" ");
+}
+
+export function splitCompetitors(raw: string): string[] {
+  if (!raw) return [];
+  return raw
+    .split(/[,;\/\n](?![^(]*\))/)
+    .flatMap((s) => s.split(/\s+dan\s+/i))
+    .map((s) => normalizeCompetitorName(s))
+    .filter(Boolean);
+}
+
+const PROMO_RULES: { cat: PromoCategory; kws: string[] }[] = [
+  { cat: "Gratis Instalasi", kws: ["gratis instal", "free instal", "instalasi gratis", "bebas instal"] },
+  { cat: "Diskon Instalasi", kws: ["diskon instal", "diskon biaya instal", "disc instal", "potongan instal"] },
+  { cat: "Upgrade Kecepatan", kws: ["upgrade kecepatan", "upgrade speed", "tambah kecepatan", "double speed"] },
+  { cat: "Cashback", kws: ["cashback", "cash back"] },
+  { cat: "Bundling", kws: ["bundling", "bundle", "paket"] },
+];
+
+export function categorizePromo(raw: string): PromoCategory {
+  const s = raw.trim().toLowerCase();
+  if (!s || s === "-" || s === "tidak ada" || s.includes("tidak ada promo") || s === "none" || s === "no") {
+    return "Tidak Ada Promo";
+  }
+  for (const r of PROMO_RULES) if (r.kws.some((k) => s.includes(k))) return r.cat;
+  return "Lainnya";
+}
+
+export async function parseCompetitorFile(
+  file: File,
+): Promise<{ rows: CompetitorRow[]; meta: UploadMeta }> {
+  const buf = await file.arrayBuffer();
+  const wb = XLSX.read(buf, { type: "array" });
+  const { name: sheetName, ws } = pickSheet(wb, ["KOMPETITOR", "COMPETITOR", "DATA"]);
+  const raw = sheetToCleanJson(ws);
+  const rows: CompetitorRow[] = [];
+  let mapped = 0;
+  let idx = 0;
+  for (const r of raw) {
+    const cluster = toStr(pick(r, ["CLUSTER", "cluster"]));
+    const namaRaw = toStr(
+      pick(r, ["NAMA KOMPETITOR", "KOMPETITOR", "NAMA COMPETITOR", "COMPETITOR"]),
+    );
+    if (!cluster && !namaRaw) continue;
+    mapped++;
+    const price = toNum(
+      pick(r, [
+        "HARGA KOMPETITOR TERMURAH",
+        "HARGA KOMPETITOR",
+        "HARGA TERMURAH",
+        "HARGA",
+      ]),
+    );
+    const promoRaw = toStr(pick(r, ["PROMO COMPETITOR", "PROMO KOMPETITOR", "PROMO"]));
+    const kab = toStr(pick(r, ["KABUPATEN", "KABUPATEN/KOTA", "KABUPATEN/KOTA YG BENAR"]));
+    const prov = toStr(pick(r, ["PROVINSI", "Provinsi"]));
+    const promoCategory = categorizePromo(promoRaw);
+    const names = splitCompetitors(namaRaw);
+    if (names.length === 0) continue;
+    for (const nm of names) {
+      rows.push({
+        id: `${idx++}-${cluster}-${nm}`,
+        cluster,
+        kabupaten: kab,
+        provinsi: prov,
+        competitor: nm,
+        competitorRaw: namaRaw,
+        price,
+        promo: promoRaw,
+        promoCategory,
+      });
+    }
+  }
+  // Dedupe (cluster + competitor + price + promo)
+  const seen = new Set<string>();
+  const deduped = rows.filter((r) => {
+    const k = `${r.cluster}|${r.competitor}|${r.price}|${r.promo}`;
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
+  const clusters = new Set(deduped.map((r) => r.cluster).filter(Boolean));
+  const unique = new Set(deduped.map((r) => r.competitor));
+  const prices = deduped.map((r) => r.price).filter((p) => p > 0);
+  const meta: UploadMeta = {
+    fileName: file.name,
+    sheetCount: wb.SheetNames.length,
+    sheetPicked: sheetName,
+    rowCount: deduped.length,
+    extra: {
+      Cluster: clusters.size,
+      Kompetitor: unique.size,
+      Promo: new Set(deduped.map((r) => r.promoCategory)).size,
+      HargaMin: prices.length ? Math.min(...prices) : 0,
+      HargaMax: prices.length ? Math.max(...prices) : 0,
+    },
+    mappingPct: raw.length ? Math.round((mapped / raw.length) * 100) : 100,
+    timestamp: Date.now(),
+  };
+  return { rows: deduped, meta };
+}
+
 // ---------- Smart Import: auto-detect kind ----------
-export type ImportKind = "cluster" | "ticket" | "analyst";
+export type ImportKind = "cluster" | "ticket" | "analyst" | "competitor";
 export type SmartResult =
   | { kind: "cluster"; rows: ClusterRow[]; meta: UploadMeta }
   | { kind: "ticket"; rows: TicketRow[]; meta: UploadMeta }
-  | { kind: "analyst"; rows: AnalystRow[]; meta: UploadMeta };
+  | { kind: "analyst"; rows: AnalystRow[]; meta: UploadMeta }
+  | { kind: "competitor"; rows: CompetitorRow[]; meta: UploadMeta };
 
 function collectHeaders(wb: XLSX.WorkBook): string[] {
   const out: string[] = [];
@@ -370,6 +540,19 @@ export function detectKind(wb: XLSX.WorkBook, fileName: string): ImportKind {
   const hs = collectHeaders(wb);
   const has = (needle: string) => hs.some((h) => h.includes(needle));
 
+  // Competitor: NAMA KOMPETITOR + HARGA KOMPETITOR (TERMURAH) + PROMO
+  if (
+    has("namakompetitor") &&
+    (has("hargakompetitortermurah") || has("hargakompetitor")) &&
+    (has("promocompetitor") || has("promokompetitor"))
+  ) {
+    return "competitor";
+  }
+  if (sheets.some((s) => s.includes("kompetitor") || s.includes("competitor"))) {
+    // ambiguous with analyst sheet naming — only accept when cluster header exists too
+    if (has("cluster") && (has("hargakompetitor") || has("namakompetitor"))) return "competitor";
+  }
+
   // Analyst: HASIL PROFILING sheet or profiling-specific columns
   if (sheets.some((s) => s.includes("hasilprofiling") || s.includes("profiling"))) return "analyst";
   if (has("namaae") || has("insightae") || has("relokasifat") || has("tingkatpotensicluster")) return "analyst";
@@ -387,6 +570,7 @@ export function detectKind(wb: XLSX.WorkBook, fileName: string): ImportKind {
 
   // Filename fallback
   const fn = norm(fileName);
+  if (fn.includes("kompetitor") || fn.includes("competitor")) return "competitor";
   if (fn.includes("analyst")) return "analyst";
   if (fn.includes("cluster") || fn.includes("pembagian") || fn.includes("sibt")) return "cluster";
   return "ticket";
@@ -396,13 +580,16 @@ export async function smartImport(file: File): Promise<SmartResult> {
   const buf = await file.arrayBuffer();
   const wb = XLSX.read(buf, { type: "array" });
   const kind = detectKind(wb, file.name);
-  // Re-parse via existing typed parsers (they re-read the file, negligible cost)
   if (kind === "cluster") {
     const r = await parseClusterFile(file);
     return { kind, ...r };
   }
   if (kind === "analyst") {
     const r = await parseAnalystFile(file);
+    return { kind, ...r };
+  }
+  if (kind === "competitor") {
+    const r = await parseCompetitorFile(file);
     return { kind, ...r };
   }
   const r = await parseTicketFile(file);
@@ -420,7 +607,9 @@ export async function classifyFile(
       ? ["DATA CLUSTER", "CLUSTER", "PEMBAGIAN"]
       : kind === "analyst"
         ? ["HASIL PROFILING", "PROFILING", "ANALYST"]
-        : ["TICKET", "DATA", "PIVOT"];
+        : kind === "competitor"
+          ? ["KOMPETITOR", "COMPETITOR", "DATA"]
+          : ["TICKET", "DATA", "PIVOT"];
   const { name } = pickSheet(wb, preferred);
   return { kind, fileName: file.name, sheetName: name, sheetCount: wb.SheetNames.length, size: file.size };
 }
@@ -440,8 +629,8 @@ export function exportToExcel<T extends Record<string, unknown>>(rows: T[], file
   XLSX.writeFile(wb, filename);
 }
 
-export function downloadTemplate(kind: "cluster" | "ticket" | "analyst") {
-  const templates: Record<string, string[]> = {
+export function downloadTemplate(kind: ImportKind) {
+  const templates: Record<ImportKind, string[]> = {
     cluster: [
       "PROV/KAB/CLUSTER", "JANUARI", "FEBRUARI", "MARET", "APRIL", "MEI", "JUNI",
       "Grand Total", "MEI.1", "JUNI.1", "DELTA MEI - JUNI", "ticket", "TOTAL HC 2026",
@@ -459,10 +648,20 @@ export function downloadTemplate(kind: "cluster" | "ticket" | "analyst") {
       "TOTAL SF/MI", "MITRA BARU", "NAMA MITRA", "POTENSI MITRA", "STRATEGI PEMASARAN",
       "SEGMEN PELANGGAN", "DAYA BELI", "INSIGHT AE", "EVIDENCE",
     ],
+    competitor: [
+      "CLUSTER", "KABUPATEN", "PROVINSI", "NAMA KOMPETITOR",
+      "HARGA KOMPETITOR TERMURAH", "PROMO COMPETITOR",
+    ],
   };
   const headers = templates[kind];
   const ws = XLSX.utils.aoa_to_sheet([headers]);
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, kind === "cluster" ? "DATA CLUSTER" : kind === "analyst" ? "HASIL PROFILING" : "TICKET");
+  const sheetName =
+    kind === "cluster" ? "DATA CLUSTER"
+      : kind === "analyst" ? "HASIL PROFILING"
+      : kind === "competitor" ? "KOMPETITOR"
+      : "TICKET";
+  XLSX.utils.book_append_sheet(wb, ws, sheetName);
   XLSX.writeFile(wb, `template-${kind}.xlsx`);
 }
+
