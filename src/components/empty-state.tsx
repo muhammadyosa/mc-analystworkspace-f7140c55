@@ -13,7 +13,7 @@ export function EmptyState({ title = "Belum ada data", desc }: { title?: string;
         {desc ?? "Upload file Excel PEMBAGIAN CLUSTER SIBT.xlsx dan ticket jan-jun.xlsx untuk memulai analisa."}
       </p>
       <Button asChild className="mt-5">
-        <Link to="/upload">Buka Halaman Upload</Link>
+        <Link to="/settings/data">Buka Halaman Upload</Link>
       </Button>
     </div>
   );

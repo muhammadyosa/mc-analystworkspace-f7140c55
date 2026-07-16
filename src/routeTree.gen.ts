@@ -9,7 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as UploadRouteImport } from './routes/upload'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as PriorityRouteImport } from './routes/priority'
 import { Route as MasterRouteImport } from './routes/master'
@@ -19,11 +19,14 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AnalystRouteImport } from './routes/analyst'
 import { Route as ActionPlanRouteImport } from './routes/action-plan'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as SettingsIndexRouteImport } from './routes/settings.index'
+import { Route as SettingsUsersRouteImport } from './routes/settings.users'
+import { Route as SettingsDataRouteImport } from './routes/settings.data'
 import { Route as ClusterNameRouteImport } from './routes/cluster.$name'
 
-const UploadRoute = UploadRouteImport.update({
-  id: '/upload',
-  path: '/upload',
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ReportsRoute = ReportsRouteImport.update({
@@ -71,6 +74,21 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SettingsIndexRoute = SettingsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => SettingsRoute,
+} as any)
+const SettingsUsersRoute = SettingsUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => SettingsRoute,
+} as any)
+const SettingsDataRoute = SettingsDataRouteImport.update({
+  id: '/data',
+  path: '/data',
+  getParentRoute: () => SettingsRoute,
+} as any)
 const ClusterNameRoute = ClusterNameRouteImport.update({
   id: '/cluster/$name',
   path: '/cluster/$name',
@@ -87,8 +105,11 @@ export interface FileRoutesByFullPath {
   '/master': typeof MasterRoute
   '/priority': typeof PriorityRoute
   '/reports': typeof ReportsRoute
-  '/upload': typeof UploadRoute
+  '/settings': typeof SettingsRouteWithChildren
   '/cluster/$name': typeof ClusterNameRoute
+  '/settings/data': typeof SettingsDataRoute
+  '/settings/users': typeof SettingsUsersRoute
+  '/settings/': typeof SettingsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -100,8 +121,10 @@ export interface FileRoutesByTo {
   '/master': typeof MasterRoute
   '/priority': typeof PriorityRoute
   '/reports': typeof ReportsRoute
-  '/upload': typeof UploadRoute
   '/cluster/$name': typeof ClusterNameRoute
+  '/settings/data': typeof SettingsDataRoute
+  '/settings/users': typeof SettingsUsersRoute
+  '/settings': typeof SettingsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -114,8 +137,11 @@ export interface FileRoutesById {
   '/master': typeof MasterRoute
   '/priority': typeof PriorityRoute
   '/reports': typeof ReportsRoute
-  '/upload': typeof UploadRoute
+  '/settings': typeof SettingsRouteWithChildren
   '/cluster/$name': typeof ClusterNameRoute
+  '/settings/data': typeof SettingsDataRoute
+  '/settings/users': typeof SettingsUsersRoute
+  '/settings/': typeof SettingsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -129,8 +155,11 @@ export interface FileRouteTypes {
     | '/master'
     | '/priority'
     | '/reports'
-    | '/upload'
+    | '/settings'
     | '/cluster/$name'
+    | '/settings/data'
+    | '/settings/users'
+    | '/settings/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -142,8 +171,10 @@ export interface FileRouteTypes {
     | '/master'
     | '/priority'
     | '/reports'
-    | '/upload'
     | '/cluster/$name'
+    | '/settings/data'
+    | '/settings/users'
+    | '/settings'
   id:
     | '__root__'
     | '/'
@@ -155,8 +186,11 @@ export interface FileRouteTypes {
     | '/master'
     | '/priority'
     | '/reports'
-    | '/upload'
+    | '/settings'
     | '/cluster/$name'
+    | '/settings/data'
+    | '/settings/users'
+    | '/settings/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -169,17 +203,17 @@ export interface RootRouteChildren {
   MasterRoute: typeof MasterRoute
   PriorityRoute: typeof PriorityRoute
   ReportsRoute: typeof ReportsRoute
-  UploadRoute: typeof UploadRoute
+  SettingsRoute: typeof SettingsRouteWithChildren
   ClusterNameRoute: typeof ClusterNameRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/upload': {
-      id: '/upload'
-      path: '/upload'
-      fullPath: '/upload'
-      preLoaderRoute: typeof UploadRouteImport
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reports': {
@@ -245,6 +279,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/settings/': {
+      id: '/settings/'
+      path: '/'
+      fullPath: '/settings/'
+      preLoaderRoute: typeof SettingsIndexRouteImport
+      parentRoute: typeof SettingsRoute
+    }
+    '/settings/users': {
+      id: '/settings/users'
+      path: '/users'
+      fullPath: '/settings/users'
+      preLoaderRoute: typeof SettingsUsersRouteImport
+      parentRoute: typeof SettingsRoute
+    }
+    '/settings/data': {
+      id: '/settings/data'
+      path: '/data'
+      fullPath: '/settings/data'
+      preLoaderRoute: typeof SettingsDataRouteImport
+      parentRoute: typeof SettingsRoute
+    }
     '/cluster/$name': {
       id: '/cluster/$name'
       path: '/cluster/$name'
@@ -254,6 +309,22 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface SettingsRouteChildren {
+  SettingsDataRoute: typeof SettingsDataRoute
+  SettingsUsersRoute: typeof SettingsUsersRoute
+  SettingsIndexRoute: typeof SettingsIndexRoute
+}
+
+const SettingsRouteChildren: SettingsRouteChildren = {
+  SettingsDataRoute: SettingsDataRoute,
+  SettingsUsersRoute: SettingsUsersRoute,
+  SettingsIndexRoute: SettingsIndexRoute,
+}
+
+const SettingsRouteWithChildren = SettingsRoute._addFileChildren(
+  SettingsRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -265,7 +336,7 @@ const rootRouteChildren: RootRouteChildren = {
   MasterRoute: MasterRoute,
   PriorityRoute: PriorityRoute,
   ReportsRoute: ReportsRoute,
-  UploadRoute: UploadRoute,
+  SettingsRoute: SettingsRouteWithChildren,
   ClusterNameRoute: ClusterNameRoute,
 }
 export const routeTree = rootRouteImport

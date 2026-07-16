@@ -35,12 +35,30 @@ function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
 
+  const [pending, setPending] = useState(false);
+
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/", replace: true });
-      else setChecking(false);
+    supabase.auth.getSession().then(async ({ data }) => {
+      if (!data.session) return setChecking(false);
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return setChecking(false);
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("approved")
+        .eq("id", u.user.id)
+        .maybeSingle();
+      if (profile?.approved) navigate({ to: "/", replace: true });
+      else {
+        setPending(true);
+        setChecking(false);
+      }
     });
   }, [navigate]);
+
+  async function handleSignOut() {
+    await supabase.auth.signOut();
+    setPending(false);
+  }
 
   async function handleGoogle() {
     setLoading(true);
@@ -124,22 +142,37 @@ function AuthPage() {
               <div className="grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-br from-cyan-400/20 to-blue-500/20 ring-1 ring-white/15 backdrop-blur-md">
                 <img src={coniLogo} alt="CONI" className="h-12 w-12 object-contain" />
               </div>
-              <h2 className="mt-5 font-display text-2xl font-bold tracking-tight">Selamat Datang</h2>
-              <p className="mt-1.5 text-sm text-white/60">Masuk untuk melanjutkan ke workspace</p>
+              <h2 className="mt-5 font-display text-2xl font-bold tracking-tight">
+                {pending ? "Menunggu Persetujuan" : "Selamat Datang"}
+              </h2>
+              <p className="mt-1.5 text-sm text-white/60">
+                {pending
+                  ? "Akun Anda sudah terdaftar. Admin akan meninjau akses secepatnya."
+                  : "Masuk untuk melanjutkan ke workspace"}
+              </p>
             </div>
 
-            <button
-              onClick={handleGoogle}
-              disabled={loading || checking}
-              className="group relative mt-8 flex w-full items-center justify-center gap-3 rounded-2xl bg-white px-5 py-3.5 text-[15px] font-semibold text-slate-900 shadow-lg shadow-blue-950/30 ring-1 ring-black/5 transition hover:shadow-xl hover:shadow-cyan-500/20 hover:-translate-y-[1px] active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {loading ? (
-                <Loader2 className="h-5 w-5 animate-spin text-slate-500" />
-              ) : (
-                <GoogleIcon />
-              )}
-              <span>{loading ? "Menghubungkan…" : "Masuk dengan Google"}</span>
-            </button>
+            {pending ? (
+              <button
+                onClick={handleSignOut}
+                className="mt-8 flex w-full items-center justify-center gap-3 rounded-2xl border border-white/15 bg-white/[0.04] px-5 py-3.5 text-[15px] font-semibold text-white/90 transition hover:bg-white/[0.08]"
+              >
+                Keluar & ganti akun
+              </button>
+            ) : (
+              <button
+                onClick={handleGoogle}
+                disabled={loading || checking}
+                className="group relative mt-8 flex w-full items-center justify-center gap-3 rounded-2xl bg-white px-5 py-3.5 text-[15px] font-semibold text-slate-900 shadow-lg shadow-blue-950/30 ring-1 ring-black/5 transition hover:shadow-xl hover:shadow-cyan-500/20 hover:-translate-y-[1px] active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {loading ? (
+                  <Loader2 className="h-5 w-5 animate-spin text-slate-500" />
+                ) : (
+                  <GoogleIcon />
+                )}
+                <span>{loading ? "Menghubungkan…" : "Masuk dengan Google"}</span>
+              </button>
+            )}
 
             <div className="mt-6 flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2.5 text-[11px] text-white/60">
               <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-cyan-300" />
