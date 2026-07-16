@@ -90,8 +90,3 @@ export function DrilldownDialog({
     </Dialog>
   );
 }
-
-      </DialogContent>
-    </Dialog>
-  );
-}
