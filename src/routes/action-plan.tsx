@@ -338,7 +338,7 @@ function CalendarView({ rows }: { rows: ActionPlanRow[] }) {
 }
 
 function ActionPlanPage() {
-  const { actionPlans, clusters, tickets, analyst, competitors, overrideActionPlanStatus } = useDataStore();
+  const { actionPlans, clusters, tickets, analyst, competitorData, overrideActionPlanStatus } = useDataStore();
   const [search, setSearch] = useState("");
   const [filterPic, setFilterPic] = useState("");
   const [filterCluster, setFilterCluster] = useState("");
