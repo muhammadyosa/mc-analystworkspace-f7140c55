@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as UploadRouteImport } from './routes/upload'
 import { Route as MasterRouteImport } from './routes/master'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ClusterNameRouteImport } from './routes/cluster.$name'
 
 const UploadRoute = UploadRouteImport.update({
   id: '/upload',
@@ -28,35 +29,44 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ClusterNameRoute = ClusterNameRouteImport.update({
+  id: '/cluster/$name',
+  path: '/cluster/$name',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/master': typeof MasterRoute
   '/upload': typeof UploadRoute
+  '/cluster/$name': typeof ClusterNameRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/master': typeof MasterRoute
   '/upload': typeof UploadRoute
+  '/cluster/$name': typeof ClusterNameRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/master': typeof MasterRoute
   '/upload': typeof UploadRoute
+  '/cluster/$name': typeof ClusterNameRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/master' | '/upload'
+  fullPaths: '/' | '/master' | '/upload' | '/cluster/$name'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/master' | '/upload'
-  id: '__root__' | '/' | '/master' | '/upload'
+  to: '/' | '/master' | '/upload' | '/cluster/$name'
+  id: '__root__' | '/' | '/master' | '/upload' | '/cluster/$name'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   MasterRoute: typeof MasterRoute
   UploadRoute: typeof UploadRoute
+  ClusterNameRoute: typeof ClusterNameRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -82,6 +92,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/cluster/$name': {
+      id: '/cluster/$name'
+      path: '/cluster/$name'
+      fullPath: '/cluster/$name'
+      preLoaderRoute: typeof ClusterNameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -89,6 +106,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   MasterRoute: MasterRoute,
   UploadRoute: UploadRoute,
+  ClusterNameRoute: ClusterNameRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
