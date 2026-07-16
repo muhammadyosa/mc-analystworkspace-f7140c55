@@ -1,21 +1,41 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useCallback, useState } from "react";
-import { Upload, FileSpreadsheet, CheckCircle2, Trash2, Download, History, Sparkles } from "lucide-react";
+import { useCallback, useMemo, useRef, useState } from "react";
+import {
+  Upload,
+  FileSpreadsheet,
+  CheckCircle2,
+  Trash2,
+  Download,
+  History,
+  Sparkles,
+  X,
+  AlertCircle,
+  Database,
+  Zap,
+} from "lucide-react";
 import { toast } from "sonner";
+import { motion, AnimatePresence } from "framer-motion";
 import { AppHeader } from "@/components/app-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import {
-  parseClusterFile,
-  parseTicketFile,
-  parseAnalystFile,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  classifyFile,
   exportToExcel,
   downloadTemplate,
-  smartImport,
-  type UploadMeta,
+  fileChecksum,
+  parseAnalystFile,
+  parseClusterFile,
+  parseTicketFile,
   type ImportKind,
+  type UploadMeta,
 } from "@/lib/excel";
 import { useDataStore, type UploadHistoryEntry } from "@/lib/store";
 
@@ -24,207 +44,438 @@ export const Route = createFileRoute("/upload")({
   component: UploadPage,
 });
 
-type Kind = "cluster" | "ticket" | "analyst";
+type Classified = {
+  file: File;
+  kind: ImportKind;
+  fileName: string;
+  sheetName: string;
+  sheetCount: number;
+  size: number;
+  checksum: string;
+  cached: boolean;
+};
 
-function DropZone({
-  label,
-  hint,
-  loaded,
-  progress,
-  onFile,
+type StageKey = "scan" | "identify" | "validate" | "normalize" | "map" | "relate" | "refresh";
+const STAGES: { key: StageKey; label: string }[] = [
+  { key: "scan", label: "Scanning Workbook" },
+  { key: "identify", label: "Identifying Dataset" },
+  { key: "validate", label: "Validating Sheet & Header" },
+  { key: "normalize", label: "Normalizing Data" },
+  { key: "map", label: "Mapping to Database" },
+  { key: "relate", label: "Building Relations" },
+  { key: "refresh", label: "Refreshing Dashboard" },
+];
+
+const KIND_LABEL: Record<ImportKind, string> = {
+  cluster: "Master Cluster",
+  ticket: "Ticket",
+  analyst: "Analyst Market",
+};
+
+type ImportSummary = {
+  cluster?: { rows: number; kab: number; prov: number };
+  ticket?: { rows: number; bulan: number };
+  analyst?: { rows: number; ae: number };
+};
+
+function formatBytes(n: number) {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  return `${(n / 1024 / 1024).toFixed(1)} MB`;
+}
+
+function BulkImportZone({
+  onFiles,
+  disabled,
 }: {
-  label: string;
-  hint: string;
-  loaded?: number;
-  progress?: number;
-  onFile: (f: File) => void;
+  onFiles: (files: File[]) => void;
+  disabled?: boolean;
 }) {
   const [drag, setDrag] = useState(false);
-  const onDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
-      setDrag(false);
-      const f = e.dataTransfer.files?.[0];
-      if (f) onFile(f);
-    },
-    [onFile],
-  );
-
+  const inputRef = useRef<HTMLInputElement>(null);
   return (
-    <label
+    <div
       onDragOver={(e) => {
         e.preventDefault();
-        setDrag(true);
+        if (!disabled) setDrag(true);
       }}
       onDragLeave={() => setDrag(false)}
-      onDrop={onDrop}
-      className={`relative flex min-h-[200px] cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed p-6 text-center transition ${
-        drag ? "border-primary bg-primary/5" : "border-border bg-muted/30 hover:border-primary/60 hover:bg-muted/50"
-      }`}
+      onDrop={(e) => {
+        e.preventDefault();
+        setDrag(false);
+        if (disabled) return;
+        const fs = e.dataTransfer.files;
+        if (fs?.length) onFiles(Array.from(fs));
+      }}
+      className={`relative overflow-hidden rounded-2xl border-2 border-dashed p-8 text-center transition ${
+        drag
+          ? "border-primary bg-primary/10"
+          : "border-primary/40 bg-gradient-to-br from-primary/5 via-transparent to-primary/10"
+      } ${disabled ? "opacity-60" : ""}`}
     >
       <input
+        ref={inputRef}
         type="file"
+        multiple
         accept=".xlsx,.xls,.csv"
         className="hidden"
         onChange={(e) => {
-          const f = e.target.files?.[0];
-          if (f) onFile(f);
+          const fs = e.target.files;
+          if (fs?.length) onFiles(Array.from(fs));
           e.currentTarget.value = "";
         }}
       />
-      <div className="grid h-14 w-14 place-items-center rounded-2xl gradient-primary shadow-lg">
-        {loaded ? <CheckCircle2 className="h-7 w-7 text-white" /> : <Upload className="h-7 w-7 text-white" />}
-      </div>
-      <div>
-        <div className="font-display text-sm font-semibold">{label}</div>
-        <div className="mt-0.5 text-xs text-muted-foreground">{hint}</div>
-      </div>
-      {progress !== undefined && progress > 0 && progress < 100 && (
-        <div className="h-1.5 w-full max-w-[200px] overflow-hidden rounded-full bg-muted">
-          <div className="h-full bg-primary transition-all" style={{ width: `${progress}%` }} />
+      <div className="mx-auto flex max-w-md flex-col items-center gap-3">
+        <div className="grid h-16 w-16 place-items-center rounded-2xl gradient-primary shadow-lg">
+          <Sparkles className="h-8 w-8 text-white" />
         </div>
-      )}
-      {loaded !== undefined && loaded > 0 && (
-        <div className="rounded-full bg-success/15 px-3 py-1 text-xs font-medium text-success">
-          {loaded} baris dimuat
-        </div>
-      )}
-    </label>
-  );
-}
-
-function MetaCard({ meta, kind }: { meta: UploadMeta; kind: Kind }) {
-  return (
-    <div className="rounded-xl border border-border/60 bg-muted/20 p-4">
-      <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
-        <CheckCircle2 className="h-4 w-4 text-success" /> File berhasil dibaca
-        <span className="ml-auto text-[10px] uppercase tracking-wide text-muted-foreground">{kind}</span>
-      </div>
-      <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs md:grid-cols-3">
-        <div><span className="text-muted-foreground">Nama:</span> <span className="font-medium">{meta.fileName}</span></div>
-        <div><span className="text-muted-foreground">Sheet:</span> <span className="font-medium">{meta.sheetPicked}</span></div>
-        <div><span className="text-muted-foreground">Total Sheet:</span> {meta.sheetCount}</div>
-        <div><span className="text-muted-foreground">Rows:</span> {meta.rowCount}</div>
-        {Object.entries(meta.extra).map(([k, v]) => (
-          <div key={k}><span className="text-muted-foreground">{k}:</span> <span className="font-medium">{v}</span></div>
-        ))}
         <div>
-          <span className="text-muted-foreground">Mapping:</span>{" "}
-          <span className="font-medium text-success">{meta.mappingPct}%</span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function SmartDropZone({
-  running,
-  log,
-  onFiles,
-}: {
-  running: boolean;
-  log: { name: string; kind: ImportKind; count: number; ok: boolean; error?: string }[];
-  onFiles: (files: File[]) => void;
-}) {
-  const [drag, setDrag] = useState(false);
-  const handle = (fl: FileList | null) => {
-    if (!fl || !fl.length) return;
-    onFiles(Array.from(fl));
-  };
-  return (
-    <div
-      onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
-      onDragLeave={() => setDrag(false)}
-      onDrop={(e) => { e.preventDefault(); setDrag(false); handle(e.dataTransfer.files); }}
-      className={`rounded-2xl border-2 border-dashed p-5 transition ${
-        drag ? "border-primary bg-primary/5" : "border-primary/40 bg-gradient-to-br from-primary/5 to-transparent"
-      }`}
-    >
-      <div className="flex flex-col items-center gap-3 text-center sm:flex-row sm:text-left">
-        <div className="grid h-12 w-12 place-items-center rounded-2xl gradient-primary shadow-lg">
-          <Sparkles className="h-6 w-6 text-white" />
-        </div>
-        <div className="flex-1">
-          <div className="font-display text-sm font-semibold">Smart Import — Drag beberapa file sekaligus</div>
-          <div className="text-xs text-muted-foreground">
-            Otomatis mendeteksi jenis file (Cluster / Ticket / Analyst) berdasarkan sheet, header, & isi. Fuzzy header matching aktif.
+          <div className="font-display text-lg font-semibold">Bulk Excel Import</div>
+          <div className="mt-1 text-sm text-muted-foreground">
+            Drag &amp; Drop banyak file .xlsx sekaligus — Cluster, Ticket, Analyst Market
+            terdeteksi otomatis (no config)
           </div>
         </div>
-        <label className="cursor-pointer">
-          <input
-            type="file"
-            multiple
-            accept=".xlsx,.xls,.csv"
-            className="hidden"
-            onChange={(e) => { handle(e.target.files); e.currentTarget.value = ""; }}
-          />
-          <span className="inline-flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground shadow hover:opacity-90">
-            <Upload className="h-3.5 w-3.5" /> Pilih File
-          </span>
-        </label>
-      </div>
-      {(running || log.length > 0) && (
-        <div className="mt-4 space-y-1 rounded-xl border border-border/60 bg-background/50 p-3 text-xs">
-          {log.map((l, i) => (
-            <div key={i} className="flex items-center gap-2">
-              <CheckCircle2 className={`h-3.5 w-3.5 ${l.ok ? "text-success" : "text-destructive"}`} />
-              <span className="font-medium">{l.name}</span>
-              <span className="uppercase text-muted-foreground">→ {l.kind}</span>
-              <span className="ml-auto">
-                {l.ok ? `${l.count.toLocaleString("id-ID")} baris` : (l.error ?? "gagal")}
-              </span>
-            </div>
-          ))}
-          {running && <div className="text-muted-foreground">Memproses…</div>}
+        <Button
+          className="mt-1"
+          disabled={disabled}
+          onClick={() => inputRef.current?.click()}
+        >
+          <Upload className="mr-2 h-4 w-4" /> Upload Multiple Files
+        </Button>
+        <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+          Ctrl / Cmd + klik untuk pilih beberapa file
         </div>
-      )}
+      </div>
     </div>
+  );
+}
+
+function ClassifiedList({
+  items,
+  onRemove,
+}: {
+  items: Classified[];
+  onRemove: (idx: number) => void;
+}) {
+  const groups = useMemo(() => {
+    const g: Record<ImportKind, Classified[]> = { cluster: [], ticket: [], analyst: [] };
+    items.forEach((it) => g[it.kind].push(it));
+    return g;
+  }, [items]);
+
+  return (
+    <div className="grid gap-3 md:grid-cols-3">
+      {(Object.keys(groups) as ImportKind[]).map((k) => (
+        <div key={k} className="rounded-xl border border-border/60 bg-muted/20 p-3">
+          <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide">
+            <CheckCircle2
+              className={`h-3.5 w-3.5 ${groups[k].length ? "text-success" : "text-muted-foreground/50"}`}
+            />
+            {KIND_LABEL[k]}
+            <span className="ml-auto rounded-full bg-background px-2 py-0.5 text-[10px]">
+              {groups[k].length}
+            </span>
+          </div>
+          {groups[k].length === 0 && (
+            <div className="text-[11px] text-muted-foreground">Belum ada file</div>
+          )}
+          <div className="space-y-1.5">
+            {groups[k].map((it) => {
+              const idx = items.indexOf(it);
+              return (
+                <div
+                  key={it.checksum}
+                  className="group flex items-center gap-2 rounded-lg bg-background/70 px-2 py-1.5 text-xs"
+                >
+                  <FileSpreadsheet className="h-3.5 w-3.5 shrink-0 text-primary" />
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate font-medium">{it.fileName}</div>
+                    <div className="text-[10px] text-muted-foreground">
+                      {it.sheetName} · {formatBytes(it.size)}
+                      {it.cached && (
+                        <span className="ml-1 rounded bg-warning/15 px-1 text-warning">cache</span>
+                      )}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => onRemove(idx)}
+                    className="opacity-40 hover:opacity-100"
+                    aria-label="remove"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function PipelineProgress({
+  stage,
+  overall,
+  running,
+}: {
+  stage: StageKey | null;
+  overall: number;
+  running: boolean;
+}) {
+  if (!running && overall === 0) return null;
+  return (
+    <div className="rounded-xl border border-border/60 bg-background/70 p-4">
+      <div className="mb-3 flex items-center justify-between text-xs">
+        <div className="flex items-center gap-2 font-medium">
+          <Zap className="h-3.5 w-3.5 text-primary" />
+          {stage ? STAGES.find((s) => s.key === stage)?.label : "Selesai"}…
+        </div>
+        <div className="font-mono text-muted-foreground">{overall}%</div>
+      </div>
+      <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+        <motion.div
+          initial={{ width: 0 }}
+          animate={{ width: `${overall}%` }}
+          transition={{ duration: 0.4 }}
+          className="h-full gradient-primary"
+        />
+      </div>
+      <div className="mt-3 grid grid-cols-3 gap-1.5 sm:grid-cols-7">
+        {STAGES.map((s, i) => {
+          const done = STAGES.findIndex((x) => x.key === stage) > i || overall === 100;
+          const active = s.key === stage;
+          return (
+            <div
+              key={s.key}
+              className={`rounded-md px-1.5 py-1 text-center text-[9px] uppercase tracking-wide transition ${
+                done
+                  ? "bg-success/15 text-success"
+                  : active
+                    ? "bg-primary/15 text-primary"
+                    : "bg-muted/40 text-muted-foreground"
+              }`}
+            >
+              {s.label.split(" ")[0]}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function SummaryResult({ summary }: { summary: ImportSummary }) {
+  const items: { label: string; value: string; sub: string }[] = [];
+  if (summary.cluster)
+    items.push({
+      label: "Master Cluster",
+      value: summary.cluster.rows.toLocaleString("id-ID"),
+      sub: `${summary.cluster.kab} Kabupaten · ${summary.cluster.prov} Provinsi`,
+    });
+  if (summary.ticket)
+    items.push({
+      label: "Ticket",
+      value: summary.ticket.rows.toLocaleString("id-ID"),
+      sub: `${summary.ticket.bulan} Bulan`,
+    });
+  if (summary.analyst)
+    items.push({
+      label: "Analyst Market",
+      value: summary.analyst.rows.toLocaleString("id-ID"),
+      sub: `${summary.analyst.ae} AE`,
+    });
+  if (!items.length) return null;
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="rounded-xl border border-success/40 bg-success/5 p-4"
+    >
+      <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-success">
+        <CheckCircle2 className="h-4 w-4" /> Import Completed · Dashboard diperbarui
+      </div>
+      <div className="grid gap-3 sm:grid-cols-3">
+        {items.map((it) => (
+          <div key={it.label} className="rounded-lg bg-background/70 p-3">
+            <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+              {it.label}
+            </div>
+            <div className="font-display text-2xl font-bold">{it.value}</div>
+            <div className="text-[11px] text-muted-foreground">{it.sub}</div>
+          </div>
+        ))}
+      </div>
+    </motion.div>
   );
 }
 
 function UploadPage() {
   const {
-    clusters, tickets, analyst, history,
-    setClusters, setTickets, setAnalyst, pushHistory, clearAll,
+    clusters,
+    tickets,
+    analyst,
+    history,
+    setClusters,
+    setTickets,
+    setAnalyst,
+    pushHistory,
+    clearAll,
   } = useDataStore();
-  const [append, setAppend] = useState(false);
-  const [progress, setProgress] = useState<Record<Kind, number>>({ cluster: 0, ticket: 0, analyst: 0 });
-  const [metas, setMetas] = useState<Partial<Record<Kind, UploadMeta>>>({});
-  const [smart, setSmart] = useState<{ running: boolean; log: { name: string; kind: ImportKind; count: number; ok: boolean; error?: string }[] }>({ running: false, log: [] });
 
-  const runImport = async (kind: Kind, file: File) => {
-    setProgress((p) => ({ ...p, [kind]: 20 }));
-    try {
-      let count = 0;
-      let meta: UploadMeta;
-      if (kind === "cluster") {
-        const r = await parseClusterFile(file);
-        setProgress((p) => ({ ...p, [kind]: 70 }));
-        setClusters(r.rows, append ? "append" : "replace");
-        count = r.rows.length;
-        meta = r.meta;
-      } else if (kind === "ticket") {
-        const r = await parseTicketFile(file);
-        setProgress((p) => ({ ...p, [kind]: 70 }));
-        setTickets(r.rows, append ? "append" : "replace");
-        count = r.rows.length;
-        meta = r.meta;
-      } else {
-        const r = await parseAnalystFile(file);
-        setProgress((p) => ({ ...p, [kind]: 70 }));
-        setAnalyst(r.rows, append ? "append" : "replace");
-        count = r.rows.length;
-        meta = r.meta;
+  const [queue, setQueue] = useState<Classified[]>([]);
+  const [classifying, setClassifying] = useState(false);
+  const [running, setRunning] = useState(false);
+  const [stage, setStage] = useState<StageKey | null>(null);
+  const [overall, setOverall] = useState(0);
+  const [summary, setSummary] = useState<ImportSummary>({});
+  const [confirmMode, setConfirmMode] = useState<null | "prompt">(null);
+  const [errors, setErrors] = useState<{ name: string; message: string }[]>([]);
+
+  const hasData = clusters.length > 0 || tickets.length > 0 || analyst.length > 0;
+  const knownChecksums = useMemo(
+    () => new Set(history.map((h) => h.checksum).filter(Boolean) as string[]),
+    [history],
+  );
+
+  const addFiles = useCallback(
+    async (files: File[]) => {
+      setClassifying(true);
+      setErrors([]);
+      try {
+        const results = await Promise.all(
+          files.map(async (f) => {
+            try {
+              const [meta, checksum] = await Promise.all([classifyFile(f), fileChecksum(f)]);
+              return {
+                file: f,
+                ...meta,
+                checksum,
+                cached: knownChecksums.has(checksum),
+              } as Classified;
+            } catch (e) {
+              setErrors((prev) => [...prev, { name: f.name, message: (e as Error).message }]);
+              return null;
+            }
+          }),
+        );
+        const ok = results.filter((r): r is Classified => r !== null);
+        setQueue((q) => {
+          const seen = new Set(q.map((x) => x.checksum));
+          const merged = [...q];
+          for (const r of ok) if (!seen.has(r.checksum)) merged.push(r);
+          return merged;
+        });
+        if (ok.length) toast.success(`${ok.length} file terdeteksi otomatis`);
+      } finally {
+        setClassifying(false);
       }
-      const entry: UploadHistoryEntry = { ...meta, kind, mode: append ? "append" : "replace" };
-      pushHistory(entry);
-      setMetas((m) => ({ ...m, [kind]: meta }));
-      setProgress((p) => ({ ...p, [kind]: 100 }));
-      toast.success(`${count} baris berhasil diimpor (${kind})`);
-      setTimeout(() => setProgress((p) => ({ ...p, [kind]: 0 })), 800);
+    },
+    [knownChecksums],
+  );
+
+  const removeAt = (i: number) => setQueue((q) => q.filter((_, idx) => idx !== i));
+
+  const startImport = () => {
+    if (!queue.length) return;
+    if (hasData) setConfirmMode("prompt");
+    else void runImport("replace");
+  };
+
+  const runImport = async (mode: "replace" | "append") => {
+    setConfirmMode(null);
+    setRunning(true);
+    setSummary({});
+    setErrors([]);
+    setOverall(0);
+
+    const advance = async (s: StageKey, pct: number) => {
+      setStage(s);
+      setOverall(pct);
+      await new Promise((r) => setTimeout(r, 180));
+    };
+
+    try {
+      await advance("scan", 8);
+      await advance("identify", 18);
+      await advance("validate", 28);
+      await advance("normalize", 40);
+
+      // Parse in parallel
+      const parsePromises = queue.map(async (q) => {
+        if (q.kind === "cluster") {
+          const r = await parseClusterFile(q.file);
+          return { q, kind: "cluster" as const, rows: r.rows, meta: r.meta };
+        }
+        if (q.kind === "ticket") {
+          const r = await parseTicketFile(q.file);
+          return { q, kind: "ticket" as const, rows: r.rows, meta: r.meta };
+        }
+        const r = await parseAnalystFile(q.file);
+        return { q, kind: "analyst" as const, rows: r.rows, meta: r.meta };
+      });
+
+      const results = await Promise.all(
+        parsePromises.map((p) =>
+          p.catch((e: Error) => ({ error: e.message }) as { error: string }),
+        ),
+      );
+
+      await advance("map", 62);
+
+      const buckets = {
+        cluster: [] as Awaited<ReturnType<typeof parseClusterFile>>["rows"],
+        ticket: [] as Awaited<ReturnType<typeof parseTicketFile>>["rows"],
+        analyst: [] as Awaited<ReturnType<typeof parseAnalystFile>>["rows"],
+      };
+      const metas: { kind: ImportKind; meta: UploadMeta; checksum: string }[] = [];
+
+      results.forEach((res, i) => {
+        if ("error" in res) {
+          setErrors((prev) => [...prev, { name: queue[i].fileName, message: res.error }]);
+          return;
+        }
+        if (res.kind === "cluster") buckets.cluster.push(...res.rows);
+        else if (res.kind === "ticket") buckets.ticket.push(...res.rows);
+        else buckets.analyst.push(...res.rows);
+        metas.push({ kind: res.kind, meta: res.meta, checksum: queue[i].checksum });
+      });
+
+      await advance("relate", 82);
+
+      const sum: ImportSummary = {};
+      if (buckets.cluster.length) {
+        setClusters(buckets.cluster, mode);
+        const kab = new Set(buckets.cluster.map((r) => r.kabupaten).filter(Boolean));
+        const prov = new Set(buckets.cluster.map((r) => r.provinsi).filter(Boolean));
+        sum.cluster = { rows: buckets.cluster.length, kab: kab.size, prov: prov.size };
+      }
+      if (buckets.ticket.length) {
+        setTickets(buckets.ticket, mode);
+        const bulan = new Set(buckets.ticket.map((r) => r.bulan).filter(Boolean));
+        sum.ticket = { rows: buckets.ticket.length, bulan: bulan.size };
+      }
+      if (buckets.analyst.length) {
+        setAnalyst(buckets.analyst, mode);
+        const ae = new Set(buckets.analyst.map((r) => r.aeName).filter(Boolean));
+        sum.analyst = { rows: buckets.analyst.length, ae: ae.size };
+      }
+      metas.forEach((m) =>
+        pushHistory({ ...m.meta, kind: m.kind, mode, checksum: m.checksum } as UploadHistoryEntry),
+      );
+
+      await advance("refresh", 96);
+      setOverall(100);
+      setStage(null);
+      setSummary(sum);
+      setQueue([]);
+      toast.success("Import selesai · Dashboard diperbarui");
     } catch (e) {
-      setProgress((p) => ({ ...p, [kind]: 0 }));
-      toast.error(`Gagal impor ${kind}: ${(e as Error).message}`);
+      toast.error(`Gagal import: ${(e as Error).message}`);
+    } finally {
+      setRunning(false);
+      setTimeout(() => setOverall(0), 1500);
     }
   };
 
@@ -235,105 +486,77 @@ function UploadPage() {
     toast.success("Data diekspor");
   };
 
-  const runSmartImport = async (files: File[]) => {
-    if (!files.length) return;
-    setSmart({ running: true, log: [] });
-    // Group results so we can apply per-kind replace/append semantics once
-    const buckets: Record<ImportKind, { rows: unknown[]; metas: UploadMeta[] }> = {
-      cluster: { rows: [], metas: [] },
-      ticket: { rows: [], metas: [] },
-      analyst: { rows: [], metas: [] },
-    };
-    const log: { name: string; kind: ImportKind; count: number; ok: boolean; error?: string }[] = [];
-    for (const f of files) {
-      try {
-        const r = await smartImport(f);
-        buckets[r.kind].rows.push(...(r.rows as unknown[]));
-        buckets[r.kind].metas.push(r.meta);
-        log.push({ name: f.name, kind: r.kind, count: r.rows.length, ok: true });
-      } catch (e) {
-        log.push({ name: f.name, kind: "cluster", count: 0, ok: false, error: (e as Error).message });
-      }
-      setSmart({ running: true, log: [...log] });
-    }
-    // Apply
-    const mode: "append" | "replace" = append ? "append" : "replace";
-    if (buckets.cluster.rows.length) {
-      setClusters(buckets.cluster.rows as never, mode);
-      buckets.cluster.metas.forEach((m) => pushHistory({ ...m, kind: "cluster", mode }));
-      setMetas((prev) => ({ ...prev, cluster: buckets.cluster.metas[buckets.cluster.metas.length - 1] }));
-    }
-    if (buckets.ticket.rows.length) {
-      setTickets(buckets.ticket.rows as never, mode);
-      buckets.ticket.metas.forEach((m) => pushHistory({ ...m, kind: "ticket", mode }));
-      setMetas((prev) => ({ ...prev, ticket: buckets.ticket.metas[buckets.ticket.metas.length - 1] }));
-    }
-    if (buckets.analyst.rows.length) {
-      setAnalyst(buckets.analyst.rows as never, mode);
-      buckets.analyst.metas.forEach((m) => pushHistory({ ...m, kind: "analyst", mode }));
-      setMetas((prev) => ({ ...prev, analyst: buckets.analyst.metas[buckets.analyst.metas.length - 1] }));
-    }
-    setSmart({ running: false, log });
-    const ok = log.filter((l) => l.ok).length;
-    toast.success(`Smart Import selesai · ${ok}/${files.length} file · dashboard diperbarui`);
-  };
-
   return (
     <>
-      <AppHeader title="Data Management" subtitle="Import Excel, kelola dataset, riwayat upload" />
+      <AppHeader title="Data Management" subtitle="Bulk Excel Import — zero config, auto detect" />
       <div className="space-y-6 p-4 sm:p-6">
         <Card className="glass-card border-0">
           <CardHeader className="flex-row items-center justify-between space-y-0">
             <div className="flex items-center gap-2">
-              <FileSpreadsheet className="h-5 w-5 text-primary" />
-              <CardTitle className="font-display text-base">Dynamic Excel Import Engine</CardTitle>
+              <Database className="h-5 w-5 text-primary" />
+              <CardTitle className="font-display text-base">
+                Smart Bulk Excel Import Engine
+              </CardTitle>
             </div>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2">
-                <Switch id="mode" checked={append} onCheckedChange={setAppend} />
-                <Label htmlFor="mode" className="text-xs">{append ? "Append" : "Replace"}</Label>
-              </div>
-              <Button variant="outline" size="sm" onClick={exportAll} disabled={!clusters.length && !tickets.length && !analyst.length}>
-                <Download className="mr-1 h-4 w-4" /> Export
-              </Button>
-            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={exportAll}
+              disabled={!hasData}
+            >
+              <Download className="mr-1 h-4 w-4" /> Export
+            </Button>
           </CardHeader>
           <CardContent className="space-y-4">
-            <SmartDropZone
-              running={smart.running}
-              log={smart.log}
-              onFiles={runSmartImport}
-            />
+            <BulkImportZone onFiles={addFiles} disabled={running} />
 
-            <div className="grid gap-4 md:grid-cols-3">
-              <DropZone
-                label="PEMBAGIAN CLUSTER SIBT.xlsx"
-                hint="Sheet: DATA CLUSTER · HC Jan–Jun, ticket, PIC"
-                loaded={clusters.length}
-                progress={progress.cluster}
-                onFile={(f) => runImport("cluster", f)}
-              />
-              <DropZone
-                label="ticket jan-jun.xlsx"
-                hint="Pivot flatten otomatis · sheet dipilih auto"
-                loaded={tickets.length}
-                progress={progress.ticket}
-                onFile={(f) => runImport("ticket", f)}
-              />
-              <DropZone
-                label="ANALYST MARKET.xlsx"
-                hint="Sheet: HASIL PROFILING · AE, Kompetitor, Insight"
-                loaded={analyst.length}
-                progress={progress.analyst}
-                onFile={(f) => runImport("analyst", f)}
-              />
-            </div>
+            {classifying && (
+              <div className="rounded-lg bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+                Scanning workbook & menghitung checksum…
+              </div>
+            )}
 
-            <div className="grid gap-3 md:grid-cols-3">
-              {metas.cluster && <MetaCard meta={metas.cluster} kind="cluster" />}
-              {metas.ticket && <MetaCard meta={metas.ticket} kind="ticket" />}
-              {metas.analyst && <MetaCard meta={metas.analyst} kind="analyst" />}
-            </div>
+            <AnimatePresence>
+              {queue.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  className="space-y-3"
+                >
+                  <ClassifiedList items={queue} onRemove={removeAt} />
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button onClick={startImport} disabled={running}>
+                      <Zap className="mr-1 h-4 w-4" />
+                      Import {queue.length} File
+                    </Button>
+                    <Button variant="ghost" onClick={() => setQueue([])} disabled={running}>
+                      Kosongkan
+                    </Button>
+                    <div className="ml-auto text-[11px] text-muted-foreground">
+                      Parsing paralel (Promise.all) · SHA-256 cache aktif
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <PipelineProgress stage={stage} overall={overall} running={running} />
+
+            {errors.length > 0 && (
+              <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-xs">
+                <div className="mb-1 flex items-center gap-2 font-semibold text-destructive">
+                  <AlertCircle className="h-3.5 w-3.5" /> {errors.length} file gagal
+                </div>
+                {errors.map((e, i) => (
+                  <div key={i} className="text-muted-foreground">
+                    <span className="font-medium">{e.name}</span> — {e.message}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <SummaryResult summary={summary} />
 
             <div className="flex flex-wrap items-center gap-2 border-t border-border/60 pt-4">
               <Button size="sm" variant="outline" onClick={() => downloadTemplate("cluster")}>
@@ -346,7 +569,9 @@ function UploadPage() {
                 <Download className="mr-1 h-4 w-4" /> Template Analyst
               </Button>
               <div className="ml-auto text-xs text-muted-foreground">
-                {clusters.length} cluster · {tickets.length} ticket · {analyst.length} profiling — tersimpan di device
+                {clusters.length.toLocaleString("id-ID")} cluster ·{" "}
+                {tickets.length.toLocaleString("id-ID")} ticket ·{" "}
+                {analyst.length.toLocaleString("id-ID")} profiling
               </div>
               <Button
                 variant="outline"
@@ -354,7 +579,7 @@ function UploadPage() {
                 onClick={() => {
                   if (confirm("Hapus semua data yang tersimpan?")) {
                     clearAll();
-                    setMetas({});
+                    setSummary({});
                     toast.info("Semua data dihapus");
                   }
                 }}
@@ -388,7 +613,9 @@ function UploadPage() {
                   <tbody>
                     {history.map((h, i) => (
                       <tr key={i} className="border-t border-border/50">
-                        <td className="py-1.5 pr-3">{new Date(h.timestamp).toLocaleString("id-ID")}</td>
+                        <td className="py-1.5 pr-3">
+                          {new Date(h.timestamp).toLocaleString("id-ID")}
+                        </td>
                         <td className="py-1.5 pr-3 font-medium">{h.fileName}</td>
                         <td className="py-1.5 pr-3 uppercase">{h.kind}</td>
                         <td className="py-1.5 pr-3">{h.sheetPicked}</td>
@@ -404,6 +631,34 @@ function UploadPage() {
           </Card>
         )}
       </div>
+
+      <Dialog open={confirmMode === "prompt"} onOpenChange={(o) => !o && setConfirmMode(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Data lama terdeteksi</DialogTitle>
+            <DialogDescription>
+              Terdapat data existing. Pilih apakah data baru menggantikan (Replace) atau ditambahkan
+              (Append) ke dataset yang ada.
+              {queue.some((q) => q.cached) && (
+                <div className="mt-2 rounded-md bg-warning/10 p-2 text-warning">
+                  {queue.filter((q) => q.cached).length} file identik pernah diupload (SHA-256 sama).
+                </div>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:justify-between">
+            <Button variant="ghost" onClick={() => setConfirmMode(null)}>
+              Cancel
+            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => runImport("append")}>
+                Append New Data
+              </Button>
+              <Button onClick={() => runImport("replace")}>Replace Existing</Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
