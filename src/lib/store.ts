@@ -1,6 +1,39 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { persist, createJSONStorage, type StateStorage } from "zustand/middleware";
+import { get as idbGet, set as idbSet, del as idbDel } from "idb-keyval";
 import type { AnalystRow, ClusterRow, TicketRow, UploadMeta } from "./excel";
+
+// Async IndexedDB storage — writes don't block the UI thread or navigation.
+// Debounced so bursts of updates coalesce into a single write.
+const writeTimers = new Map<string, ReturnType<typeof setTimeout>>();
+const pending = new Map<string, string>();
+const idbStorage: StateStorage = {
+  getItem: async (name) => {
+    try {
+      const v = await idbGet(name);
+      return typeof v === "string" ? v : null;
+    } catch {
+      return null;
+    }
+  },
+  setItem: (name, value) => {
+    pending.set(name, value);
+    const t = writeTimers.get(name);
+    if (t) clearTimeout(t);
+    writeTimers.set(
+      name,
+      setTimeout(() => {
+        const v = pending.get(name);
+        pending.delete(name);
+        writeTimers.delete(name);
+        if (v !== undefined) void idbSet(name, v);
+      }, 350),
+    );
+  },
+  removeItem: (name) => {
+    void idbDel(name);
+  },
+};
 
 export type ActionStatus = "belum" | "onprogress" | "done";
 export type ActionItem = {
