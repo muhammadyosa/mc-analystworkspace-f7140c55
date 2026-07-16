@@ -66,6 +66,27 @@ export type AnalystRow = {
   evidence: string;
 };
 
+export type CompetitorRow = {
+  id: string;
+  cluster: string;
+  kabupaten: string;
+  provinsi: string;
+  competitor: string;
+  competitorRaw: string;
+  price: number;
+  promo: string;
+  promoCategory: PromoCategory;
+};
+
+export type PromoCategory =
+  | "Gratis Instalasi"
+  | "Diskon Instalasi"
+  | "Upgrade Kecepatan"
+  | "Cashback"
+  | "Bundling"
+  | "Tidak Ada Promo"
+  | "Lainnya";
+
 export type UploadMeta = {
   fileName: string;
   sheetCount: number;
