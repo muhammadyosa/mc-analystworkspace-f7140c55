@@ -41,7 +41,7 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border">
-        <div className="flex items-center gap-3 px-3 py-3">
+        <div className="flex items-center gap-3 px-3 py-3 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-2">
           <img src={iconnetLogo.url} alt="Iconnet" className="h-9 w-9 object-contain" />
           <div className="min-w-0 group-data-[collapsible=icon]:hidden">
             <div className="truncate font-display text-sm font-bold leading-tight">Iconnet</div>
@@ -59,7 +59,7 @@ export function AppSidebar() {
                     asChild
                     isActive={isActive(item.url)}
                     tooltip={item.title}
-                    className="justify-center group-data-[collapsible=icon]:px-2"
+                    className="justify-start group-data-[collapsible=icon]:justify-center"
                   >
                     <Link to={item.url} className="flex items-center gap-3">
                       <item.icon className="h-[18px] w-[18px] shrink-0" />
