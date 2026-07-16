@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
-import { AppHeader } from "@/components/app-header";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -39,7 +39,7 @@ import {
 } from "@/lib/excel";
 import { useDataStore, type UploadHistoryEntry } from "@/lib/store";
 
-export const Route = createFileRoute("/upload")({
+export const Route = createFileRoute("/settings/data")({
   head: () => ({ meta: [{ title: "Data Management — MCA Workspace" }] }),
   component: UploadPage,
 });
@@ -488,8 +488,7 @@ function UploadPage() {
 
   return (
     <>
-      <AppHeader title="Data Management" subtitle="Bulk Excel Import — zero config, auto detect" />
-      <div className="space-y-6 p-4 sm:p-6">
+      <div className="space-y-6">
         <Card className="glass-card border-0">
           <CardHeader className="flex-row items-center justify-between space-y-0">
             <div className="flex items-center gap-2">
