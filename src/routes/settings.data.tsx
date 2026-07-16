@@ -135,8 +135,8 @@ function BulkImportZone({
         <div>
           <div className="font-display text-lg font-semibold">Bulk Excel Import</div>
           <div className="mt-1 text-sm text-muted-foreground">
-            Drag &amp; Drop banyak file .xlsx sekaligus — Cluster, Ticket, Analyst Market
-            terdeteksi otomatis (no config)
+            Drag &amp; Drop banyak file .xlsx sekaligus — Cluster, Ticket, Analyst Market,
+            Competitor terdeteksi otomatis (no config)
           </div>
         </div>
         <Button
