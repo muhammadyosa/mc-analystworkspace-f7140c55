@@ -663,6 +663,14 @@ function ActionPlanPage() {
           <TabsContent value="calendar">
             <Card className="glass-card border-0">
               <CardContent className="p-4">
+                <div className="mb-3 flex flex-wrap items-center justify-end gap-2">
+                  <Button size="sm" variant="outline" onClick={() => exportCalendarExcel(filtered)}>
+                    <Download className="mr-1 h-4 w-4" /> Excel
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => exportCalendarPDF(filtered)}>
+                    <Download className="mr-1 h-4 w-4" /> PDF
+                  </Button>
+                </div>
                 <CalendarView rows={filtered} />
               </CardContent>
             </Card>
