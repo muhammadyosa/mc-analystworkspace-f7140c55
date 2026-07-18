@@ -584,10 +584,11 @@ function ActionPlanPage() {
                     className="h-8 shrink-0 rounded-md border border-input bg-background px-2 text-xs"
                   >
                     <option value="">Semua Status</option>
-                    <option value="planned">Planned</option>
+                    <option value="planned">Not Started</option>
                     <option value="onprogress">On Progress</option>
-                    <option value="completed">Completed</option>
+                    <option value="completed">Done</option>
                     <option value="overdue">Overdue</option>
+                    <option value="reschedule">Reschedule</option>
                   </select>
                   <input
                     type="month"
