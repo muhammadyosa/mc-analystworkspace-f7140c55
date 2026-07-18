@@ -1000,26 +1000,26 @@ function DetailDialog({
                   <div className="mb-1 text-xs font-semibold text-muted-foreground">Progress Timeline</div>
                   <Progress value={pct} className="h-2" />
                 </div>
-                {row.description && (
-                  <div>
-                    <div className="mb-1 text-xs font-semibold text-muted-foreground">Keterangan</div>
-                    <p className="whitespace-pre-wrap text-sm">{row.description}</p>
-                  </div>
-                )}
+                <div>
+                  <div className="mb-1 text-xs font-semibold text-muted-foreground">Catatan / Keterangan (editable)</div>
+                  <Textarea
+                    rows={3}
+                    value={row.description || ""}
+                    onChange={(e) => onUpdate(row.id, { description: e.target.value })}
+                    placeholder="Update catatan progres realtime…"
+                  />
+                </div>
                 <div>
                   <div className="mb-1 flex items-center gap-2 text-xs font-semibold">
                     <Trophy className="h-3.5 w-3.5 text-emerald-500" />
-                    <span className="text-muted-foreground">Hasil / Outcome</span>
+                    <span className="text-muted-foreground">Hasil / Outcome (editable)</span>
                   </div>
-                  {row.result?.trim() ? (
-                    <p className="whitespace-pre-wrap rounded-md border border-emerald-500/30 bg-emerald-500/5 p-2 text-sm">
-                      {row.result}
-                    </p>
-                  ) : (
-                    <p className="rounded-md border border-dashed border-border p-2 text-xs italic text-muted-foreground">
-                      Belum ada hasil dicatat.
-                    </p>
-                  )}
+                  <Textarea
+                    rows={2}
+                    value={row.result || ""}
+                    onChange={(e) => onUpdate(row.id, { result: e.target.value })}
+                    placeholder="Catat outcome program di sini…"
+                  />
                 </div>
               </CardContent>
             </Card>
