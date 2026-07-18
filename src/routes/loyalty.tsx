@@ -6,8 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, TrendingDown, Ticket, ShieldCheck, Plus, ChevronRight } from "lucide-react";
-import { useDataStore, type ClusterRow } from "@/lib/store";
-import { computeActionStatus } from "@/lib/excel";
+import { useDataStore } from "@/lib/store";
+import { computeActionStatus, type ClusterRow } from "@/lib/excel";
 
 export const Route = createFileRoute("/loyalty")({
   head: () => ({ meta: [{ title: "Customer Loyalty — Iconnet Workspace" }] }),
