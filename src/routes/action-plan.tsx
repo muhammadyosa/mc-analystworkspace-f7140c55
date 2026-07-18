@@ -616,8 +616,13 @@ function ActionPlanPage() {
                   )}
                 </div>
               </div>
-              <div className="text-[11px] text-muted-foreground sm:ml-auto">
-                {filtered.length} dari {rows.length} program
+              <div className="flex items-center gap-2 sm:ml-auto">
+                <span className="text-[11px] text-muted-foreground">
+                  {filtered.length} dari {rows.length} program
+                </span>
+                <Button size="sm" className="h-8" onClick={() => setAddOpen(true)}>
+                  <Plus className="mr-1 h-4 w-4" /> Tambah ke Action Plan
+                </Button>
               </div>
             </div>
           </CardContent>
