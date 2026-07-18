@@ -7,11 +7,14 @@ import {
   Clock,
   GripVertical,
   ListChecks,
+  Plus,
   Sparkles,
   Target,
   Trophy,
   Users,
   Link2,
+  Download,
+  RotateCcw,
 } from "lucide-react";
 import {
   DndContext,
@@ -24,17 +27,21 @@ import {
   type DragEndEvent,
 } from "@dnd-kit/core";
 import { motion } from "framer-motion";
+import * as XLSX from "xlsx";
 import { AppHeader } from "@/components/app-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -46,17 +53,30 @@ export const Route = createFileRoute("/action-plan")({
   component: ActionPlanPage,
 });
 
+const PROGRAM_OPTIONS = [
+  "Door to Door",
+  "Digital Ads",
+  "Branding",
+  "Event",
+  "Partnership",
+  "Site Visit",
+  "Retention",
+  "Profiling",
+  "Customer Loyalty",
+];
+
 const STATUS_META: Record<
   ActionPlanStatus,
   { label: string; color: string; dot: string; ring: string; icon: typeof Clock }
 > = {
-  planned: { label: "Planned", color: "text-sky-500", dot: "bg-sky-500", ring: "ring-sky-500/30", icon: CalendarDays },
+  planned: { label: "Not Started", color: "text-sky-500", dot: "bg-sky-500", ring: "ring-sky-500/30", icon: CalendarDays },
   onprogress: { label: "On Progress", color: "text-amber-500", dot: "bg-amber-500", ring: "ring-amber-500/30", icon: Clock },
-  completed: { label: "Completed", color: "text-emerald-500", dot: "bg-emerald-500", ring: "ring-emerald-500/30", icon: CheckCircle2 },
+  completed: { label: "Done", color: "text-emerald-500", dot: "bg-emerald-500", ring: "ring-emerald-500/30", icon: CheckCircle2 },
   overdue: { label: "Overdue", color: "text-rose-500", dot: "bg-rose-500", ring: "ring-rose-500/30", icon: AlertTriangle },
+  reschedule: { label: "Reschedule", color: "text-purple-500", dot: "bg-purple-500", ring: "ring-purple-500/30", icon: RotateCcw },
 };
 
-const COLUMNS: ActionPlanStatus[] = ["planned", "onprogress", "completed", "overdue"];
+const COLUMNS: ActionPlanStatus[] = ["planned", "onprogress", "completed", "overdue", "reschedule"];
 
 function progressOf(row: ActionPlanRow): number {
   if (row.status === "completed") return 100;
