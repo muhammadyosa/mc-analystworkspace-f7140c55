@@ -87,7 +87,7 @@ export type PromoCategory =
   | "Tidak Ada Promo"
   | "Lainnya";
 
-export type ActionPlanStatus = "planned" | "onprogress" | "completed" | "overdue";
+export type ActionPlanStatus = "planned" | "onprogress" | "completed" | "overdue" | "reschedule";
 export type ActionPlanRow = {
   id: string;
   pic: string;
