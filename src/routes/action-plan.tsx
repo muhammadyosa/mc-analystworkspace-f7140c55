@@ -927,6 +927,7 @@ function FilterSelect({
 function DetailDialog({
   row,
   onClose,
+  onUpdate,
   clusterMeta,
   ticketByCluster,
   analystByCluster,
@@ -934,6 +935,7 @@ function DetailDialog({
 }: {
   row: ActionPlanRow | null;
   onClose: () => void;
+  onUpdate: (id: string, patch: Partial<ActionPlanRow>) => void;
   clusterMeta: Map<string, any>;
   ticketByCluster: Map<string, number>;
   analystByCluster: Map<string, any>;
