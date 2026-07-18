@@ -358,7 +358,7 @@ function CalendarView({ rows }: { rows: ActionPlanRow[] }) {
 }
 
 function ActionPlanPage() {
-  const { actionPlans, clusters, tickets, analyst, competitorData, overrideActionPlanStatus } = useDataStore();
+  const { actionPlans, clusters, tickets, analyst, competitorData, overrideActionPlanStatus, addActionPlans, updateActionPlan } = useDataStore();
   const [search, setSearch] = useState("");
   const [filterPic, setFilterPic] = useState("");
   const [filterCluster, setFilterCluster] = useState("");
@@ -367,6 +367,7 @@ function ActionPlanPage() {
   const [filterStatus, setFilterStatus] = useState<"" | ActionPlanStatus>("");
   const [filterMonth, setFilterMonth] = useState("");
   const [openRow, setOpenRow] = useState<ActionPlanRow | null>(null);
+  const [addOpen, setAddOpen] = useState(false);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
   // Cluster meta lookup by name (case-insensitive)
@@ -399,12 +400,12 @@ function ActionPlanPage() {
     return m;
   }, [competitorData]);
 
-  // Recompute status live (some rows may have moved from planned→onprogress by date)
+  // Recompute status live but preserve manual overrides (completed / reschedule)
   const rows = useMemo(() => {
     return actionPlans.map((r) => ({
       ...r,
       status:
-        r.status === "completed"
+        r.status === "completed" || r.status === "reschedule"
           ? r.status
           : computeActionStatus(r.startDate, r.endDate, r.result),
     }));
