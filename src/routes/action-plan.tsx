@@ -715,12 +715,185 @@ function ActionPlanPage() {
       <DetailDialog
         row={openRow}
         onClose={() => setOpenRow(null)}
+        onUpdate={updateActionPlan}
         clusterMeta={clusterMeta}
         ticketByCluster={ticketByCluster}
         analystByCluster={analystByCluster}
         competitorByCluster={competitorByCluster}
       />
+
+      <AddProgramDialog
+        open={addOpen}
+        onClose={() => setAddOpen(false)}
+        clusterOptions={Array.from(new Set(clusters.map((c) => c.cluster).filter(Boolean))).sort()}
+        picOptions={Array.from(new Set(clusters.map((c) => c.pic).filter(Boolean))).sort()}
+        onSubmit={(payload) => {
+          const now = Date.now();
+          const created: ActionPlanRow[] = payload.programs.map((prog, i) => {
+            const durationDays = payload.startDate && payload.endDate
+              ? Math.max(1, Math.round((new Date(payload.endDate).getTime() - new Date(payload.startDate).getTime()) / 86400000) + 1)
+              : 0;
+            return {
+              id: `manual-${now}-${i}-${prog}`.slice(0, 120),
+              pic: payload.pic,
+              cluster: payload.cluster,
+              program: prog,
+              startDate: payload.startDate,
+              endDate: payload.endDate,
+              description: payload.description,
+              result: "",
+              status: computeActionStatus(payload.startDate, payload.endDate, ""),
+              durationDays,
+            };
+          });
+          addActionPlans(created);
+          setAddOpen(false);
+        }}
+      />
     </>
+  );
+}
+
+function exportCalendarExcel(rows: ActionPlanRow[]) {
+  const data = rows
+    .filter((r) => r.startDate)
+    .sort((a, b) => a.startDate.localeCompare(b.startDate))
+    .map((r) => ({
+      "Start Date": r.startDate,
+      "End Date": r.endDate,
+      Cluster: r.cluster,
+      Program: r.program,
+      PIC: r.pic,
+      Status: STATUS_META[r.status].label,
+      Keterangan: r.description,
+      Hasil: r.result,
+    }));
+  const ws = XLSX.utils.json_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Kalender Action Plan");
+  XLSX.writeFile(wb, `kalender-action-plan-${new Date().toISOString().slice(0, 10)}.xlsx`);
+}
+
+function exportCalendarPDF(rows: ActionPlanRow[]) {
+  const w = window.open("", "", "width=1000,height=1200");
+  if (!w) return;
+  const sorted = [...rows].filter((r) => r.startDate).sort((a, b) => a.startDate.localeCompare(b.startDate));
+  const body = sorted
+    .map(
+      (r) => `<tr>
+      <td>${r.startDate}</td><td>${r.endDate}</td><td>${r.cluster}</td>
+      <td>${r.program}</td><td>${r.pic || "-"}</td>
+      <td>${STATUS_META[r.status].label}</td><td>${(r.description || "").replace(/</g, "&lt;")}</td>
+    </tr>`,
+    )
+    .join("");
+  w.document.write(`<html><head><title>Kalender Action Plan</title><style>
+    body{font-family:-apple-system,sans-serif;padding:24px;color:#111}
+    h1{font-size:20px;margin:0 0 12px}
+    table{width:100%;border-collapse:collapse;font-size:11px}
+    th,td{border:1px solid #ccc;padding:6px;text-align:left;vertical-align:top}
+    th{background:#f3f4f6}
+    </style></head><body>
+    <h1>Kalender Action Plan — ${new Date().toLocaleDateString("id-ID")}</h1>
+    <table><thead><tr>
+      <th>Start</th><th>End</th><th>Cluster</th><th>Program</th><th>PIC</th><th>Status</th><th>Keterangan</th>
+    </tr></thead><tbody>${body}</tbody></table>
+    </body></html>`);
+  w.document.close();
+  setTimeout(() => w.print(), 300);
+}
+
+function AddProgramDialog({
+  open,
+  onClose,
+  onSubmit,
+  clusterOptions,
+  picOptions,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onSubmit: (p: { programs: string[]; cluster: string; pic: string; startDate: string; endDate: string; description: string }) => void;
+  clusterOptions: string[];
+  picOptions: string[];
+}) {
+  const [selected, setSelected] = useState<string[]>([]);
+  const [cluster, setCluster] = useState("");
+  const [pic, setPic] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [description, setDescription] = useState("");
+
+  const toggle = (p: string) => setSelected((s) => (s.includes(p) ? s.filter((x) => x !== p) : [...s, p]));
+
+  const submit = () => {
+    if (!selected.length || !cluster.trim()) return;
+    onSubmit({ programs: selected, cluster: cluster.trim(), pic: pic.trim(), startDate, endDate, description });
+    setSelected([]); setCluster(""); setPic(""); setStartDate(""); setEndDate(""); setDescription("");
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="w-[calc(100vw-1.5rem)] max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="font-display">Tambah ke Action Plan</DialogTitle>
+          <DialogDescription>Pilih satu atau beberapa program sekaligus.</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div>
+            <Label className="text-xs">Program ({selected.length} dipilih)</Label>
+            <div className="mt-1.5 flex flex-wrap gap-1.5">
+              {PROGRAM_OPTIONS.map((p) => {
+                const active = selected.includes(p);
+                return (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => toggle(p)}
+                    className={`rounded-full border px-3 py-1 text-xs transition ${
+                      active
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border bg-background hover:bg-muted"
+                    }`}
+                  >
+                    {p}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label className="text-xs">Cluster *</Label>
+              <Input list="ap-clusters" value={cluster} onChange={(e) => setCluster(e.target.value)} className="h-8" />
+              <datalist id="ap-clusters">{clusterOptions.map((c) => <option key={c} value={c} />)}</datalist>
+            </div>
+            <div>
+              <Label className="text-xs">PIC</Label>
+              <Input list="ap-pics" value={pic} onChange={(e) => setPic(e.target.value)} className="h-8" />
+              <datalist id="ap-pics">{picOptions.map((p) => <option key={p} value={p} />)}</datalist>
+            </div>
+            <div>
+              <Label className="text-xs">Start Date</Label>
+              <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="h-8" />
+            </div>
+            <div>
+              <Label className="text-xs">End Date</Label>
+              <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="h-8" />
+            </div>
+          </div>
+          <div>
+            <Label className="text-xs">Catatan</Label>
+            <Textarea rows={2} value={description} onChange={(e) => setDescription(e.target.value)} />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={onClose}>Batal</Button>
+          <Button onClick={submit} disabled={!selected.length || !cluster.trim()}>
+            Simpan {selected.length ? `(${selected.length})` : ""}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
