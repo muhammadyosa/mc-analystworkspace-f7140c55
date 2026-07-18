@@ -966,11 +966,20 @@ function DetailDialog({
     <Dialog open={!!row} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
         <DialogHeader>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Badge className={`${status.ring} ${status.color}`} variant="outline">
               {status.label}
             </Badge>
             <DialogTitle className="font-display">{row.program || "—"}</DialogTitle>
+            <select
+              value={row.status}
+              onChange={(e) => onUpdate(row.id, { status: e.target.value as ActionPlanStatus })}
+              className="ml-auto h-7 rounded-md border border-input bg-background px-2 text-xs"
+            >
+              {COLUMNS.map((s) => (
+                <option key={s} value={s}>{STATUS_META[s].label}</option>
+              ))}
+            </select>
           </div>
           <DialogDescription>
             {row.cluster} · PIC: {row.pic || "-"}
