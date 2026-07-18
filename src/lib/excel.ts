@@ -756,7 +756,7 @@ export function downloadTemplate(kind: ImportKind) {
       "KABUPATEN/KOTA YG BENAR", "STATUS KETERSEDIAAN TIM SERPO",
       "STATUS KETERSEDIAAN TIM IKR", "Provinsi", "PIC",
     ],
-    ticket: ["cluster", "JANUARI", "FEBRUARI", "MARET", "APRIL", "MEI", "JUNI", "kategori", "penyebab", "status"],
+    ticket: ["cluster", "JANUARI", "FEBRUARI", "MARET", "APRIL", "MEI", "JUNI"],
     analyst: [
       "Timestamp", "Nama AE", "TANGGAL CANVASING & PROFILING", "CLUSTER",
       "SEBUTKAN KOMPETITOR YANG ADA DI SANA", "SEBUTKAN BERAPA HARGA RATA-RATA KOMPETITOR",
