@@ -7,11 +7,14 @@ import {
   Clock,
   GripVertical,
   ListChecks,
+  Plus,
   Sparkles,
   Target,
   Trophy,
   Users,
   Link2,
+  Download,
+  RotateCcw,
 } from "lucide-react";
 import {
   DndContext,
@@ -24,17 +27,21 @@ import {
   type DragEndEvent,
 } from "@dnd-kit/core";
 import { motion } from "framer-motion";
+import * as XLSX from "xlsx";
 import { AppHeader } from "@/components/app-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -46,17 +53,30 @@ export const Route = createFileRoute("/action-plan")({
   component: ActionPlanPage,
 });
 
+const PROGRAM_OPTIONS = [
+  "Door to Door",
+  "Digital Ads",
+  "Branding",
+  "Event",
+  "Partnership",
+  "Site Visit",
+  "Retention",
+  "Profiling",
+  "Customer Loyalty",
+];
+
 const STATUS_META: Record<
   ActionPlanStatus,
   { label: string; color: string; dot: string; ring: string; icon: typeof Clock }
 > = {
-  planned: { label: "Planned", color: "text-sky-500", dot: "bg-sky-500", ring: "ring-sky-500/30", icon: CalendarDays },
+  planned: { label: "Not Started", color: "text-sky-500", dot: "bg-sky-500", ring: "ring-sky-500/30", icon: CalendarDays },
   onprogress: { label: "On Progress", color: "text-amber-500", dot: "bg-amber-500", ring: "ring-amber-500/30", icon: Clock },
-  completed: { label: "Completed", color: "text-emerald-500", dot: "bg-emerald-500", ring: "ring-emerald-500/30", icon: CheckCircle2 },
+  completed: { label: "Done", color: "text-emerald-500", dot: "bg-emerald-500", ring: "ring-emerald-500/30", icon: CheckCircle2 },
   overdue: { label: "Overdue", color: "text-rose-500", dot: "bg-rose-500", ring: "ring-rose-500/30", icon: AlertTriangle },
+  reschedule: { label: "Reschedule", color: "text-purple-500", dot: "bg-purple-500", ring: "ring-purple-500/30", icon: RotateCcw },
 };
 
-const COLUMNS: ActionPlanStatus[] = ["planned", "onprogress", "completed", "overdue"];
+const COLUMNS: ActionPlanStatus[] = ["planned", "onprogress", "completed", "overdue", "reschedule"];
 
 function progressOf(row: ActionPlanRow): number {
   if (row.status === "completed") return 100;
@@ -338,7 +358,7 @@ function CalendarView({ rows }: { rows: ActionPlanRow[] }) {
 }
 
 function ActionPlanPage() {
-  const { actionPlans, clusters, tickets, analyst, competitorData, overrideActionPlanStatus } = useDataStore();
+  const { actionPlans, clusters, tickets, analyst, competitorData, overrideActionPlanStatus, addActionPlans, updateActionPlan } = useDataStore();
   const [search, setSearch] = useState("");
   const [filterPic, setFilterPic] = useState("");
   const [filterCluster, setFilterCluster] = useState("");
@@ -347,6 +367,7 @@ function ActionPlanPage() {
   const [filterStatus, setFilterStatus] = useState<"" | ActionPlanStatus>("");
   const [filterMonth, setFilterMonth] = useState("");
   const [openRow, setOpenRow] = useState<ActionPlanRow | null>(null);
+  const [addOpen, setAddOpen] = useState(false);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
   // Cluster meta lookup by name (case-insensitive)
@@ -379,12 +400,12 @@ function ActionPlanPage() {
     return m;
   }, [competitorData]);
 
-  // Recompute status live (some rows may have moved from planned→onprogress by date)
+  // Recompute status live but preserve manual overrides (completed / reschedule)
   const rows = useMemo(() => {
     return actionPlans.map((r) => ({
       ...r,
       status:
-        r.status === "completed"
+        r.status === "completed" || r.status === "reschedule"
           ? r.status
           : computeActionStatus(r.startDate, r.endDate, r.result),
     }));
@@ -563,10 +584,11 @@ function ActionPlanPage() {
                     className="h-8 shrink-0 rounded-md border border-input bg-background px-2 text-xs"
                   >
                     <option value="">Semua Status</option>
-                    <option value="planned">Planned</option>
+                    <option value="planned">Not Started</option>
                     <option value="onprogress">On Progress</option>
-                    <option value="completed">Completed</option>
+                    <option value="completed">Done</option>
                     <option value="overdue">Overdue</option>
+                    <option value="reschedule">Reschedule</option>
                   </select>
                   <input
                     type="month"
@@ -594,8 +616,13 @@ function ActionPlanPage() {
                   )}
                 </div>
               </div>
-              <div className="text-[11px] text-muted-foreground sm:ml-auto">
-                {filtered.length} dari {rows.length} program
+              <div className="flex items-center gap-2 sm:ml-auto">
+                <span className="text-[11px] text-muted-foreground">
+                  {filtered.length} dari {rows.length} program
+                </span>
+                <Button size="sm" className="h-8" onClick={() => setAddOpen(true)}>
+                  <Plus className="mr-1 h-4 w-4" /> Tambah ke Action Plan
+                </Button>
               </div>
             </div>
           </CardContent>
@@ -636,6 +663,14 @@ function ActionPlanPage() {
           <TabsContent value="calendar">
             <Card className="glass-card border-0">
               <CardContent className="p-4">
+                <div className="mb-3 flex flex-wrap items-center justify-end gap-2">
+                  <Button size="sm" variant="outline" onClick={() => exportCalendarExcel(filtered)}>
+                    <Download className="mr-1 h-4 w-4" /> Excel
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => exportCalendarPDF(filtered)}>
+                    <Download className="mr-1 h-4 w-4" /> PDF
+                  </Button>
+                </div>
                 <CalendarView rows={filtered} />
               </CardContent>
             </Card>
@@ -680,12 +715,185 @@ function ActionPlanPage() {
       <DetailDialog
         row={openRow}
         onClose={() => setOpenRow(null)}
+        onUpdate={updateActionPlan}
         clusterMeta={clusterMeta}
         ticketByCluster={ticketByCluster}
         analystByCluster={analystByCluster}
         competitorByCluster={competitorByCluster}
       />
+
+      <AddProgramDialog
+        open={addOpen}
+        onClose={() => setAddOpen(false)}
+        clusterOptions={Array.from(new Set(clusters.map((c) => c.cluster).filter(Boolean))).sort()}
+        picOptions={Array.from(new Set(clusters.map((c) => c.pic).filter(Boolean))).sort()}
+        onSubmit={(payload) => {
+          const now = Date.now();
+          const created: ActionPlanRow[] = payload.programs.map((prog, i) => {
+            const durationDays = payload.startDate && payload.endDate
+              ? Math.max(1, Math.round((new Date(payload.endDate).getTime() - new Date(payload.startDate).getTime()) / 86400000) + 1)
+              : 0;
+            return {
+              id: `manual-${now}-${i}-${prog}`.slice(0, 120),
+              pic: payload.pic,
+              cluster: payload.cluster,
+              program: prog,
+              startDate: payload.startDate,
+              endDate: payload.endDate,
+              description: payload.description,
+              result: "",
+              status: computeActionStatus(payload.startDate, payload.endDate, ""),
+              durationDays,
+            };
+          });
+          addActionPlans(created);
+          setAddOpen(false);
+        }}
+      />
     </>
+  );
+}
+
+function exportCalendarExcel(rows: ActionPlanRow[]) {
+  const data = rows
+    .filter((r) => r.startDate)
+    .sort((a, b) => a.startDate.localeCompare(b.startDate))
+    .map((r) => ({
+      "Start Date": r.startDate,
+      "End Date": r.endDate,
+      Cluster: r.cluster,
+      Program: r.program,
+      PIC: r.pic,
+      Status: STATUS_META[r.status].label,
+      Keterangan: r.description,
+      Hasil: r.result,
+    }));
+  const ws = XLSX.utils.json_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Kalender Action Plan");
+  XLSX.writeFile(wb, `kalender-action-plan-${new Date().toISOString().slice(0, 10)}.xlsx`);
+}
+
+function exportCalendarPDF(rows: ActionPlanRow[]) {
+  const w = window.open("", "", "width=1000,height=1200");
+  if (!w) return;
+  const sorted = [...rows].filter((r) => r.startDate).sort((a, b) => a.startDate.localeCompare(b.startDate));
+  const body = sorted
+    .map(
+      (r) => `<tr>
+      <td>${r.startDate}</td><td>${r.endDate}</td><td>${r.cluster}</td>
+      <td>${r.program}</td><td>${r.pic || "-"}</td>
+      <td>${STATUS_META[r.status].label}</td><td>${(r.description || "").replace(/</g, "&lt;")}</td>
+    </tr>`,
+    )
+    .join("");
+  w.document.write(`<html><head><title>Kalender Action Plan</title><style>
+    body{font-family:-apple-system,sans-serif;padding:24px;color:#111}
+    h1{font-size:20px;margin:0 0 12px}
+    table{width:100%;border-collapse:collapse;font-size:11px}
+    th,td{border:1px solid #ccc;padding:6px;text-align:left;vertical-align:top}
+    th{background:#f3f4f6}
+    </style></head><body>
+    <h1>Kalender Action Plan — ${new Date().toLocaleDateString("id-ID")}</h1>
+    <table><thead><tr>
+      <th>Start</th><th>End</th><th>Cluster</th><th>Program</th><th>PIC</th><th>Status</th><th>Keterangan</th>
+    </tr></thead><tbody>${body}</tbody></table>
+    </body></html>`);
+  w.document.close();
+  setTimeout(() => w.print(), 300);
+}
+
+function AddProgramDialog({
+  open,
+  onClose,
+  onSubmit,
+  clusterOptions,
+  picOptions,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onSubmit: (p: { programs: string[]; cluster: string; pic: string; startDate: string; endDate: string; description: string }) => void;
+  clusterOptions: string[];
+  picOptions: string[];
+}) {
+  const [selected, setSelected] = useState<string[]>([]);
+  const [cluster, setCluster] = useState("");
+  const [pic, setPic] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [description, setDescription] = useState("");
+
+  const toggle = (p: string) => setSelected((s) => (s.includes(p) ? s.filter((x) => x !== p) : [...s, p]));
+
+  const submit = () => {
+    if (!selected.length || !cluster.trim()) return;
+    onSubmit({ programs: selected, cluster: cluster.trim(), pic: pic.trim(), startDate, endDate, description });
+    setSelected([]); setCluster(""); setPic(""); setStartDate(""); setEndDate(""); setDescription("");
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="w-[calc(100vw-1.5rem)] max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="font-display">Tambah ke Action Plan</DialogTitle>
+          <DialogDescription>Pilih satu atau beberapa program sekaligus.</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div>
+            <Label className="text-xs">Program ({selected.length} dipilih)</Label>
+            <div className="mt-1.5 flex flex-wrap gap-1.5">
+              {PROGRAM_OPTIONS.map((p) => {
+                const active = selected.includes(p);
+                return (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => toggle(p)}
+                    className={`rounded-full border px-3 py-1 text-xs transition ${
+                      active
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border bg-background hover:bg-muted"
+                    }`}
+                  >
+                    {p}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label className="text-xs">Cluster *</Label>
+              <Input list="ap-clusters" value={cluster} onChange={(e) => setCluster(e.target.value)} className="h-8" />
+              <datalist id="ap-clusters">{clusterOptions.map((c) => <option key={c} value={c} />)}</datalist>
+            </div>
+            <div>
+              <Label className="text-xs">PIC</Label>
+              <Input list="ap-pics" value={pic} onChange={(e) => setPic(e.target.value)} className="h-8" />
+              <datalist id="ap-pics">{picOptions.map((p) => <option key={p} value={p} />)}</datalist>
+            </div>
+            <div>
+              <Label className="text-xs">Start Date</Label>
+              <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="h-8" />
+            </div>
+            <div>
+              <Label className="text-xs">End Date</Label>
+              <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="h-8" />
+            </div>
+          </div>
+          <div>
+            <Label className="text-xs">Catatan</Label>
+            <Textarea rows={2} value={description} onChange={(e) => setDescription(e.target.value)} />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={onClose}>Batal</Button>
+          <Button onClick={submit} disabled={!selected.length || !cluster.trim()}>
+            Simpan {selected.length ? `(${selected.length})` : ""}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -719,6 +927,7 @@ function FilterSelect({
 function DetailDialog({
   row,
   onClose,
+  onUpdate,
   clusterMeta,
   ticketByCluster,
   analystByCluster,
@@ -726,6 +935,7 @@ function DetailDialog({
 }: {
   row: ActionPlanRow | null;
   onClose: () => void;
+  onUpdate: (id: string, patch: Partial<ActionPlanRow>) => void;
   clusterMeta: Map<string, any>;
   ticketByCluster: Map<string, number>;
   analystByCluster: Map<string, any>;
@@ -756,11 +966,20 @@ function DetailDialog({
     <Dialog open={!!row} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
         <DialogHeader>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Badge className={`${status.ring} ${status.color}`} variant="outline">
               {status.label}
             </Badge>
             <DialogTitle className="font-display">{row.program || "—"}</DialogTitle>
+            <select
+              value={row.status}
+              onChange={(e) => onUpdate(row.id, { status: e.target.value as ActionPlanStatus })}
+              className="ml-auto h-7 rounded-md border border-input bg-background px-2 text-xs"
+            >
+              {COLUMNS.map((s) => (
+                <option key={s} value={s}>{STATUS_META[s].label}</option>
+              ))}
+            </select>
           </div>
           <DialogDescription>
             {row.cluster} · PIC: {row.pic || "-"}
@@ -781,26 +1000,26 @@ function DetailDialog({
                   <div className="mb-1 text-xs font-semibold text-muted-foreground">Progress Timeline</div>
                   <Progress value={pct} className="h-2" />
                 </div>
-                {row.description && (
-                  <div>
-                    <div className="mb-1 text-xs font-semibold text-muted-foreground">Keterangan</div>
-                    <p className="whitespace-pre-wrap text-sm">{row.description}</p>
-                  </div>
-                )}
+                <div>
+                  <div className="mb-1 text-xs font-semibold text-muted-foreground">Catatan / Keterangan (editable)</div>
+                  <Textarea
+                    rows={3}
+                    value={row.description || ""}
+                    onChange={(e) => onUpdate(row.id, { description: e.target.value })}
+                    placeholder="Update catatan progres realtime…"
+                  />
+                </div>
                 <div>
                   <div className="mb-1 flex items-center gap-2 text-xs font-semibold">
                     <Trophy className="h-3.5 w-3.5 text-emerald-500" />
-                    <span className="text-muted-foreground">Hasil / Outcome</span>
+                    <span className="text-muted-foreground">Hasil / Outcome (editable)</span>
                   </div>
-                  {row.result?.trim() ? (
-                    <p className="whitespace-pre-wrap rounded-md border border-emerald-500/30 bg-emerald-500/5 p-2 text-sm">
-                      {row.result}
-                    </p>
-                  ) : (
-                    <p className="rounded-md border border-dashed border-border p-2 text-xs italic text-muted-foreground">
-                      Belum ada hasil dicatat.
-                    </p>
-                  )}
+                  <Textarea
+                    rows={2}
+                    value={row.result || ""}
+                    onChange={(e) => onUpdate(row.id, { result: e.target.value })}
+                    placeholder="Catat outcome program di sini…"
+                  />
                 </div>
               </CardContent>
             </Card>

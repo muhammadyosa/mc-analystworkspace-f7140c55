@@ -85,6 +85,8 @@ type DataState = {
   setAnalyst: (a: AnalystRow[], mode?: "replace" | "append") => void;
   setCompetitorData: (c: CompetitorRow[], mode?: "replace" | "append") => void;
   setActionPlans: (a: ActionPlanRow[], mode?: "replace" | "append") => void;
+  addActionPlans: (a: ActionPlanRow[]) => void;
+  updateActionPlan: (id: string, patch: Partial<ActionPlanRow>) => void;
   overrideActionPlanStatus: (id: string, status: ActionPlanRow["status"]) => void;
   pushHistory: (h: UploadHistoryEntry) => void;
   addAction: (a: ActionItem) => void;
@@ -117,6 +119,10 @@ export const useDataStore = create<DataState>()(
         set((s) => ({ competitorData: mode === "append" ? [...s.competitorData, ...rows] : rows, lastUpdated: Date.now() })),
       setActionPlans: (rows, mode = "replace") =>
         set((s) => ({ actionPlans: mode === "append" ? [...s.actionPlans, ...rows] : rows, lastUpdated: Date.now() })),
+      addActionPlans: (rows) =>
+        set((s) => ({ actionPlans: [...rows, ...s.actionPlans], lastUpdated: Date.now() })),
+      updateActionPlan: (id, patch) =>
+        set((s) => ({ actionPlans: s.actionPlans.map((a) => (a.id === id ? { ...a, ...patch } : a)) })),
       overrideActionPlanStatus: (id, status) =>
         set((s) => ({ actionPlans: s.actionPlans.map((a) => (a.id === id ? { ...a, status } : a)) })),
       pushHistory: (h) => set((s) => ({ history: [h, ...s.history].slice(0, 20) })),
