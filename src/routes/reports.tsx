@@ -623,6 +623,8 @@ function ReportsPage() {
                     "Update pricing playbook bulanan berbasis data harga kompetitor terbaru.",
                   ]} />
                 </div>
+
+                {analyst.length > 0 && <ProfilingSummary analyst={analyst} dFrom={cDFrom} dTo={cDTo} onFrom={setCDFrom} onTo={setCDTo} />}
               </>
             )}
           </TabsContent>
