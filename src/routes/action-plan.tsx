@@ -700,6 +700,7 @@ function ActionPlanPage() {
                     status={c}
                     rows={filtered.filter((r) => r.status === c)}
                     onOpen={setOpenRow}
+                    onOpenGroup={(cluster, rows) => setOltGroup({ cluster, rows })}
                   />
                 ))}
               </div>
