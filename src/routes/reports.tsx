@@ -481,10 +481,12 @@ function ReportsPage() {
 
           <TabsContent value="weekly" className="space-y-4">
             {weekly && renderTab(weekly, "weekly", wFrom, wTo, setWFrom, setWTo, weeklyRef)}
+            {analyst.length > 0 && <ProfilingSummary analyst={analyst} dFrom={wDFrom} dTo={wDTo} onFrom={setWDFrom} onTo={setWDTo} />}
           </TabsContent>
 
           <TabsContent value="monthly" className="space-y-4">
             {monthly && renderTab(monthly, "monthly", mFrom, mTo, setMFrom, setMTo, monthlyRef)}
+            {analyst.length > 0 && <ProfilingSummary analyst={analyst} dFrom={mDFrom} dTo={mDTo} onFrom={setMDFrom} onTo={setMDTo} />}
           </TabsContent>
 
           <TabsContent value="intel" className="space-y-4">
