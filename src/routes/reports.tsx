@@ -254,6 +254,11 @@ function ReportsPage() {
   const [cFrom, setCFrom] = useState(0);
   const [cTo, setCTo] = useState(5);
 
+  const [wDFrom, setWDFrom] = useState(""); const [wDTo, setWDTo] = useState("");
+  const [mDFrom, setMDFrom] = useState(""); const [mDTo, setMDTo] = useState("");
+  const [cDFrom, setCDFrom] = useState(""); const [cDTo, setCDTo] = useState("");
+  const analyst = useDataStore((s) => s.analyst);
+
   const weekly = useMemo(() => clusters.length ? computeStats(clusters, wFrom, wTo) : null, [clusters, wFrom, wTo]);
   const monthly = useMemo(() => clusters.length ? computeStats(clusters, mFrom, mTo) : null, [clusters, mFrom, mTo]);
   const compBase = useMemo(() => clusters.length ? computeStats(clusters, cFrom, cTo) : null, [clusters, cFrom, cTo]);
