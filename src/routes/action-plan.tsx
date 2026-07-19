@@ -420,6 +420,7 @@ function ActionPlanPage() {
   const [filterStatus, setFilterStatus] = useState<"" | ActionPlanStatus>("");
   const [filterMonth, setFilterMonth] = useState("");
   const [openRow, setOpenRow] = useState<ActionPlanRow | null>(null);
+  const [oltGroup, setOltGroup] = useState<{ cluster: string; rows: ActionPlanRow[] } | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
