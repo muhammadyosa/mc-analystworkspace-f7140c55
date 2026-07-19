@@ -777,6 +777,46 @@ function ActionPlanPage() {
         competitorByCluster={competitorByCluster}
       />
 
+      <Dialog open={!!oltGroup} onOpenChange={(o) => { if (!o) setOltGroup(null); }}>
+        <DialogContent className="w-[calc(100vw-1.5rem)] max-w-[calc(100vw-1.5rem)] p-4 sm:max-w-lg sm:p-6">
+          <DialogHeader>
+            <DialogTitle className="font-display flex flex-wrap items-center gap-2 text-base">
+              <span className="min-w-0 truncate">OLT · {oltGroup?.cluster}</span>
+              {oltGroup && <Badge variant="secondary">{oltGroup.rows.length} action</Badge>}
+            </DialogTitle>
+            <DialogDescription>Klik salah satu action plan untuk melihat / mengedit detail.</DialogDescription>
+          </DialogHeader>
+          {oltGroup && (
+            <div className="max-h-[60vh] space-y-2 overflow-y-auto pr-1">
+              {oltGroup.rows.map((r) => {
+                const meta = STATUS_META[r.status];
+                const StatusIcon = meta.icon;
+                const pct = progressOf(r);
+                return (
+                  <button
+                    key={r.id}
+                    onClick={() => { setOltGroup(null); setOpenRow(r); }}
+                    className={`w-full rounded-xl border border-border/60 bg-muted/30 p-3 text-left transition hover:border-primary/60 hover:bg-muted/60`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="truncate font-display text-sm font-semibold">{r.program || "—"}</div>
+                        <div className="mt-0.5 text-[11px] text-muted-foreground">PIC: {r.pic || "-"} · {fmtDate(r.startDate)} → {fmtDate(r.endDate)}</div>
+                      </div>
+                      <Badge variant="outline" className={`shrink-0 gap-1 text-[10px] ${meta.color}`}>
+                        <StatusIcon className="h-3 w-3" /> {meta.label}
+                      </Badge>
+                    </div>
+                    {r.description && <p className="mt-1 line-clamp-2 text-[11px] text-muted-foreground">{r.description}</p>}
+                    <Progress value={pct} className="mt-2 h-1.5" />
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       <AddProgramDialog
         open={addOpen}
         onClose={() => setAddOpen(false)}
