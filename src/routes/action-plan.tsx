@@ -146,18 +146,67 @@ function DraggableCard({ row, onOpen }: { row: ActionPlanRow; onOpen: (r: Action
   );
 }
 
+function OltGroupCard({
+  cluster,
+  rows,
+  onOpenGroup,
+}: {
+  cluster: string;
+  rows: ActionPlanRow[];
+  onOpenGroup: (cluster: string, rows: ActionPlanRow[]) => void;
+}) {
+  const avgPct = Math.round(rows.reduce((s, r) => s + progressOf(r), 0) / rows.length);
+  const hasResult = rows.some((r) => r.result?.trim());
+  return (
+    <div
+      className="glass-card group relative cursor-pointer rounded-xl border-0 p-3 shadow-sm ring-1 ring-border/50 hover:ring-primary/60"
+      onClick={() => onOpenGroup(cluster, rows)}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <p className="truncate text-sm font-semibold">{cluster || "—"}</p>
+        <Badge className="shrink-0 bg-primary/10 text-[10px] text-primary">{rows.length} action</Badge>
+      </div>
+      <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
+        {rows.slice(0, 2).map((r) => r.program).join(" · ")}
+        {rows.length > 2 ? ` +${rows.length - 2} lainnya` : ""}
+      </p>
+      <div className="mt-2 flex items-center justify-between text-[10px] text-muted-foreground">
+        <span className="truncate">PIC: {Array.from(new Set(rows.map((r) => r.pic).filter(Boolean))).join(", ") || "-"}</span>
+        {hasResult && <span className="text-emerald-600">Hasil ✓</span>}
+      </div>
+      <Progress value={avgPct} className="mt-2 h-1.5" />
+      <div className="mt-1 flex justify-between text-[10px] text-muted-foreground">
+        <span>Rata-rata progress</span>
+        <span>{avgPct}%</span>
+      </div>
+    </div>
+  );
+}
+
 function KanbanColumn({
   status,
   rows,
   onOpen,
+  onOpenGroup,
 }: {
   status: ActionPlanStatus;
   rows: ActionPlanRow[];
   onOpen: (r: ActionPlanRow) => void;
+  onOpenGroup: (cluster: string, rows: ActionPlanRow[]) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: status });
   const meta = STATUS_META[status];
   const Icon = meta.icon;
+  // Group by OLT (cluster). If a cluster has only 1 action → normal draggable card. If ≥2 → single OLT group card.
+  const groups = useMemo(() => {
+    const m = new Map<string, ActionPlanRow[]>();
+    rows.forEach((r) => {
+      const k = r.cluster || "—";
+      if (!m.has(k)) m.set(k, []);
+      m.get(k)!.push(r);
+    });
+    return Array.from(m.entries());
+  }, [rows]);
   return (
     <div
       ref={setNodeRef}
@@ -173,9 +222,13 @@ function KanbanColumn({
         </Badge>
       </div>
       <div className="space-y-2">
-        {rows.map((r) => (
-          <DraggableCard key={r.id} row={r} onOpen={onOpen} />
-        ))}
+        {groups.map(([cluster, list]) =>
+          list.length === 1 ? (
+            <DraggableCard key={list[0].id} row={list[0]} onOpen={onOpen} />
+          ) : (
+            <OltGroupCard key={cluster} cluster={cluster} rows={list} onOpenGroup={onOpenGroup} />
+          ),
+        )}
         {!rows.length && (
           <p className="px-1 py-6 text-center text-xs text-muted-foreground">Kosong</p>
         )}
