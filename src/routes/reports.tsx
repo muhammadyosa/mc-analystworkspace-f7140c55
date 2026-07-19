@@ -13,8 +13,87 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { useDataStore } from "@/lib/store";
-import type { ClusterRow, CompetitorRow, PromoCategory } from "@/lib/excel";
+import type { AnalystRow, ClusterRow, CompetitorRow, PromoCategory } from "@/lib/excel";
+
+// Parse various profiling date formats to a Date (or null)
+function parseProfilingDate(s: string): Date | null {
+  if (!s) return null;
+  const t = s.trim();
+  // ISO first
+  const iso = new Date(t);
+  if (!isNaN(iso.getTime()) && /^\d{4}-\d{1,2}-\d{1,2}/.test(t)) return iso;
+  // DD/MM/YYYY or DD-MM-YYYY
+  const m = t.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/);
+  if (m) {
+    const d = Number(m[1]); const mo = Number(m[2]) - 1;
+    let y = Number(m[3]); if (y < 100) y += 2000;
+    return new Date(y, mo, d);
+  }
+  const d2 = new Date(t);
+  return isNaN(d2.getTime()) ? null : d2;
+}
+
+function ProfilingSummary({ analyst, dFrom, dTo, onFrom, onTo }: { analyst: AnalystRow[]; dFrom: string; dTo: string; onFrom: (v: string) => void; onTo: (v: string) => void }) {
+  const from = dFrom ? new Date(dFrom) : null;
+  const to = dTo ? new Date(dTo + "T23:59:59") : null;
+  const rows = analyst.filter((a) => {
+    const d = parseProfilingDate(a.profilingDate) || parseProfilingDate(a.timestamp);
+    if (!d) return !from && !to;
+    if (from && d < from) return false;
+    if (to && d > to) return false;
+    return true;
+  });
+  const totalAE = new Set(rows.map((r) => r.aeName).filter(Boolean)).size;
+  const totalCluster = new Set(rows.map((r) => r.cluster).filter(Boolean)).size;
+  return (
+    <Card className="glass-card border-0">
+      <CardHeader className="pb-2">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <CardTitle className="font-display text-sm">Ringkasan Profiling (harian)</CardTitle>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs text-muted-foreground">Tanggal:</span>
+            <Input type="date" value={dFrom} onChange={(e) => onFrom(e.target.value)} className="h-8 w-[150px]" />
+            <span className="text-xs text-muted-foreground">→</span>
+            <Input type="date" value={dTo} onChange={(e) => onTo(e.target.value)} className="h-8 w-[150px]" />
+            {(dFrom || dTo) && <Button size="sm" variant="ghost" className="h-8" onClick={() => { onFrom(""); onTo(""); }}>Reset</Button>}
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="mb-2 flex flex-wrap gap-3 text-xs">
+          <Badge variant="secondary">Total: {rows.length}</Badge>
+          <Badge variant="secondary">AE: {totalAE}</Badge>
+          <Badge variant="secondary">Cluster: {totalCluster}</Badge>
+        </div>
+        {rows.length === 0 ? (
+          <div className="py-6 text-center text-xs text-muted-foreground">Tidak ada profiling di rentang tanggal ini.</div>
+        ) : (
+          <div className="scroll-x max-h-72 overflow-y-auto">
+            <table className="w-full min-w-[560px] text-xs">
+              <thead className="sticky top-0 bg-muted/40 text-[10px] uppercase text-muted-foreground">
+                <tr><th className="p-2 text-left">AE</th><th className="p-2 text-left">Cluster</th><th className="p-2 text-left">Tanggal</th><th className="p-2 text-left">Kompetitor</th><th className="p-2 text-left">Potensi</th></tr>
+              </thead>
+              <tbody>
+                {rows.slice(0, 200).map((r) => (
+                  <tr key={r.id} className="border-t border-border/40">
+                    <td className="p-2 font-medium">{r.aeName || "—"}</td>
+                    <td className="p-2">{r.cluster || "—"}</td>
+                    <td className="p-2 text-muted-foreground">{r.profilingDate || r.timestamp || "—"}</td>
+                    <td className="p-2 text-muted-foreground">{r.competitor || "—"}</td>
+                    <td className="p-2">{r.potential || "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {rows.length > 200 && <div className="mt-2 text-center text-[10px] text-muted-foreground">Menampilkan 200 dari {rows.length}</div>}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 export const Route = createFileRoute("/reports")({
   head: () => ({ meta: [{ title: "Reports — MCA Workspace" }] }),
