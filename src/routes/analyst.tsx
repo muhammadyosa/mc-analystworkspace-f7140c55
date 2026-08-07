@@ -250,6 +250,11 @@ function AnalystPage() {
   const [drill, setDrill] = useState<DrilldownState>(null);
   const [detailFilter, setDetailFilter] = useState("");
   const [detailPotensi, setDetailPotensi] = useState("");
+  const [detailAE, setDetailAE] = useState("");
+  const [detailPic, setDetailPic] = useState("");
+  const [detailSeg, setDetailSeg] = useState("");
+  const [detailComp, setDetailComp] = useState("");
+  const [detailSort, setDetailSort] = useState("cluster");
 
   if (!analyst.length) {
     return (
