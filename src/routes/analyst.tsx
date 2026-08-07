@@ -514,11 +514,12 @@ function AnalystPage() {
   );
 }
 
-function FilterSelect({ value, onChange, placeholder, options }: { value: string; onChange: (v: string) => void; placeholder: string; options: string[] }) {
+function FilterSelect({ value, onChange, placeholder, options }: { value: string; onChange: (v: string) => void; placeholder: string; options: { value: string; count: number }[] }) {
+  const total = options.reduce((a, b) => a + b.count, 0);
   return (
-    <select value={value} onChange={(e) => onChange(e.target.value)} className="h-8 max-w-[160px] shrink-0 rounded-md border border-input bg-background px-2 text-xs">
-      <option value="">{placeholder}</option>
-      {options.map((o) => <option key={o} value={o}>{o}</option>)}
+    <select value={value} onChange={(e) => onChange(e.target.value)} className="h-8 max-w-[190px] shrink-0 rounded-md border border-input bg-background px-2 text-xs font-medium">
+      <option value="">{placeholder} ({total})</option>
+      {options.map((o) => <option key={o.value} value={o.value}>{o.value} ({o.count})</option>)}
     </select>
   );
 }
