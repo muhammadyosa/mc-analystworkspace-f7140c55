@@ -356,6 +356,8 @@ function AnalystPage() {
           <KpiCard tone="success" label="Potensi Tinggi" value={s.potensi.tinggi} icon={Target} onClick={() => openPot("tinggi")} />
           <KpiCard tone="warning" label="Potensi Sedang" value={s.potensi.sedang} icon={Target} onClick={() => openPot("sedang")} />
           <KpiCard tone="danger" label="Potensi Rendah" value={s.potensi.rendah} icon={Target} onClick={() => openPot("rendah")} />
+          <KpiCard tone="info" label="Potensi Belum Terisi" value={s.potensi.unknown} icon={AlertTriangle} hint="perlu dilengkapi AE" onClick={() => openAll("Potensi Belum Terisi", filtered.filter((a) => !a.potential.trim()))} />
+
           <KpiCard tone="danger" label="FAT Perlu Relokasi" value={s.fatRelocation} icon={AlertTriangle} onClick={() => openAll("FAT Perlu Relokasi", filtered.filter((a) => /ya|perlu|butuh/i.test(a.fatRelocation)))} />
           <KpiCard tone="warning" label="Butuh Toolkit" value={s.toolkitNeed} icon={AlertTriangle} onClick={() => openAll("Butuh Toolkit", filtered.filter((a) => /ya|butuh/i.test(a.toolkitRequest)))} />
           <KpiCard tone="primary" label="Coverage" value={`${profilingPct}%`} icon={Award} hint={`${s.profCluster}/${clusters.length} cluster`} onClick={() => openAll("Cluster Terprofil")} />
