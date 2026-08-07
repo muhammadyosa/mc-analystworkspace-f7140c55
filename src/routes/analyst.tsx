@@ -397,14 +397,31 @@ function AnalystPage() {
               <CardHeader>
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <CardTitle className="font-display text-base">Detail Profiling per Cluster</CardTitle>
-                  <div className="flex flex-wrap gap-2">
-                    <Input placeholder="Cari cluster / AE…" value={detailFilter} onChange={(e) => setDetailFilter(e.target.value)} className="h-8 w-48" />
-                    <select value={detailPotensi} onChange={(e) => setDetailPotensi(e.target.value)} className="h-8 rounded-md border border-input bg-background px-2 text-xs">
-                      <option value="">Semua Potensi</option>
-                      <option value="tinggi">Tinggi</option>
-                      <option value="sedang">Sedang</option>
-                      <option value="rendah">Rendah</option>
-                    </select>
+                  <div className="scroll-x -mx-4 px-4 sm:mx-0 sm:px-0">
+                    <div className="flex min-w-max flex-wrap gap-2 sm:min-w-0">
+                      <Input placeholder="Cari cluster / AE / kompetitor…" value={detailFilter} onChange={(e) => setDetailFilter(e.target.value)} className="h-8 w-48" />
+                      <FilterSelect value={detailAE} onChange={setDetailAE} placeholder="Semua AE" options={aeOptions} />
+                      <FilterSelect value={detailPic} onChange={setDetailPic} placeholder="Semua PIC" options={picOptions} />
+                      <FilterSelect value={detailSeg} onChange={setDetailSeg} placeholder="Semua Segmen" options={segOptions} />
+                      <FilterSelect value={detailComp} onChange={setDetailComp} placeholder="Semua Kompetitor" options={compOptions} />
+                      <select value={detailPotensi} onChange={(e) => setDetailPotensi(e.target.value)} className="h-8 rounded-md border border-input bg-background px-2 text-xs font-medium">
+                        <option value="">Semua Potensi ({potensiCounts.tinggi + potensiCounts.sedang + potensiCounts.rendah})</option>
+                        <option value="tinggi">Tinggi ({potensiCounts.tinggi})</option>
+                        <option value="sedang">Sedang ({potensiCounts.sedang})</option>
+                        <option value="rendah">Rendah ({potensiCounts.rendah})</option>
+                      </select>
+                      <select value={detailSort} onChange={(e) => setDetailSort(e.target.value)} className="h-8 rounded-md border border-input bg-background px-2 text-xs font-medium">
+                        <option value="cluster">Urut: Cluster A-Z</option>
+                        <option value="ae">Urut: AE A-Z</option>
+                        <option value="closewon">Urut: Close Won ↓</option>
+                        <option value="harga">Urut: Harga Kompetitor ↓</option>
+                      </select>
+                      {(detailFilter || detailAE || detailPic || detailSeg || detailComp || detailPotensi) && (
+                        <Button size="sm" variant="ghost" className="h-8" onClick={() => { setDetailFilter(""); setDetailAE(""); setDetailPic(""); setDetailSeg(""); setDetailComp(""); setDetailPotensi(""); }}>
+                          <X className="mr-1 h-3 w-3" /> Reset
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </CardHeader>
@@ -413,6 +430,10 @@ function AnalystPage() {
                   const q2 = detailFilter.trim().toLowerCase();
                   const list = filtered.filter((a) => {
                     if (q2 && !(a.cluster.toLowerCase().includes(q2) || a.aeName.toLowerCase().includes(q2) || a.competitor.toLowerCase().includes(q2))) return false;
+                    if (detailAE && a.aeName !== detailAE) return false;
+                    if (detailPic && (clusterMeta.get(a.cluster.toLowerCase())?.pic || "") !== detailPic) return false;
+                    if (detailSeg && a.customerSegment !== detailSeg) return false;
+                    if (detailComp && !a.competitor.toLowerCase().includes(detailComp.toLowerCase())) return false;
                     if (detailPotensi) {
                       const p = a.potential.toLowerCase();
                       if (detailPotensi === "tinggi" && !(p.includes("tinggi") || p.includes("potensial"))) return false;
@@ -420,6 +441,11 @@ function AnalystPage() {
                       if (detailPotensi === "rendah" && (!p || p.includes("tinggi") || p.includes("potensial") || p.includes("sedang"))) return false;
                     }
                     return true;
+                  }).sort((x, y) => {
+                    if (detailSort === "ae") return (x.aeName || "").localeCompare(y.aeName || "");
+                    if (detailSort === "closewon") return y.closewonToday - x.closewonToday;
+                    if (detailSort === "harga") return y.competitorPrice - x.competitorPrice;
+                    return (x.cluster || "").localeCompare(y.cluster || "");
                   });
                   return (
                     <>
