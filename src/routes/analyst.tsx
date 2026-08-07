@@ -314,11 +314,11 @@ function AnalystPage() {
                   <FilterSelect value={fPic} onChange={setFPic} placeholder="Semua PIC" options={picOptions} />
                   <FilterSelect value={fProv} onChange={setFProv} placeholder="Semua Provinsi" options={provOptions} />
                   <FilterSelect value={fSegment} onChange={setFSegment} placeholder="Semua Segmen" options={segOptions} />
-                  <select value={fPotensi} onChange={(e) => setFPotensi(e.target.value)} className="h-8 rounded-md border border-input bg-background px-2 text-xs">
-                    <option value="">Semua Potensi</option>
-                    <option value="tinggi">Tinggi</option>
-                    <option value="sedang">Sedang</option>
-                    <option value="rendah">Rendah</option>
+                  <select value={fPotensi} onChange={(e) => setFPotensi(e.target.value)} className="h-8 rounded-md border border-input bg-background px-2 text-xs font-medium">
+                    <option value="">Semua Potensi ({potensiCounts.tinggi + potensiCounts.sedang + potensiCounts.rendah})</option>
+                    <option value="tinggi">Tinggi ({potensiCounts.tinggi})</option>
+                    <option value="sedang">Sedang ({potensiCounts.sedang})</option>
+                    <option value="rendah">Rendah ({potensiCounts.rendah})</option>
                   </select>
                   {hasFilter && (
                     <Button size="sm" variant="ghost" className="h-8" onClick={resetFilters}>
