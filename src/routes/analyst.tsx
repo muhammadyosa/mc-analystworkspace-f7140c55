@@ -108,6 +108,11 @@ function AnalystPage() {
   const picOptions = useMemo(() => countBy((a) => clusterMeta.get(a.cluster.toLowerCase())?.pic), [analyst, clusterMeta]);
   const segOptions = useMemo(() => countBy((a) => a.customerSegment), [analyst]);
   const provOptions = useMemo(() => countBy((a) => clusterMeta.get(a.cluster.toLowerCase())?.provinsi), [analyst, clusterMeta]);
+  const compOptions = useMemo(() => {
+    const m = new Map<string, number>();
+    analyst.forEach((a) => a.competitor.split(/[,;/]/).map((s) => s.trim()).filter(Boolean).forEach((c) => m.set(c, (m.get(c) ?? 0) + 1)));
+    return Array.from(m.entries()).map(([value, count]) => ({ value, count })).sort((a, b) => b.count - a.count);
+  }, [analyst]);
   const potensiCounts = useMemo(() => {
     const c = { tinggi: 0, sedang: 0, rendah: 0 };
     analyst.forEach((a) => {
