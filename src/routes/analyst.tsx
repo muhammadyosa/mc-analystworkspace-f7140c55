@@ -96,10 +96,28 @@ function AnalystPage() {
     return m;
   }, [clusters]);
 
-  const aeOptions = useMemo(() => Array.from(new Set(analyst.map((a) => a.aeName).filter(Boolean))).sort(), [analyst]);
-  const picOptions = useMemo(() => Array.from(new Set(analyst.map((a) => clusterMeta.get(a.cluster.toLowerCase())?.pic).filter(Boolean) as string[])).sort(), [analyst, clusterMeta]);
-  const segOptions = useMemo(() => Array.from(new Set(analyst.map((a) => a.customerSegment).filter(Boolean))).sort(), [analyst]);
-  const provOptions = useMemo(() => Array.from(new Set(analyst.map((a) => clusterMeta.get(a.cluster.toLowerCase())?.provinsi).filter(Boolean) as string[])).sort(), [analyst, clusterMeta]);
+  const countBy = (get: (a: (typeof analyst)[number]) => string | undefined) => {
+    const m = new Map<string, number>();
+    analyst.forEach((a) => {
+      const v = (get(a) || "").trim();
+      if (v) m.set(v, (m.get(v) ?? 0) + 1);
+    });
+    return Array.from(m.entries()).map(([value, count]) => ({ value, count })).sort((a, b) => b.count - a.count);
+  };
+  const aeOptions = useMemo(() => countBy((a) => a.aeName), [analyst]);
+  const picOptions = useMemo(() => countBy((a) => clusterMeta.get(a.cluster.toLowerCase())?.pic), [analyst, clusterMeta]);
+  const segOptions = useMemo(() => countBy((a) => a.customerSegment), [analyst]);
+  const provOptions = useMemo(() => countBy((a) => clusterMeta.get(a.cluster.toLowerCase())?.provinsi), [analyst, clusterMeta]);
+  const potensiCounts = useMemo(() => {
+    const c = { tinggi: 0, sedang: 0, rendah: 0 };
+    analyst.forEach((a) => {
+      const p = (a.potential || "").toLowerCase();
+      if (p.includes("tinggi") || p.includes("potensial")) c.tinggi++;
+      else if (p.includes("sedang")) c.sedang++;
+      else if (p) c.rendah++;
+    });
+    return c;
+  }, [analyst]);
 
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
