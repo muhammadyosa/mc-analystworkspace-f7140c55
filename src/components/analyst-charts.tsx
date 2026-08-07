@@ -1,15 +1,18 @@
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-const COLORS = [
-  "hsl(var(--primary))",
-  "hsl(var(--success))",
-  "hsl(var(--warning))",
-  "hsl(var(--destructive))",
-  "hsl(var(--accent))",
-];
+// Explicit hex palette — CSS tokens are oklch(), so hsl(var(--x)) would render invalid colors.
+const COLORS = ["#6366f1", "#22c55e", "#f59e0b", "#ef4444", "#06b6d4", "#a855f7", "#ec4899", "#84cc16"];
+const POTENSI_COLORS = ["#22c55e", "#f59e0b", "#ef4444"];
 
-const tt = { background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 };
+const tt = {
+  background: "var(--color-card)",
+  border: "1px solid var(--color-border)",
+  borderRadius: 8,
+  color: "var(--color-foreground)",
+  fontSize: 12,
+};
+const axis = { fontSize: 11, fill: "var(--color-muted-foreground)" };
 
 type Stats = {
   topCompetitors: { name: string; count: number; avgPrice: number }[];
@@ -42,6 +45,7 @@ export default function AnalystCharts({
     { name: "Sedang", value: s.potensi.sedang },
     { name: "Rendah", value: s.potensi.rendah },
   ];
+  const legend = <Legend wrapperStyle={{ fontSize: 11 }} />;
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       <Card className="glass-card border-0">
@@ -49,10 +53,10 @@ export default function AnalystCharts({
         <CardContent className="h-[320px]">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={s.topCompetitors} layout="vertical" margin={{ left: 20 }} onClick={handleBar("competitor")} {...cursor}>
-              <XAxis type="number" fontSize={11} />
-              <YAxis type="category" dataKey="name" fontSize={11} width={100} />
-              <Tooltip cursor={{ fill: "hsl(var(--muted))" }} contentStyle={tt} />
-              <Bar dataKey="count" fill="hsl(var(--primary))" radius={[0, 6, 6, 0]} isAnimationActive={false} />
+              <XAxis type="number" tick={axis} />
+              <YAxis type="category" dataKey="name" tick={axis} width={100} />
+              <Tooltip cursor={{ fill: "var(--color-muted)" }} contentStyle={tt} />
+              <Bar dataKey="count" name="Jumlah" fill="#6366f1" radius={[0, 6, 6, 0]} isAnimationActive={false} />
             </BarChart>
           </ResponsiveContainer>
         </CardContent>
@@ -63,10 +67,11 @@ export default function AnalystCharts({
         <CardContent className="h-[320px]">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
-              <Pie data={potensiData} dataKey="value" nameKey="name" innerRadius={60} outerRadius={110} paddingAngle={4} isAnimationActive={false} onClick={handlePie("potensi")} {...cursor}>
-                {potensiData.map((_, i) => <Cell key={i} fill={COLORS[i]} />)}
+              <Pie data={potensiData} dataKey="value" nameKey="name" innerRadius={60} outerRadius={110} paddingAngle={4} isAnimationActive={false} onClick={handlePie("potensi")} label={{ fontSize: 11 }} {...cursor}>
+                {potensiData.map((_, i) => <Cell key={i} fill={POTENSI_COLORS[i]} />)}
               </Pie>
               <Tooltip contentStyle={tt} />
+              {legend}
             </PieChart>
           </ResponsiveContainer>
         </CardContent>
@@ -77,10 +82,10 @@ export default function AnalystCharts({
         <CardContent className="h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={s.topCompetitors.filter((c) => c.avgPrice > 0)} onClick={handleBar("competitor")} {...cursor}>
-              <XAxis dataKey="name" fontSize={10} angle={-25} textAnchor="end" height={60} />
-              <YAxis fontSize={11} tickFormatter={(v) => `${v / 1000}k`} />
+              <XAxis dataKey="name" tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }} angle={-25} textAnchor="end" height={60} />
+              <YAxis tick={axis} tickFormatter={(v) => `${v / 1000}k`} />
               <Tooltip formatter={(v: number) => `Rp${v.toLocaleString("id-ID")}`} contentStyle={tt} />
-              <Bar dataKey="avgPrice" fill="hsl(var(--accent))" radius={[6, 6, 0, 0]} isAnimationActive={false} />
+              <Bar dataKey="avgPrice" name="Harga rata-rata" fill="#06b6d4" radius={[6, 6, 0, 0]} isAnimationActive={false} />
             </BarChart>
           </ResponsiveContainer>
         </CardContent>
@@ -91,10 +96,11 @@ export default function AnalystCharts({
         <CardContent className="h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
-              <Pie data={s.promos} dataKey="value" nameKey="name" outerRadius={110} isAnimationActive={false} onClick={handlePie("promo")} {...cursor}>
+              <Pie data={s.promos} dataKey="value" nameKey="name" outerRadius={100} isAnimationActive={false} onClick={handlePie("promo")} label={{ fontSize: 10 }} {...cursor}>
                 {s.promos.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
               </Pie>
               <Tooltip contentStyle={tt} />
+              {legend}
             </PieChart>
           </ResponsiveContainer>
         </CardContent>
@@ -105,10 +111,10 @@ export default function AnalystCharts({
         <CardContent className="h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={s.strategies} layout="vertical" margin={{ left: 20 }} onClick={handleBar("strategy")} {...cursor}>
-              <XAxis type="number" fontSize={11} />
-              <YAxis type="category" dataKey="name" fontSize={11} width={110} />
-              <Tooltip contentStyle={tt} />
-              <Bar dataKey="value" fill="hsl(var(--success))" radius={[0, 6, 6, 0]} isAnimationActive={false} />
+              <XAxis type="number" tick={axis} />
+              <YAxis type="category" dataKey="name" tick={axis} width={110} />
+              <Tooltip cursor={{ fill: "var(--color-muted)" }} contentStyle={tt} />
+              <Bar dataKey="value" name="Jumlah" fill="#22c55e" radius={[0, 6, 6, 0]} isAnimationActive={false} />
             </BarChart>
           </ResponsiveContainer>
         </CardContent>
@@ -119,11 +125,11 @@ export default function AnalystCharts({
         <CardContent className="h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
-              <Pie data={s.segments} dataKey="value" nameKey="name" cx="30%" outerRadius={90} label={{ fontSize: 10 }} isAnimationActive={false} onClick={handlePie("segment")} {...cursor}>
+              <Pie data={s.segments} dataKey="value" nameKey="name" cx="30%" outerRadius={85} label={{ fontSize: 10 }} isAnimationActive={false} onClick={handlePie("segment")} {...cursor}>
                 {s.segments.map((_, i) => <Cell key={`seg-${i}`} fill={COLORS[i % COLORS.length]} />)}
               </Pie>
-              <Pie data={s.dayaBeli} dataKey="value" nameKey="name" cx="75%" innerRadius={50} outerRadius={90} label={{ fontSize: 10 }} isAnimationActive={false} onClick={handlePie("dayaBeli")} {...cursor}>
-                {s.dayaBeli.map((_, i) => <Cell key={`db-${i}`} fill={COLORS[(i + 2) % COLORS.length]} />)}
+              <Pie data={s.dayaBeli} dataKey="value" nameKey="name" cx="75%" innerRadius={48} outerRadius={85} label={{ fontSize: 10 }} isAnimationActive={false} onClick={handlePie("dayaBeli")} {...cursor}>
+                {s.dayaBeli.map((_, i) => <Cell key={`db-${i}`} fill={COLORS[(i + 3) % COLORS.length]} />)}
               </Pie>
               <Tooltip contentStyle={tt} />
             </PieChart>

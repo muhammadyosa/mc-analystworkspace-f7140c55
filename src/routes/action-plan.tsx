@@ -1057,6 +1057,14 @@ function DetailDialog({
         ? `Program aktif ${pct}%. Pantau progres mingguan, siapkan dokumentasi Hasil menjelang End Date.`
         : `Program akan dimulai. Pastikan resource PIC ${row.pic || "-"} & alignment dengan cluster ${row.cluster}.`;
 
+  const patchDates = (startDate: string, endDate: string) => {
+    const s = startDate || row.startDate;
+    const e = endDate || row.endDate;
+    const ms = s && e ? new Date(e).getTime() - new Date(s).getTime() : 0;
+    const durationDays = ms > 0 ? Math.round(ms / 86400000) + 1 : row.durationDays;
+    onUpdate(row.id, { startDate, endDate, durationDays, status: computeActionStatus(startDate, endDate, row.result) });
+  };
+
   return (
     <Dialog open={!!row} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
@@ -1085,6 +1093,32 @@ function DetailDialog({
           <div className="space-y-3 md:col-span-2">
             <Card className="glass-card border-0">
               <CardContent className="space-y-3 p-4 text-sm">
+                <div className="text-xs font-semibold text-muted-foreground">Edit Manual (perubahan tersimpan otomatis)</div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-1">
+                    <Label className="text-[11px]">OLT / Cluster</Label>
+                    <Input className="h-8" value={row.cluster} onChange={(e) => onUpdate(row.id, { cluster: e.target.value })} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-[11px]">PIC</Label>
+                    <Input className="h-8" value={row.pic} onChange={(e) => onUpdate(row.id, { pic: e.target.value })} />
+                  </div>
+                  <div className="space-y-1 sm:col-span-2">
+                    <Label className="text-[11px]">Program</Label>
+                    <Input className="h-8" value={row.program} onChange={(e) => onUpdate(row.id, { program: e.target.value })} list="program-options" />
+                    <datalist id="program-options">
+                      {PROGRAM_OPTIONS.map((p) => <option key={p} value={p} />)}
+                    </datalist>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-[11px]">Start Date</Label>
+                    <Input type="date" className="h-8" value={row.startDate} onChange={(e) => patchDates(e.target.value, row.endDate)} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-[11px]">End Date</Label>
+                    <Input type="date" className="h-8" value={row.endDate} onChange={(e) => patchDates(row.startDate, e.target.value)} />
+                  </div>
+                </div>
                 <div className="grid grid-cols-2 gap-3 text-xs">
                   <Info label="Start Date" value={fmtDate(row.startDate)} />
                   <Info label="End Date" value={fmtDate(row.endDate)} />

@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useRef, useState } from "react";
+import * as XLSX from "xlsx";
 import { Printer, FileText, Calendar, Radar as RadarIcon, Lightbulb, Sparkles } from "lucide-react";
 import {
   Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Line, LineChart,
@@ -35,6 +36,27 @@ function parseProfilingDate(s: string): Date | null {
   return isNaN(d2.getTime()) ? null : d2;
 }
 
+function exportProfilingExcel(rows: AnalystRow[], label: string) {
+  const data = rows.map((r) => ({
+    AE: r.aeName, Cluster: r.cluster, Tanggal: r.profilingDate || r.timestamp,
+    Kompetitor: r.competitor, "Harga Kompetitor": r.competitorPrice, Promo: r.competitorPromo,
+    Segmen: r.customerSegment, "Daya Beli": r.purchasingPower, Potensi: r.potential,
+    "SF/MI": r.sfToday, "Close Won": r.closewonToday, Insight: r.aeInsight,
+  }));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data), "Profiling");
+  XLSX.writeFile(wb, `report-profiling-${label}.xlsx`);
+}
+
+function exportProfilingPDF(rows: AnalystRow[], label: string) {
+  const w = window.open("", "", "width=1000,height=1200");
+  if (!w) return;
+  const body = rows.map((r) => `<tr><td>${r.aeName || "-"}</td><td>${r.cluster || "-"}</td><td>${r.profilingDate || r.timestamp || "-"}</td><td>${r.competitor || "-"}</td><td>${r.potential || "-"}</td><td>${r.closewonToday}</td></tr>`).join("");
+  w.document.write(`<html><head><title>Report Profiling</title><style>body{font-family:sans-serif;padding:24px;color:#111}h1{font-size:20px;margin:0 0 4px}table{width:100%;border-collapse:collapse;font-size:11px;margin-top:12px}th,td{border:1px solid #ccc;padding:5px;text-align:left}th{background:#eee}</style></head><body><h1>Laporan Hasil Profiling</h1><div>Periode: ${label} · Total ${rows.length} record</div><table><thead><tr><th>AE</th><th>Cluster</th><th>Tanggal</th><th>Kompetitor</th><th>Potensi</th><th>Close Won</th></tr></thead><tbody>${body}</tbody></table></body></html>`);
+  w.document.close();
+  setTimeout(() => w.print(), 300);
+}
+
 function ProfilingSummary({ analyst, dFrom, dTo, onFrom, onTo }: { analyst: AnalystRow[]; dFrom: string; dTo: string; onFrom: (v: string) => void; onTo: (v: string) => void }) {
   const from = dFrom ? new Date(dFrom) : null;
   const to = dTo ? new Date(dTo + "T23:59:59") : null;
@@ -45,6 +67,7 @@ function ProfilingSummary({ analyst, dFrom, dTo, onFrom, onTo }: { analyst: Anal
     if (to && d > to) return false;
     return true;
   });
+  const rangeLabel = dFrom || dTo ? `${dFrom || "awal"} s/d ${dTo || "akhir"}` : "semua tanggal";
   const totalAE = new Set(rows.map((r) => r.aeName).filter(Boolean)).size;
   const totalCluster = new Set(rows.map((r) => r.cluster).filter(Boolean)).size;
   return (
@@ -58,6 +81,12 @@ function ProfilingSummary({ analyst, dFrom, dTo, onFrom, onTo }: { analyst: Anal
             <span className="text-xs text-muted-foreground">→</span>
             <Input type="date" value={dTo} onChange={(e) => onTo(e.target.value)} className="h-8 w-[150px]" />
             {(dFrom || dTo) && <Button size="sm" variant="ghost" className="h-8" onClick={() => { onFrom(""); onTo(""); }}>Reset</Button>}
+            <Button size="sm" variant="outline" className="h-8" disabled={!rows.length} onClick={() => exportProfilingExcel(rows, rangeLabel)}>
+              <FileText className="mr-1 h-3.5 w-3.5" /> Excel
+            </Button>
+            <Button size="sm" variant="outline" className="h-8" disabled={!rows.length} onClick={() => exportProfilingPDF(rows, rangeLabel)}>
+              <Printer className="mr-1 h-3.5 w-3.5" /> PDF
+            </Button>
           </div>
         </div>
       </CardHeader>

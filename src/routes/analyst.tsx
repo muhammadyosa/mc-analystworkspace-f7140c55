@@ -96,10 +96,33 @@ function AnalystPage() {
     return m;
   }, [clusters]);
 
-  const aeOptions = useMemo(() => Array.from(new Set(analyst.map((a) => a.aeName).filter(Boolean))).sort(), [analyst]);
-  const picOptions = useMemo(() => Array.from(new Set(analyst.map((a) => clusterMeta.get(a.cluster.toLowerCase())?.pic).filter(Boolean) as string[])).sort(), [analyst, clusterMeta]);
-  const segOptions = useMemo(() => Array.from(new Set(analyst.map((a) => a.customerSegment).filter(Boolean))).sort(), [analyst]);
-  const provOptions = useMemo(() => Array.from(new Set(analyst.map((a) => clusterMeta.get(a.cluster.toLowerCase())?.provinsi).filter(Boolean) as string[])).sort(), [analyst, clusterMeta]);
+  const countBy = (get: (a: (typeof analyst)[number]) => string | undefined) => {
+    const m = new Map<string, number>();
+    analyst.forEach((a) => {
+      const v = (get(a) || "").trim();
+      if (v) m.set(v, (m.get(v) ?? 0) + 1);
+    });
+    return Array.from(m.entries()).map(([value, count]) => ({ value, count })).sort((a, b) => b.count - a.count);
+  };
+  const aeOptions = useMemo(() => countBy((a) => a.aeName), [analyst]);
+  const picOptions = useMemo(() => countBy((a) => clusterMeta.get(a.cluster.toLowerCase())?.pic), [analyst, clusterMeta]);
+  const segOptions = useMemo(() => countBy((a) => a.customerSegment), [analyst]);
+  const provOptions = useMemo(() => countBy((a) => clusterMeta.get(a.cluster.toLowerCase())?.provinsi), [analyst, clusterMeta]);
+  const compOptions = useMemo(() => {
+    const m = new Map<string, number>();
+    analyst.forEach((a) => a.competitor.split(/[,;/]/).map((s) => s.trim()).filter(Boolean).forEach((c) => m.set(c, (m.get(c) ?? 0) + 1)));
+    return Array.from(m.entries()).map(([value, count]) => ({ value, count })).sort((a, b) => b.count - a.count);
+  }, [analyst]);
+  const potensiCounts = useMemo(() => {
+    const c = { tinggi: 0, sedang: 0, rendah: 0 };
+    analyst.forEach((a) => {
+      const p = (a.potential || "").toLowerCase();
+      if (p.includes("tinggi") || p.includes("potensial")) c.tinggi++;
+      else if (p.includes("sedang")) c.sedang++;
+      else if (p) c.rendah++;
+    });
+    return c;
+  }, [analyst]);
 
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
@@ -232,6 +255,11 @@ function AnalystPage() {
   const [drill, setDrill] = useState<DrilldownState>(null);
   const [detailFilter, setDetailFilter] = useState("");
   const [detailPotensi, setDetailPotensi] = useState("");
+  const [detailAE, setDetailAE] = useState("");
+  const [detailPic, setDetailPic] = useState("");
+  const [detailSeg, setDetailSeg] = useState("");
+  const [detailComp, setDetailComp] = useState("");
+  const [detailSort, setDetailSort] = useState("cluster");
 
   if (!analyst.length) {
     return (
@@ -296,11 +324,11 @@ function AnalystPage() {
                   <FilterSelect value={fPic} onChange={setFPic} placeholder="Semua PIC" options={picOptions} />
                   <FilterSelect value={fProv} onChange={setFProv} placeholder="Semua Provinsi" options={provOptions} />
                   <FilterSelect value={fSegment} onChange={setFSegment} placeholder="Semua Segmen" options={segOptions} />
-                  <select value={fPotensi} onChange={(e) => setFPotensi(e.target.value)} className="h-8 rounded-md border border-input bg-background px-2 text-xs">
-                    <option value="">Semua Potensi</option>
-                    <option value="tinggi">Tinggi</option>
-                    <option value="sedang">Sedang</option>
-                    <option value="rendah">Rendah</option>
+                  <select value={fPotensi} onChange={(e) => setFPotensi(e.target.value)} className="h-8 rounded-md border border-input bg-background px-2 text-xs font-medium">
+                    <option value="">Semua Potensi ({potensiCounts.tinggi + potensiCounts.sedang + potensiCounts.rendah})</option>
+                    <option value="tinggi">Tinggi ({potensiCounts.tinggi})</option>
+                    <option value="sedang">Sedang ({potensiCounts.sedang})</option>
+                    <option value="rendah">Rendah ({potensiCounts.rendah})</option>
                   </select>
                   {hasFilter && (
                     <Button size="sm" variant="ghost" className="h-8" onClick={resetFilters}>
@@ -328,6 +356,8 @@ function AnalystPage() {
           <KpiCard tone="success" label="Potensi Tinggi" value={s.potensi.tinggi} icon={Target} onClick={() => openPot("tinggi")} />
           <KpiCard tone="warning" label="Potensi Sedang" value={s.potensi.sedang} icon={Target} onClick={() => openPot("sedang")} />
           <KpiCard tone="danger" label="Potensi Rendah" value={s.potensi.rendah} icon={Target} onClick={() => openPot("rendah")} />
+          <KpiCard tone="info" label="Potensi Belum Terisi" value={s.potensi.unknown} icon={AlertTriangle} hint="perlu dilengkapi AE" onClick={() => openAll("Potensi Belum Terisi", filtered.filter((a) => !a.potential.trim()))} />
+
           <KpiCard tone="danger" label="FAT Perlu Relokasi" value={s.fatRelocation} icon={AlertTriangle} onClick={() => openAll("FAT Perlu Relokasi", filtered.filter((a) => /ya|perlu|butuh/i.test(a.fatRelocation)))} />
           <KpiCard tone="warning" label="Butuh Toolkit" value={s.toolkitNeed} icon={AlertTriangle} onClick={() => openAll("Butuh Toolkit", filtered.filter((a) => /ya|butuh/i.test(a.toolkitRequest)))} />
           <KpiCard tone="primary" label="Coverage" value={`${profilingPct}%`} icon={Award} hint={`${s.profCluster}/${clusters.length} cluster`} onClick={() => openAll("Cluster Terprofil")} />
@@ -374,14 +404,31 @@ function AnalystPage() {
               <CardHeader>
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <CardTitle className="font-display text-base">Detail Profiling per Cluster</CardTitle>
-                  <div className="flex flex-wrap gap-2">
-                    <Input placeholder="Cari cluster / AE…" value={detailFilter} onChange={(e) => setDetailFilter(e.target.value)} className="h-8 w-48" />
-                    <select value={detailPotensi} onChange={(e) => setDetailPotensi(e.target.value)} className="h-8 rounded-md border border-input bg-background px-2 text-xs">
-                      <option value="">Semua Potensi</option>
-                      <option value="tinggi">Tinggi</option>
-                      <option value="sedang">Sedang</option>
-                      <option value="rendah">Rendah</option>
-                    </select>
+                  <div className="scroll-x -mx-4 px-4 sm:mx-0 sm:px-0">
+                    <div className="flex min-w-max flex-wrap gap-2 sm:min-w-0">
+                      <Input placeholder="Cari cluster / AE / kompetitor…" value={detailFilter} onChange={(e) => setDetailFilter(e.target.value)} className="h-8 w-48" />
+                      <FilterSelect value={detailAE} onChange={setDetailAE} placeholder="Semua AE" options={aeOptions} />
+                      <FilterSelect value={detailPic} onChange={setDetailPic} placeholder="Semua PIC" options={picOptions} />
+                      <FilterSelect value={detailSeg} onChange={setDetailSeg} placeholder="Semua Segmen" options={segOptions} />
+                      <FilterSelect value={detailComp} onChange={setDetailComp} placeholder="Semua Kompetitor" options={compOptions} />
+                      <select value={detailPotensi} onChange={(e) => setDetailPotensi(e.target.value)} className="h-8 rounded-md border border-input bg-background px-2 text-xs font-medium">
+                        <option value="">Semua Potensi ({potensiCounts.tinggi + potensiCounts.sedang + potensiCounts.rendah})</option>
+                        <option value="tinggi">Tinggi ({potensiCounts.tinggi})</option>
+                        <option value="sedang">Sedang ({potensiCounts.sedang})</option>
+                        <option value="rendah">Rendah ({potensiCounts.rendah})</option>
+                      </select>
+                      <select value={detailSort} onChange={(e) => setDetailSort(e.target.value)} className="h-8 rounded-md border border-input bg-background px-2 text-xs font-medium">
+                        <option value="cluster">Urut: Cluster A-Z</option>
+                        <option value="ae">Urut: AE A-Z</option>
+                        <option value="closewon">Urut: Close Won ↓</option>
+                        <option value="harga">Urut: Harga Kompetitor ↓</option>
+                      </select>
+                      {(detailFilter || detailAE || detailPic || detailSeg || detailComp || detailPotensi) && (
+                        <Button size="sm" variant="ghost" className="h-8" onClick={() => { setDetailFilter(""); setDetailAE(""); setDetailPic(""); setDetailSeg(""); setDetailComp(""); setDetailPotensi(""); }}>
+                          <X className="mr-1 h-3 w-3" /> Reset
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </CardHeader>
@@ -390,6 +437,10 @@ function AnalystPage() {
                   const q2 = detailFilter.trim().toLowerCase();
                   const list = filtered.filter((a) => {
                     if (q2 && !(a.cluster.toLowerCase().includes(q2) || a.aeName.toLowerCase().includes(q2) || a.competitor.toLowerCase().includes(q2))) return false;
+                    if (detailAE && a.aeName !== detailAE) return false;
+                    if (detailPic && (clusterMeta.get(a.cluster.toLowerCase())?.pic || "") !== detailPic) return false;
+                    if (detailSeg && a.customerSegment !== detailSeg) return false;
+                    if (detailComp && !a.competitor.toLowerCase().includes(detailComp.toLowerCase())) return false;
                     if (detailPotensi) {
                       const p = a.potential.toLowerCase();
                       if (detailPotensi === "tinggi" && !(p.includes("tinggi") || p.includes("potensial"))) return false;
@@ -397,6 +448,11 @@ function AnalystPage() {
                       if (detailPotensi === "rendah" && (!p || p.includes("tinggi") || p.includes("potensial") || p.includes("sedang"))) return false;
                     }
                     return true;
+                  }).sort((x, y) => {
+                    if (detailSort === "ae") return (x.aeName || "").localeCompare(y.aeName || "");
+                    if (detailSort === "closewon") return y.closewonToday - x.closewonToday;
+                    if (detailSort === "harga") return y.competitorPrice - x.competitorPrice;
+                    return (x.cluster || "").localeCompare(y.cluster || "");
                   });
                   return (
                     <>
@@ -496,11 +552,12 @@ function AnalystPage() {
   );
 }
 
-function FilterSelect({ value, onChange, placeholder, options }: { value: string; onChange: (v: string) => void; placeholder: string; options: string[] }) {
+function FilterSelect({ value, onChange, placeholder, options }: { value: string; onChange: (v: string) => void; placeholder: string; options: { value: string; count: number }[] }) {
+  const total = options.reduce((a, b) => a + b.count, 0);
   return (
-    <select value={value} onChange={(e) => onChange(e.target.value)} className="h-8 max-w-[160px] shrink-0 rounded-md border border-input bg-background px-2 text-xs">
-      <option value="">{placeholder}</option>
-      {options.map((o) => <option key={o} value={o}>{o}</option>)}
+    <select value={value} onChange={(e) => onChange(e.target.value)} className="h-8 max-w-[190px] shrink-0 rounded-md border border-input bg-background px-2 text-xs font-medium">
+      <option value="">{placeholder} ({total})</option>
+      {options.map((o) => <option key={o.value} value={o.value}>{o.value} ({o.count})</option>)}
     </select>
   );
 }
