@@ -347,90 +347,125 @@ function CompetitorIntelPage() {
       )}
 
       {/* Charts */}
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Card className="glass-card border-0">
-          <CardHeader>
-            <CardTitle className="font-display text-sm">Top Competitor (kemunculan)</CardTitle>
-          </CardHeader>
-          <CardContent className="h-72">
-            <ResponsiveContainer>
-              <BarChart data={topCompetitors} layout="vertical" margin={{ left: 40 }}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis type="number" fontSize={11} />
-                <YAxis type="category" dataKey="name" fontSize={11} width={90} />
-                <Tooltip />
-                <Bar dataKey="value" radius={[0, 6, 6, 0]}>
-                  {topCompetitors.map((_, i) => (
-                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        <Card className="glass-card border-0">
-          <CardHeader>
-            <CardTitle className="font-display text-sm">Distribusi Kompetitor per Cluster</CardTitle>
-          </CardHeader>
-          <CardContent className="h-72">
-            <ResponsiveContainer>
-              <Treemap
-                data={treemap}
-                dataKey="size"
-                stroke="#fff"
-                fill="#6366f1"
-                content={<TreemapCell />}
-              />
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        <Card className="glass-card border-0">
-          <CardHeader>
-            <CardTitle className="font-display text-sm">Harga Kompetitor (min · rata² · max)</CardTitle>
-          </CardHeader>
-          <CardContent className="h-72">
-            <ResponsiveContainer>
-              <BarChart data={priceByCompetitor}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis dataKey="name" fontSize={10} angle={-25} textAnchor="end" height={60} />
-                <YAxis fontSize={10} tickFormatter={(v) => `${(v / 1000).toFixed(0)}K`} />
-                <Tooltip formatter={(v: number) => fmtRp(v)} />
-                <Legend wrapperStyle={{ fontSize: 11 }} />
-                <Bar dataKey="min" fill="#22c55e" name="Min" />
-                <Bar dataKey="avg" fill="#6366f1" name="Rata²" />
-                <Bar dataKey="max" fill="#ef4444" name="Max" />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        <Card className="glass-card border-0">
-          <CardHeader>
-            <CardTitle className="font-display text-sm">Analisis Promo</CardTitle>
-          </CardHeader>
-          <CardContent className="h-72">
-            <ResponsiveContainer>
-              <PieChart>
-                <Pie
-                  data={promoBreakdown}
+      <div className="grid gap-5 lg:grid-cols-2">
+        <ChartCard
+          icon={RadarIcon}
+          title="Top Kompetitor"
+          subtitle="Frekuensi kemunculan di seluruh cluster"
+          height={330}
+          footer={
+            topCompetitors[0]
+              ? `${topCompetitors[0].name} paling dominan dengan ${fmtFull(topCompetitors[0].value)} kemunculan (${fmtPct((topCompetitors[0].value / (stats.appearances || 1)) * 100)} dari total).`
+              : undefined
+          }
+        >
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={topCompetitors} layout="vertical" margin={{ top: 4, right: 48, left: 4, bottom: 4 }}>
+              <XAxis type="number" hide domain={[0, (topCompetitors[0]?.value ?? 1) * 1.15]} />
+              <YAxis type="category" dataKey="name" {...axisProps} width={132} tickFormatter={(v) => truncateLabel(v, 18)} />
+              <Tooltip content={CompTip} cursor={hoverCursor} />
+              <Bar dataKey="value" radius={[0, 6, 6, 0]} barSize={16} isAnimationActive={false}>
+                {topCompetitors.map((c, i) => (
+                  <Cell key={i} fill={competitorColor(c.name, i)} />
+                ))}
+                <LabelList
                   dataKey="value"
-                  nameKey="name"
-                  outerRadius={90}
-                  label={(e: any) => e.name}
-                  labelLine={false}
-                >
-                  {promoBreakdown.map((_, i) => (
-                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+                  position="right"
+                  formatter={(v: number) => fmtFull(v)}
+                  style={{ fontSize: 11, fontWeight: 600, fill: "var(--color-foreground)" }}
+                />
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartCard>
+
+        <ChartCard
+          icon={Layers}
+          title="Cluster Paling Kompetitif"
+          subtitle="Jumlah temuan kompetitor per cluster (Top 12)"
+          height={330}
+          footer={
+            clusterPressure[0]
+              ? `${clusterPressure[0].name} paling padat dengan ${fmtFull(clusterPressure[0].size)} temuan kompetitor.`
+              : undefined
+          }
+        >
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={clusterPressure} layout="vertical" margin={{ top: 4, right: 48, left: 4, bottom: 4 }}>
+              <XAxis type="number" hide domain={[0, (clusterPressure[0]?.size ?? 1) * 1.15]} />
+              <YAxis type="category" dataKey="name" {...axisProps} width={132} tickFormatter={(v) => truncateLabel(v, 18)} />
+              <Tooltip content={ClusterTip} cursor={hoverCursor} />
+              <Bar dataKey="size" radius={[0, 6, 6, 0]} barSize={14} isAnimationActive={false}>
+                {clusterPressure.map((c, i) => (
+                  <Cell key={i} fill={C.negative} fillOpacity={0.4 + 0.6 * (c.size / (clusterPressure[0]?.size || 1))} />
+                ))}
+                <LabelList
+                  dataKey="size"
+                  position="right"
+                  formatter={(v: number) => fmtFull(v)}
+                  style={{ fontSize: 11, fontWeight: 600, fill: "var(--color-foreground)" }}
+                />
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartCard>
+
+        <ChartCard
+          icon={DollarSign}
+          title="Rentang Harga Kompetitor"
+          subtitle="Min · rata-rata · max, diurutkan dari termurah"
+          height={330}
+          footer={
+            priceByCompetitor[0]
+              ? `${priceByCompetitor[0].name} paling agresif dengan harga mulai ${fmtRp(priceByCompetitor[0].min)}.`
+              : undefined
+          }
+        >
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={priceByCompetitor} layout="vertical" margin={{ top: 4, right: 16, left: 4, bottom: 4 }} barGap={2}>
+              <XAxis type="number" {...axisProps} tickFormatter={(v) => `Rp${fmtNum(v as number)}`} />
+              <YAxis type="category" dataKey="name" {...axisProps} width={122} tickFormatter={(v) => truncateLabel(v, 16)} />
+              <Tooltip content={PriceTip} cursor={hoverCursor} />
+              <Legend wrapperStyle={legendStyle} iconType="circle" iconSize={8} />
+              <Bar dataKey="min" fill={C.positive} name="Termurah" radius={[0, 3, 3, 0]} barSize={7} isAnimationActive={false} />
+              <Bar dataKey="avg" fill={C.primary} name="Rata-rata" radius={[0, 3, 3, 0]} barSize={7} isAnimationActive={false} />
+              <Bar dataKey="max" fill={C.negative} name="Tertinggi" radius={[0, 3, 3, 0]} barSize={7} isAnimationActive={false} />
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartCard>
+
+        <ChartCard
+          icon={Sparkles}
+          title="Analisis Promo"
+          subtitle="Strategi promo yang paling sering digunakan"
+          height={330}
+          footer={
+            promoRanked[0]
+              ? `Promo dominan: ${promoRanked[0].name} (${fmtPct((promoRanked[0].value / (stats.appearances || 1)) * 100)} dari temuan).`
+              : undefined
+          }
+        >
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={promoRanked} layout="vertical" margin={{ top: 4, right: 48, left: 4, bottom: 4 }}>
+              <XAxis type="number" hide domain={[0, (promoRanked[0]?.value ?? 1) * 1.15]} />
+              <YAxis type="category" dataKey="name" {...axisProps} width={150} tickFormatter={(v) => truncateLabel(v, 22)} />
+              <Tooltip content={PromoTip} cursor={hoverCursor} />
+              <Bar dataKey="value" radius={[0, 6, 6, 0]} barSize={16} isAnimationActive={false}>
+                {promoRanked.map((_, i) => (
+                  <Cell key={i} fill={CATEGORICAL[i % CATEGORICAL.length]} />
+                ))}
+                <LabelList
+                  dataKey="value"
+                  position="right"
+                  formatter={(v: number) => fmtFull(v)}
+                  style={{ fontSize: 11, fontWeight: 600, fill: "var(--color-foreground)" }}
+                />
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartCard>
       </div>
+
 
       {/* Heatmap */}
       <Card className="glass-card border-0">
