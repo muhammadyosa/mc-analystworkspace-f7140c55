@@ -12,16 +12,13 @@ import {
 import {
   Bar,
   BarChart,
-  CartesianGrid,
   Cell,
-  Pie,
-  PieChart,
+  LabelList,
+  Legend,
   ResponsiveContainer,
   Tooltip,
-  Treemap,
   XAxis,
   YAxis,
-  Legend,
 } from "recharts";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,6 +27,20 @@ import { Badge } from "@/components/ui/badge";
 import { AppHeader } from "@/components/app-header";
 import { useDataStore } from "@/lib/store";
 import type { CompetitorRow, PromoCategory } from "@/lib/excel";
+import {
+  C,
+  CATEGORICAL,
+  ChartCard,
+  axisProps,
+  competitorColor,
+  fmtFull,
+  fmtNum,
+  fmtPct,
+  hoverCursor,
+  legendStyle,
+  makeTooltip,
+  truncateLabel,
+} from "@/components/chart-kit";
 
 export const Route = createFileRoute("/competitor-intel")({
   head: () => ({
@@ -69,21 +80,6 @@ function threatFromRows(rows: CompetitorRow[]): { level: "Rendah" | "Sedang" | "
     score,
     level: score >= 71 ? "Tinggi" : score >= 41 ? "Sedang" : "Rendah",
   };
-}
-
-function TreemapCell(props: any) {
-  const { x, y, width, height, index, name } = props;
-  const color = COLORS[(index ?? 0) % COLORS.length];
-  return (
-    <g>
-      <rect x={x} y={y} width={width} height={height} fill={color} opacity={0.85} />
-      {width > 50 && height > 20 && (
-        <text x={x + 6} y={y + 16} fill="#fff" fontSize={10}>
-          {name}
-        </text>
-      )}
-    </g>
-  );
 }
 
 function CompetitorIntelPage() {
@@ -129,7 +125,7 @@ function CompetitorIntelPage() {
       .slice(0, 10);
   }, [filtered]);
 
-  const treemap = useMemo(() => {
+  const clusterPressure = useMemo(() => {
     const grp = new Map<string, number>();
     filtered.forEach((r) => {
       if (!r.cluster) return;
@@ -138,7 +134,7 @@ function CompetitorIntelPage() {
     return Array.from(grp.entries())
       .map(([name, size]) => ({ name, size }))
       .sort((a, b) => b.size - a.size)
-      .slice(0, 30);
+      .slice(0, 12);
   }, [filtered]);
 
   const priceByCompetitor = useMemo(() => {
@@ -199,12 +195,53 @@ function CompetitorIntelPage() {
       .sort((a, b) => b.score - a.score);
   }, [filtered]);
 
+  const promoRanked = useMemo(
+    () => [...promoBreakdown].sort((a, b) => b.value - a.value).slice(0, 10),
+    [promoBreakdown],
+  );
+
+  const compTotal = filtered.length || 1;
+
+  const CompTip = makeTooltip<{ name: string; value: number }>((d) => ({
+    title: d.name,
+    rows: [
+      { label: "Kemunculan", value: fmtFull(d.value), color: C.primary, strong: true },
+      { label: "Pangsa", value: fmtPct((d.value / compTotal) * 100) },
+    ],
+  }));
+
+  const ClusterTip = makeTooltip<{ name: string; size: number }>((d) => ({
+    title: d.name,
+    rows: [
+      { label: "Temuan kompetitor", value: fmtFull(d.size), color: C.negative, strong: true },
+      { label: "Pangsa", value: fmtPct((d.size / compTotal) * 100) },
+    ],
+  }));
+
+  const PriceTip = makeTooltip<{ name: string; min: number; avg: number; max: number }>((d) => ({
+    title: d.name,
+    rows: [
+      { label: "Termurah", value: fmtRp(d.min), color: C.positive },
+      { label: "Rata-rata", value: fmtRp(d.avg), color: C.primary, strong: true },
+      { label: "Tertinggi", value: fmtRp(d.max), color: C.negative },
+      { label: "Spread", value: fmtRp(d.max - d.min) },
+    ],
+  }));
+
+  const PromoTip = makeTooltip<{ name: string; value: number }>((d) => ({
+    title: d.name,
+    rows: [
+      { label: "Jumlah", value: fmtFull(d.value), strong: true },
+      { label: "Porsi", value: fmtPct((d.value / compTotal) * 100) },
+    ],
+  }));
+
   const aiSummary = useMemo(() => {
     if (!filtered.length) return null;
     const dominant = topCompetitors[0];
     const cheapest = priceByCompetitor[0];
     const highThreat = clusterThreats.filter((c) => c.level === "Tinggi").length;
-    const topPromos = promoBreakdown
+    const topPromos = [...promoBreakdown]
       .sort((a, b) => b.value - a.value)
       .slice(0, 3)
       .map((p) => p.name)
