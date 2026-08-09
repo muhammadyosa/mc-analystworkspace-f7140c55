@@ -153,9 +153,12 @@ export function TooltipShell({ title, rows }: { title?: ReactNode; rows: TipRow[
 export function makeTooltip<T = Record<string, unknown>>(
   render: (d: T) => { title?: ReactNode; rows: TipRow[] } | null,
 ) {
-  return function TooltipContent(props: { active?: boolean; payload?: Array<{ payload: T }> }) {
-    if (!props.active || !props.payload?.length) return null;
-    const out = render(props.payload[0].payload);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return function TooltipContent(props: any) {
+    const payload = props?.payload as Array<{ payload?: T }> | undefined;
+    const first = payload?.[0]?.payload;
+    if (!props?.active || !first) return null;
+    const out = render(first);
     if (!out) return null;
     return <TooltipShell title={out.title} rows={out.rows} />;
   };
