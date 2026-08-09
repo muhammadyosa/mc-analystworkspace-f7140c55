@@ -36,6 +36,8 @@ type Stats = {
   dayaBeli: { name: string; value: number }[];
 };
 
+type TipComp = ReturnType<typeof makeTooltip>;
+
 type Kind = "competitor" | "potensi" | "promo" | "segment" | "strategy" | "dayaBeli";
 type ChartClick = { activePayload?: Array<{ payload: Record<string, unknown> }> };
 
@@ -57,7 +59,7 @@ function RankedBar({
   colorFor?: (d: Record<string, unknown>, i: number) => string;
   onClick?: (p: ChartClick) => void;
   cursor: Record<string, unknown>;
-  tooltip: React.ComponentType<Record<string, unknown>>;
+  tooltip: TipComp;
   labelFormatter?: (v: number) => string;
   labelWidth?: number;
 }) {
@@ -104,7 +106,7 @@ function Donut({
   colorFor: (d: { name: string; value: number }, i: number) => string;
   onClick?: (d: Record<string, unknown>) => void;
   cursor: Record<string, unknown>;
-  tooltip: React.ComponentType<Record<string, unknown>>;
+  tooltip: TipComp;
   centerValue: string;
   centerLabel: string;
 }) {
