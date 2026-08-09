@@ -293,6 +293,11 @@ function Dashboard() {
           <KpiCard label="Cycle Completed" value={actionDone} icon={TrendingUp} tint="success" onClick={() => openActions("done", "Action Plan — Done")} />
         </div>
 
+        {/* Key Insights */}
+        <KeyInsights items={insights} />
+
+
+
         {/* Executive Summary */}
         <div className="animate-in fade-in duration-500">
           <Card className="glass-card border-0 overflow-hidden">
