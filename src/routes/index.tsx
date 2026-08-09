@@ -19,6 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDataStore, computePriority } from "@/lib/store";
 import { DrilldownDialog, type DrilldownState } from "@/components/drilldown-dialog";
+import { KeyInsights, fmtFull, fmtPct, type Insight } from "@/components/chart-kit";
 
 const DashboardCharts = lazy(() => import("@/components/dashboard-charts"));
 
@@ -191,6 +192,74 @@ function Dashboard() {
   const actionActive = actions.filter((a) => a.status === "onprogress").length;
   const actionDone = actions.filter((a) => a.status === "done").length;
 
+  const insights: Insight[] = (() => {
+    const out: Insight[] = [];
+    out.push({
+      icon: s.hcGrowth >= 0 ? "\u2705" : "\u26a0\ufe0f",
+      tone: s.hcGrowth >= 0 ? "positive" : "negative",
+      text: (
+        <>
+          HC {s.hcGrowth >= 0 ? "tumbuh" : "turun"} <b>{fmtPct(s.hcGrowth, true)}</b> bulan ini ({fmtFull(s.sumMei)} → {fmtFull(s.sumJun)}).
+        </>
+      ),
+    });
+    const best = [...s.growth].sort((a, b) => b.deltaMeiJuni - a.deltaMeiJuni)[0];
+    if (best && best.deltaMeiJuni > 0)
+      out.push({
+        icon: "\ud83d\ude80",
+        tone: "positive",
+        text: (
+          <>
+            <b>{best.cluster}</b> tumbuh paling cepat (+{fmtFull(best.deltaMeiJuni)} HC) — replikasi strateginya.
+          </>
+        ),
+      });
+    const worst = s.declines[0];
+    if (worst && worst.deltaMeiJuni < 0)
+      out.push({
+        icon: "\ud83d\udcc9",
+        tone: "negative",
+        text: (
+          <>
+            <b>{worst.cluster}</b> turun {fmtFull(worst.deltaMeiJuni)} HC — perlu program retensi segera.
+          </>
+        ),
+      });
+    const t = s.risingTicket[0];
+    if (t && t.ticket > 0)
+      out.push({
+        icon: "\ud83c\udfab",
+        tone: "warning",
+        text: (
+          <>
+            Ticket tertinggi di <b>{t.cluster}</b> ({fmtFull(t.ticket)} ticket) — indikasi masalah kualitas layanan.
+          </>
+        ),
+      });
+    if (s.highRisk > 0)
+      out.push({
+        icon: "\ud83d\udea8",
+        tone: "warning",
+        text: (
+          <>
+            <b>{s.highRisk} cluster</b> berstatus prioritas tinggi dan menunggu tindakan.
+          </>
+        ),
+      });
+    const topProv = [...s.provDist].sort((a, b) => b.value - a.value)[0];
+    if (topProv)
+      out.push({
+        icon: "\ud83d\udccd",
+        tone: "info",
+        text: (
+          <>
+            <b>{topProv.name}</b> menyumbang {fmtPct((topProv.value / (s.sumJun || 1)) * 100)} dari total HC.
+          </>
+        ),
+      });
+    return out;
+  })();
+
   const [drill, setDrill] = useState<DrilldownState>(null);
 
   const maxTicket = Math.max(...clusters.map((c) => c.ticket), 1);
@@ -292,6 +361,11 @@ function Dashboard() {
           <KpiCard label="Action Plan Aktif" value={actionActive} icon={Activity} tint="info" onClick={() => openActions("onprogress", "Action Plan — On Progress")} />
           <KpiCard label="Cycle Completed" value={actionDone} icon={TrendingUp} tint="success" onClick={() => openActions("done", "Action Plan — Done")} />
         </div>
+
+        {/* Key Insights */}
+        <KeyInsights items={insights} />
+
+
 
         {/* Executive Summary */}
         <div className="animate-in fade-in duration-500">
