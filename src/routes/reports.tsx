@@ -1258,34 +1258,53 @@ function ReportsPage() {
         </div>
 
 
-        <div ref={ref} className="grid gap-4 lg:grid-cols-2">
-          <Card className="glass-card border-0">
-            <CardHeader><CardTitle className="font-display text-sm">Chart HC — {label}</CardTitle></CardHeader>
-            <CardContent className="h-64">
-              <ResponsiveContainer>
-                <AreaChart data={s.hcTrend}>
-                  <defs><linearGradient id={`hcg-${kind}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#6366f1" stopOpacity={0.6} /><stop offset="100%" stopColor="#6366f1" stopOpacity={0.05} /></linearGradient></defs>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis dataKey="bulan" fontSize={11} />
-                  <YAxis fontSize={11} tickFormatter={(v) => (v >= 1000 ? `${(v / 1000).toFixed(0)}K` : String(v))} />
-                  <Tooltip formatter={(v: number) => fmtN(v)} />
-                  <Area type="monotone" dataKey="hc" stroke="#6366f1" strokeWidth={2} fill={`url(#hcg-${kind})`} />
+        <div ref={ref} className="grid min-w-0 gap-4 lg:grid-cols-2">
+          <Card className="glass-card min-w-0 overflow-hidden border-0">
+            <CardHeader className="space-y-1 pb-2">
+              <CardTitle className="font-display text-sm">Chart HC</CardTitle>
+              <p className="text-xs text-muted-foreground">{label} · {fmtN(s.start)} menjadi {fmtN(s.end)} HC</p>
+            </CardHeader>
+            <CardContent className="h-52 min-w-0 px-2 pb-4 sm:h-60 sm:px-5">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart
+                  data={kind === "weekly" ? [{ bulan: "Awal", hc: s.start }, { bulan: "Akhir", hc: s.end }] : s.hcTrend}
+                  margin={{ top: 10, right: 12, left: 0, bottom: 0 }}
+                >
+                  <defs><linearGradient id={`hcg-${kind}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--color-primary)" stopOpacity={0.28} /><stop offset="100%" stopColor="var(--color-primary)" stopOpacity={0.02} /></linearGradient></defs>
+                  <CartesianGrid vertical={false} stroke="var(--color-border)" strokeDasharray="3 4" />
+                  <XAxis dataKey="bulan" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "var(--color-muted-foreground)" }} />
+                  <YAxis width={42} axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }} tickFormatter={(v) => (v >= 1000 ? `${Math.round(v / 1000)}K` : String(v))} />
+                  <Tooltip formatter={(v: number) => [fmtN(v), "HC"]} labelStyle={{ color: "var(--color-foreground)" }} contentStyle={{ borderRadius: 8, borderColor: "var(--color-border)", background: "var(--color-popover)" }} />
+                  <Area type="monotone" dataKey="hc" stroke="var(--color-primary)" strokeWidth={2.5} fill={`url(#hcg-${kind})`} activeDot={{ r: 5 }} />
                 </AreaChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
 
-          <Card className="glass-card border-0">
-            <CardHeader><CardTitle className="font-display text-sm">Chart Ticket — {label}</CardTitle></CardHeader>
-            <CardContent className="h-64">
-              <ResponsiveContainer>
-                <LineChart data={s.ticketTrend}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis dataKey="bulan" fontSize={11} />
-                  <YAxis fontSize={11} />
-                  <Tooltip />
-                  <Line type="monotone" dataKey="ticket" stroke="#ef4444" strokeWidth={2.5} dot={{ r: 4 }} />
-                </LineChart>
+          <Card className="glass-card min-w-0 overflow-hidden border-0">
+            <CardHeader className="space-y-1 pb-2">
+              <CardTitle className="font-display text-sm">Chart Ticket</CardTitle>
+              <p className="text-xs text-muted-foreground">{label} · {fmtN(ticketScaled)} ticket</p>
+            </CardHeader>
+            <CardContent className="h-52 min-w-0 px-2 pb-4 sm:h-60 sm:px-5">
+              <ResponsiveContainer width="100%" height="100%">
+                {kind === "weekly" ? (
+                  <BarChart data={[{ periode: `Minggu ${wkWeek}`, ticket: ticketScaled }]} margin={{ top: 10, right: 12, left: 0, bottom: 0 }} barCategoryGap="45%">
+                    <CartesianGrid vertical={false} stroke="var(--color-border)" strokeDasharray="3 4" />
+                    <XAxis dataKey="periode" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "var(--color-muted-foreground)" }} />
+                    <YAxis width={42} axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }} tickFormatter={(v) => v >= 1000 ? `${Math.round(v / 1000)}K` : String(v)} />
+                    <Tooltip formatter={(v: number) => [fmtN(v), "Ticket"]} cursor={{ fill: "var(--color-muted)", fillOpacity: 0.35 }} contentStyle={{ borderRadius: 8, borderColor: "var(--color-border)", background: "var(--color-popover)" }} />
+                    <Bar dataKey="ticket" fill="var(--color-destructive)" radius={[6, 6, 0, 0]} maxBarSize={72} />
+                  </BarChart>
+                ) : (
+                  <LineChart data={s.ticketTrend} margin={{ top: 10, right: 12, left: 0, bottom: 0 }}>
+                    <CartesianGrid vertical={false} stroke="var(--color-border)" strokeDasharray="3 4" />
+                    <XAxis dataKey="bulan" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "var(--color-muted-foreground)" }} />
+                    <YAxis width={42} axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }} tickFormatter={(v) => v >= 1000 ? `${Math.round(v / 1000)}K` : String(v)} />
+                    <Tooltip formatter={(v: number) => [fmtN(v), "Ticket"]} contentStyle={{ borderRadius: 8, borderColor: "var(--color-border)", background: "var(--color-popover)" }} />
+                    <Line type="monotone" dataKey="ticket" stroke="var(--color-destructive)" strokeWidth={2.5} dot={{ r: 3, fill: "var(--color-background)" }} activeDot={{ r: 5 }} />
+                  </LineChart>
+                )}
               </ResponsiveContainer>
             </CardContent>
           </Card>
@@ -1377,14 +1396,16 @@ function ReportsPage() {
   return (
     <>
       <AppHeader title="Reports" subtitle="Weekly · Day · Monthly · Competitor Intelligence" />
-      <div className="space-y-4 p-4 sm:p-6">
+      <div className="min-w-0 space-y-4 p-3 sm:p-5 lg:p-6">
         <Tabs defaultValue="day">
-          <TabsList>
+          <div className="scroll-x pb-1">
+          <TabsList className="w-max min-w-full justify-start sm:min-w-0">
             <TabsTrigger value="day"><CalendarIcon className="mr-1 h-4 w-4" /> Day</TabsTrigger>
             <TabsTrigger value="weekly"><CalendarIcon className="mr-1 h-4 w-4" /> Weekly</TabsTrigger>
             <TabsTrigger value="monthly"><FileText className="mr-1 h-4 w-4" /> Monthly</TabsTrigger>
             <TabsTrigger value="intel"><RadarIcon className="mr-1 h-4 w-4" /> Competitor Intel</TabsTrigger>
           </TabsList>
+          </div>
 
           <TabsContent value="day" className="space-y-4">
             {analyst.length === 0 ? (
