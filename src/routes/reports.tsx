@@ -138,7 +138,7 @@ function exportProfilingExcel(rows: AnalystRow[], label: string) {
 function exportProfilingPDF(rows: AnalystRow[], label: string) {
   const w = window.open("", "", "width=1000,height=1200");
   if (!w) return;
-  const body = rows.map((r) => `<tr><td>${r.aeName || "-"}</td><td>${r.cluster || "-"}</td><td>${r.profilingDate || r.timestamp || "-"}</td><td>${r.competitor || "-"}</td><td>${r.potential || "-"}</td><td>${r.closewonToday}</td></tr>`).join("");
+  const body = rows.map((r) => `<tr><td>${r.aeName || "-"}</td><td>${r.cluster || "-"}</td><td>${formatDateID(profilingDateKey(r))}</td><td>${r.competitor || "-"}</td><td>${r.potential || "-"}</td><td>${r.closewonToday}</td></tr>`).join("");
   w.document.write(`<html><head><title>Report Profiling</title><style>body{font-family:sans-serif;padding:24px;color:#111}h1{font-size:20px;margin:0 0 4px}table{width:100%;border-collapse:collapse;font-size:11px;margin-top:12px}th,td{border:1px solid #ccc;padding:5px;text-align:left}th{background:#eee}</style></head><body><h1>Laporan Hasil Profiling</h1><div>Periode: ${label} · Total ${rows.length} record</div><table><thead><tr><th>AE</th><th>Cluster</th><th>Tanggal</th><th>Kompetitor</th><th>Potensi</th><th>Close Won</th></tr></thead><tbody>${body}</tbody></table></body></html>`);
   w.document.close();
   setTimeout(() => w.print(), 300);
