@@ -16,7 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { useDataStore } from "@/lib/store";
-import type { AnalystRow, ClusterRow, CompetitorRow, PromoCategory } from "@/lib/excel";
+import type { AnalystRow, ClusterRow, CompetitorRow, PromoCategory, TicketRow } from "@/lib/excel";
 
 // Parse various profiling date formats to a Date (or null)
 function parseProfilingDate(s: string): Date | null {
