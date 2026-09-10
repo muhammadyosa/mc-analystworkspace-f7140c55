@@ -611,7 +611,23 @@ function ReportsPage() {
   const weeklyRef = useRef<HTMLDivElement>(null);
   const monthlyRef = useRef<HTMLDivElement>(null);
 
-  const ticketMap = useMemo(() => ticketByMonthMap(tickets), [tickets]);
+  // Bila file ticket terpisah belum diupload, pakai kolom ticket bulanan
+  // yang sudah ada di file cluster agar analisa ticket tetap terisi.
+  const effTickets = useMemo<TicketRow[]>(() => {
+    if (tickets.length) return tickets;
+    const out: TicketRow[] = [];
+    for (const c of clusters) {
+      const byMonth = (c as unknown as { ticketByMonth?: Record<string, number> }).ticketByMonth;
+      if (!byMonth) continue;
+      for (const [bulan, val] of Object.entries(byMonth)) {
+        if (!val) continue;
+        out.push({ cluster: c.cluster, bulan, ticket: val, kategori: "", penyebab: "", status: "" });
+      }
+    }
+    return out;
+  }, [tickets, clusters]);
+
+  const ticketMap = useMemo(() => ticketByMonthMap(effTickets), [effTickets]);
   const avail = useMemo(() => availableMonths(clusters, ticketMap), [clusters, ticketMap]);
   const first = avail[0];
   const lastM = avail[avail.length - 1];
@@ -640,7 +656,7 @@ function ReportsPage() {
   const [cDFrom, setCDFrom] = useState(""); const [cDTo, setCDTo] = useState("");
   const analyst = useDataStore((s) => s.analyst);
 
-  const clusterTicketMap = useMemo(() => ticketByClusterMap(tickets), [tickets]);
+  const clusterTicketMap = useMemo(() => ticketByClusterMap(effTickets), [effTickets]);
   const weekly = useMemo(() => clusters.length ? computeStats(clusters, wFrom, wTo, ticketMap, clusterTicketMap) : null, [clusters, wFrom, wTo, ticketMap, clusterTicketMap]);
   const monthly = useMemo(() => clusters.length ? computeStats(clusters, mFrom, mTo, ticketMap, clusterTicketMap) : null, [clusters, mFrom, mTo, ticketMap, clusterTicketMap]);
   const compBase = useMemo(() => clusters.length ? computeStats(clusters, cFrom, cTo, ticketMap, clusterTicketMap) : null, [clusters, cFrom, cTo, ticketMap, clusterTicketMap]);

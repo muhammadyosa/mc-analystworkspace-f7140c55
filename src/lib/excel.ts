@@ -12,6 +12,12 @@ export type ClusterRow = {
   april: number;
   mei: number;
   juni: number;
+  juli: number;
+  agustus: number;
+  september: number;
+  oktober: number;
+  november: number;
+  desember: number;
   grandTotal: number;
   mei1: number;
   juni1: number;
@@ -20,7 +26,19 @@ export type ClusterRow = {
   totalHC2026: number;
   serpoStatus: string;
   ikrStatus: string;
+  // Kolom tambahan dari template cluster terbaru (opsional pada file lama)
+  homepass: number;
+  hcTerpasang: number;
+  hcAktif: number;
+  available: number;
+  turHC: number;
+  turHCAktif: number;
+  churn: number;
+  totalNewHC: number;
+  newHCByMonth: Record<string, number>;
+  ticketByMonth: Record<string, number>;
 };
+
 
 export type TicketRow = {
   cluster: string;
@@ -239,56 +257,147 @@ function sheetToCleanJson(ws: XLSX.WorkSheet): Record<string, unknown>[] {
   return rows;
 }
 
+const MONTH_KEYS = [
+  "januari", "februari", "maret", "april", "mei", "juni",
+  "juli", "agustus", "september", "oktober", "november", "desember",
+] as const;
+
+/**
+ * Cari kolom bulan pada header. `prefix` contoh: "hcaktif", "newhc", "ticket".
+ * Kolom total/grand/delta diabaikan, dan hanya kolom pertama tiap bulan dipakai
+ * (menghindari kolom duplikat hasil dedupe: "HC AKTIF JUNI_2").
+ */
+function monthColumnMap(headers: string[], prefix: string): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const h of headers) {
+    const n = norm(h);
+    if (!n || n.includes("total") || n.includes("grand") || n.includes("delta")) continue;
+    if (prefix && !n.startsWith(prefix)) continue;
+    const rest = prefix ? n.slice(prefix.length) : n;
+    if (!rest) continue;
+    for (const key of MONTH_KEYS) {
+      const aliases = BULAN_ALIASES[key.toUpperCase()] ?? [];
+      if (aliases.some((a) => rest === a)) {
+        if (!out[key]) out[key] = h;
+      }
+    }
+  }
+  return out;
+}
+
+const emptyMonths = (): Record<string, number> =>
+  Object.fromEntries(MONTH_KEYS.map((m) => [m, 0])) as Record<string, number>;
+
 export async function parseClusterFile(
   file: File,
 ): Promise<{ rows: ClusterRow[]; meta: UploadMeta }> {
   const buf = await file.arrayBuffer();
   const wb = XLSX.read(buf, { type: "array" });
-  const { name: sheetName, ws } = pickSheet(wb, ["DATA CLUSTER", "CLUSTER", "PEMBAGIAN"]);
+  const { name: sheetName, ws } = pickSheet(wb, ["RAW DATA CLUSTER", "DATA CLUSTER", "CLUSTER", "PEMBAGIAN"]);
   const raw = sheetToCleanJson(ws);
+  const headers = raw.length ? Object.keys(raw[0]) : [];
+
+  // Template baru: "HC AKTIF <BULAN>", "NEW HC <BULAN>", "Ticket <BULAN>".
+  // Template lama: kolom bulan polos ("JANUARI", "JUNI", …).
+  let hcCols = monthColumnMap(headers, "hcaktif");
+  if (!Object.keys(hcCols).length) hcCols = monthColumnMap(headers, "");
+  const newHcCols = monthColumnMap(headers, "newhc");
+  const ticketCols = monthColumnMap(headers, "ticket");
+
   let mapped = 0;
   const rows = raw
     .map((r, idx): ClusterRow | null => {
-      const cluster = toStr(pick(r, ["PROV/KAB/CLUSTER", "cluster"]));
+      const cluster = toStr(pick(r, ["PROV/KAB/CLUSTER", "CLUSTER", "OLT", "cluster"]));
       if (!cluster) return null;
+      if (/^(grand\s*)?total$/i.test(cluster)) return null;
       mapped++;
+
+      const hc = emptyMonths();
+      const newHC = emptyMonths();
+      const ticketM = emptyMonths();
+      for (const m of MONTH_KEYS) {
+        if (hcCols[m]) hc[m] = toNum(r[hcCols[m]]);
+        if (newHcCols[m]) newHC[m] = toNum(r[newHcCols[m]]);
+        if (ticketCols[m]) ticketM[m] = toNum(r[ticketCols[m]]);
+      }
+
+      const homepass = toNum(pick(r, ["Homepass", "HOMEPASS"]));
+      const hcAktif = toNum(pick(r, ["HC Aktif", "HC AKTIF"]));
+      const filledMonths = MONTH_KEYS.filter((m) => hc[m] > 0);
+      const lastM = filledMonths[filledMonths.length - 1];
+      const prevM = filledMonths[filledMonths.length - 2];
+      const deltaCol = toNum(pick(r, ["DELTA HC AKTIF", "DELTA MEI - JUNI", "DELTA MEI-JUNI", "DELTA"]));
+      const delta = deltaCol || (lastM && prevM ? hc[lastM] - hc[prevM] : 0);
+
+      const totalTicket = toNum(pick(r, ["Total Ticket", "TOTAL TICKET", "ticket", "TICKET"]))
+        || MONTH_KEYS.reduce((a, m) => a + ticketM[m], 0);
+      const target = toNum(pick(r, ["TOTAL HC 2026"])) || homepass || toNum(pick(r, ["TOTAL HC"]));
+
       return {
         id: `${idx}-${cluster}`,
         cluster,
-        kabupaten: toStr(pick(r, ["KABUPATEN/KOTA YG BENAR", "kabupaten"])),
-        provinsi: toStr(pick(r, ["Provinsi", "provinsi"])),
+        kabupaten: toStr(pick(r, ["KABUPATEN/KOTA YG BENAR", "Kabupaten/Kota", "kabupaten"])),
+        provinsi: toStr(pick(r, ["PROVINSI", "Provinsi", "provinsi"])),
         pic: toStr(pick(r, ["PIC"])),
-        januari: toNum(pick(r, ["JANUARI"])),
-        februari: toNum(pick(r, ["FEBRUARI"])),
-        maret: toNum(pick(r, ["MARET"])),
-        april: toNum(pick(r, ["APRIL"])),
-        mei: toNum(pick(r, ["MEI"])),
-        juni: toNum(pick(r, ["JUNI"])),
-        grandTotal: toNum(pick(r, ["Grand Total", "GRAND TOTAL"])),
+        januari: hc.januari,
+        februari: hc.februari,
+        maret: hc.maret,
+        april: hc.april,
+        mei: hc.mei,
+        juni: hc.juni || (lastM ? hc[lastM] : hcAktif),
+        juli: hc.juli,
+        agustus: hc.agustus,
+        september: hc.september,
+        oktober: hc.oktober,
+        november: hc.november,
+        desember: hc.desember,
+        grandTotal:
+          toNum(pick(r, ["Grand Total HC Aktif", "Grand Total", "GRAND TOTAL"])) ||
+          MONTH_KEYS.reduce((a, m) => a + hc[m], 0),
         mei1: toNum(pick(r, ["MEI_2", "MEI.1", "MEI 1"])),
         juni1: toNum(pick(r, ["JUNI_2", "JUNI.1", "JUNI 1"])),
-        deltaMeiJuni: toNum(pick(r, ["DELTA MEI - JUNI", "DELTA MEI-JUNI", "DELTA"])),
-        ticket: toNum(pick(r, ["ticket", "TICKET"])),
-        totalHC2026: toNum(pick(r, ["TOTAL HC 2026", "TOTAL HC"])),
+        deltaMeiJuni: delta,
+        ticket: totalTicket,
+        totalHC2026: target,
         serpoStatus: toStr(pick(r, ["STATUS KETERSEDIAAN TIM SERPO", "SERPO"])),
         ikrStatus: toStr(pick(r, ["STATUS KETERSEDIAAN TIM IKR", "IKR"])),
+        homepass,
+        hcTerpasang: toNum(pick(r, ["HC Terpasang"])),
+        hcAktif: hcAktif || (lastM ? hc[lastM] : 0),
+        available: toNum(pick(r, ["Available"])),
+        turHC: toNum(pick(r, ["TUR HC"])),
+        turHCAktif: toNum(pick(r, ["TUR HC Aktif"])),
+        churn: toNum(pick(r, ["Churn"])),
+        totalNewHC:
+          toNum(pick(r, ["Total New HC 2026", "Total New HC"])) ||
+          MONTH_KEYS.reduce((a, m) => a + newHC[m], 0),
+        newHCByMonth: newHC,
+        ticketByMonth: ticketM,
       };
     })
     .filter((r): r is ClusterRow => r !== null);
 
   const kab = new Set(rows.map((r) => r.kabupaten).filter(Boolean));
   const prov = new Set(rows.map((r) => r.provinsi).filter(Boolean));
+  const monthsFound = MONTH_KEYS.filter((m) => rows.some((r) => (r as unknown as Record<string, number>)[m] > 0));
   const meta: UploadMeta = {
     fileName: file.name,
     sheetCount: wb.SheetNames.length,
     sheetPicked: sheetName,
     rowCount: rows.length,
-    extra: { Cluster: rows.length, Kabupaten: kab.size, Provinsi: prov.size },
+    extra: {
+      Cluster: rows.length,
+      Kabupaten: kab.size,
+      Provinsi: prov.size,
+      Bulan: monthsFound.length,
+      "Total Ticket": rows.reduce((a, r) => a + r.ticket, 0),
+    },
     mappingPct: raw.length ? Math.round((mapped / raw.length) * 100) : 100,
     timestamp: Date.now(),
   };
   return { rows, meta };
 }
+
 
 
 
@@ -791,6 +900,7 @@ export function detectKind(wb: XLSX.WorkBook, fileName: string): ImportKind {
   if (sheets.some((s) => s.includes("datacluster"))) return "cluster";
   if (has("provkabcluster") && (has("pic") || has("statusketersediaan"))) return "cluster";
   if (has("totalhc2026") || has("statusketersediaantimserpo") || has("statusketersediaantimikr")) return "cluster";
+  if (has("hcterpasang") || has("homepass") || has("totalnewhc2026") || has("grandtotalhcaktif")) return "cluster";
 
   // Ticket
   if (sheets.some((s) => s.includes("listticketing") || s.includes("ticket") || s.includes("pivot"))) return "ticket";
@@ -853,11 +963,17 @@ export function exportToExcel<T extends Record<string, unknown>>(rows: T[], file
 export function downloadTemplate(kind: ImportKind) {
   const templates: Record<ImportKind, string[]> = {
     cluster: [
-      "PROV/KAB/CLUSTER", "JANUARI", "FEBRUARI", "MARET", "APRIL", "MEI", "JUNI",
-      "Grand Total", "MEI.1", "JUNI.1", "DELTA MEI - JUNI", "ticket", "TOTAL HC 2026",
-      "KABUPATEN/KOTA YG BENAR", "STATUS KETERSEDIAAN TIM SERPO",
-      "STATUS KETERSEDIAAN TIM IKR", "Provinsi", "PIC",
+      "CLUSTER", "Homepass", "HC Terpasang", "HC Aktif", "Available", "TUR HC", "TUR HC Aktif",
+      "PIC", "Churn",
+      "NEW HC JANUARI", "NEW HC FEBRUARI", "NEW HC MARET", "NEW HC APRIL", "NEW HC MEI",
+      "NEW HC JUNI", "NEW HC JULI", "NEW HC AGST", "Total New HC 2026",
+      "HC AKTIF JANUARI", "HC AKTIF FEBRUARI", "HC AKTIF MARET", "HC AKTIF APRIL",
+      "HC AKTIF MEI", "HC AKTIF JUNI", "HC AKTIF JULI", "HC AKTIF AGST", "Grand Total HC Aktif",
+      "Ticket Jan", "Ticket Feb", "Ticket Maret", "Ticket April", "Ticket Mei", "Ticket Juni",
+      "Ticket Juli", "TICKET AGST", "Total Ticket",
+      "Kabupaten/Kota", "IKR", "SERPO", "PROVINSI",
     ],
+
     ticket: [
       "CLUSTER", "Jan", "Feb", "Mar", "Apr", "Mei", "Jun",
       "Jul", "Agt", "Sep", "Okt", "Nov", "Des", "Grand Total",
