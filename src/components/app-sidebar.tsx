@@ -57,10 +57,37 @@ const colorThemes: { id: ColorTheme; label: string; swatch: string }[] = [
 export function AppSidebar() {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const { theme, colorTheme, toggle, setColorTheme } = useTheme();
+  const { state, toggleSidebar } = useSidebar();
   const isActive = (p: string) => (p === "/" ? pathname === "/" : pathname.startsWith(p));
 
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="icon" className="relative">
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            onClick={toggleSidebar}
+            aria-label={state === "expanded" ? "Tutup menu" : "Buka menu"}
+            className={cn(
+              "absolute -right-3 top-1/2 z-50 hidden h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full md:flex",
+              "border border-border/80 bg-card/90 backdrop-blur-md shadow-lg shadow-black/5",
+              "text-sidebar-foreground ring-1 ring-primary/15 transition-all duration-300 ease-out",
+              "hover:scale-110 hover:border-primary/50 hover:bg-primary hover:text-primary-foreground hover:shadow-primary/25 hover:ring-primary/40",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            )}
+          >
+            <ChevronLeft
+              className={cn(
+                "h-4 w-4 shrink-0 transition-transform duration-300 ease-out",
+                state === "collapsed" && "rotate-180",
+              )}
+            />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="right" className="text-xs">
+          {state === "expanded" ? "Tutup menu" : "Buka menu"}
+        </TooltipContent>
+      </Tooltip>
       <SidebarHeader>
         <div className="flex items-center gap-3 px-3 py-4 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-2 group-data-[collapsible=icon]:py-3">
           <img
