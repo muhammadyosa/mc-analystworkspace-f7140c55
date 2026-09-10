@@ -693,6 +693,10 @@ function ReportsPage() {
                   <KpiCard label="Kompetitor Unik" value={compCharts.totalCompetitors} />
                   <KpiCard label="Ancaman Tinggi" value={compCharts.highThreat} tone="down" hint="threat ≥ 71" />
                   <KpiCard label="Avg Harga Kompetitor" value={fmtRp(compCharts.avgPriceAll)} tone="warn" />
+                  <KpiCard label="Cluster Kritis" value={compRisk?.critical.length ?? 0} tone="down" hint="ancaman tinggi + HC turun" />
+                  <KpiCard label="HC Hilang di Cluster Kritis" value={compRisk?.lostHC ?? 0} tone="down" hint={`${MONTHS[cFrom].label} → ${MONTHS[cTo].label}`} />
+                  <KpiCard label="Ticket di Area Kompetitif" value={compBase.totalTicket} tone="warn" hint={`rata-rata ${fmtN(compBase.avgTicketPerMonth)}/bulan`} />
+                  <KpiCard label="Growth HC Pasar" value={`${compBase.growth >= 0 ? "+" : ""}${compBase.growth.toFixed(1)}%`} tone={compBase.growth >= 0 ? "up" : "down"} hint={`${fmtN(compBase.start)} → ${fmtN(compBase.end)}`} />
                 </div>
 
                 <div className="grid gap-4 lg:grid-cols-2">
