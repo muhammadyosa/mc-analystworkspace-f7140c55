@@ -900,6 +900,7 @@ export function detectKind(wb: XLSX.WorkBook, fileName: string): ImportKind {
   if (sheets.some((s) => s.includes("datacluster"))) return "cluster";
   if (has("provkabcluster") && (has("pic") || has("statusketersediaan"))) return "cluster";
   if (has("totalhc2026") || has("statusketersediaantimserpo") || has("statusketersediaantimikr")) return "cluster";
+  if (has("hcterpasang") || has("homepass") || has("totalnewhc2026") || has("grandtotalhcaktif")) return "cluster";
 
   // Ticket
   if (sheets.some((s) => s.includes("listticketing") || s.includes("ticket") || s.includes("pivot"))) return "ticket";
