@@ -963,11 +963,17 @@ export function exportToExcel<T extends Record<string, unknown>>(rows: T[], file
 export function downloadTemplate(kind: ImportKind) {
   const templates: Record<ImportKind, string[]> = {
     cluster: [
-      "PROV/KAB/CLUSTER", "JANUARI", "FEBRUARI", "MARET", "APRIL", "MEI", "JUNI",
-      "Grand Total", "MEI.1", "JUNI.1", "DELTA MEI - JUNI", "ticket", "TOTAL HC 2026",
-      "KABUPATEN/KOTA YG BENAR", "STATUS KETERSEDIAAN TIM SERPO",
-      "STATUS KETERSEDIAAN TIM IKR", "Provinsi", "PIC",
+      "CLUSTER", "Homepass", "HC Terpasang", "HC Aktif", "Available", "TUR HC", "TUR HC Aktif",
+      "PIC", "Churn",
+      "NEW HC JANUARI", "NEW HC FEBRUARI", "NEW HC MARET", "NEW HC APRIL", "NEW HC MEI",
+      "NEW HC JUNI", "NEW HC JULI", "NEW HC AGST", "Total New HC 2026",
+      "HC AKTIF JANUARI", "HC AKTIF FEBRUARI", "HC AKTIF MARET", "HC AKTIF APRIL",
+      "HC AKTIF MEI", "HC AKTIF JUNI", "HC AKTIF JULI", "HC AKTIF AGST", "Grand Total HC Aktif",
+      "Ticket Jan", "Ticket Feb", "Ticket Maret", "Ticket April", "Ticket Mei", "Ticket Juni",
+      "Ticket Juli", "TICKET AGST", "Total Ticket",
+      "Kabupaten/Kota", "IKR", "SERPO", "PROVINSI",
     ],
+
     ticket: [
       "CLUSTER", "Jan", "Feb", "Mar", "Apr", "Mei", "Jun",
       "Jul", "Agt", "Sep", "Okt", "Nov", "Des", "Grand Total",
