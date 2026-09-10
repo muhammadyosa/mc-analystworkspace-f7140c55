@@ -1250,15 +1250,14 @@ function ReportsPage() {
                   <Card className="glass-card border-0">
                     <CardHeader><CardTitle className="font-display text-sm">Threat Level Distribution</CardTitle></CardHeader>
                     <CardContent className="h-72">
-                      <ResponsiveContainer>
-                        <PieChart>
-                          <Pie data={compCharts.threatBuckets} dataKey="value" nameKey="name" outerRadius={90} label={(e: any) => `${e.name}: ${e.value}`} labelLine={false}>
-                            {compCharts.threatBuckets.map((_, i) => <Cell key={i} fill={["#22c55e", "#f59e0b", "#ef4444"][i]} />)}
-                          </Pie>
-                          <Tooltip />
-                          <Legend wrapperStyle={{ fontSize: 11 }} />
-                        </PieChart>
-                      </ResponsiveContainer>
+                      <ArcDistribution
+                        items={[
+                          { name: "Rendah", value: compCharts.threatBuckets[0].value, color: "#22c55e", icon: "✅" },
+                          { name: "Sedang", value: compCharts.threatBuckets[1].value, color: "#f59e0b", icon: "⏳" },
+                          { name: "Tinggi", value: compCharts.threatBuckets[2].value, color: "#ef4444", icon: "🔥" },
+                          { name: "Total Cluster", value: compCharts.totalClusters, color: "#3b82f6", icon: "⚙️" },
+                        ]}
+                      />
                     </CardContent>
                   </Card>
                 </div>
