@@ -393,29 +393,60 @@ function WeeklyDailyAnalysis({ analyst, from, to, onFrom, onTo }: { analyst: Ana
     <section className="space-y-4" aria-labelledby="weekly-daily-title">
       <Card className="glass-card border-0">
         <CardHeader className="pb-3">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-            <div className="space-y-2">
-              <CardTitle id="weekly-daily-title" className="font-display text-base">Analisis Profiling Harian</CardTitle>
-              <p className="text-xs text-muted-foreground">Analisis mengikuti tanggal aktual pada file profiling.</p>
-              <div className="flex flex-wrap items-center gap-1.5">
-                <Badge variant="secondary" className="text-[10px] font-medium">
-                  Data valid: {bounds.min ? `${formatDateID(bounds.min)} – ${formatDateID(bounds.max)}` : "belum ada"}
-                </Badge>
-                <Badge variant="secondary" className="text-[10px] font-medium">Rentang dipilih: {rangeLabel}</Badge>
-                {invalidDateCount > 0 && (
-                  <Badge variant="outline" className="text-[10px] font-medium text-warning">{fmtN(invalidDateCount)} baris tanpa tanggal valid (dilewati)</Badge>
-                )}
+          <div className="space-y-3">
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <CardTitle id="weekly-daily-title" className="font-display text-base">Analisis Profiling Harian</CardTitle>
+                <p className="text-xs text-muted-foreground">Analisis mengikuti tanggal aktual pada file profiling.</p>
               </div>
-            </div>
-            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
-              <ReportDatePicker label="Tanggal mulai" value={effectiveFrom} onChange={onFrom} min={bounds.min} max={effectiveTo || bounds.max} />
-              <ReportDatePicker label="Tanggal akhir" value={effectiveTo} onChange={onTo} min={effectiveFrom || bounds.min} max={bounds.max} />
               <div className="flex gap-2">
-                {(from || to) && (
-                  <Button size="sm" variant="ghost" className="h-9" onClick={() => { onFrom(""); onTo(""); }}>Reset</Button>
-                )}
                 <Button size="sm" variant="outline" className="h-9" disabled={!exportRows.length} onClick={() => exportProfilingExcel(exportRows, `${effectiveFrom}-${effectiveTo}`)}><FileText /> Excel</Button>
                 <Button size="sm" variant="outline" className="h-9" disabled={!exportRows.length} onClick={() => exportProfilingPDF(exportRows, rangeLabel)}><Printer /> PDF</Button>
+              </div>
+            </div>
+
+            <div className="rounded-xl border bg-muted/30 p-3">
+              <div className="grid gap-3 sm:grid-cols-[auto_auto_1fr] sm:items-end">
+                <ReportDatePicker label="Tanggal mulai" value={effectiveFrom} onChange={onFrom} min={bounds.min} max={effectiveTo || bounds.max} />
+                <ReportDatePicker label="Tanggal akhir" value={effectiveTo} onChange={onTo} min={effectiveFrom || bounds.min} max={bounds.max} />
+                <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8 text-xs"
+                    disabled={!bounds.max}
+                    onClick={() => {
+                      const end = new Date(`${bounds.max}T00:00:00`);
+                      const start = new Date(end); start.setDate(start.getDate() - 6);
+                      const startKey = dateToKey(start);
+                      onFrom(startKey < bounds.min ? bounds.min : startKey);
+                      onTo(bounds.max);
+                    }}
+                  >7 hari terakhir</Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8 text-xs"
+                    disabled={!bounds.max}
+                    onClick={() => {
+                      const end = new Date(`${bounds.max}T00:00:00`);
+                      const start = new Date(end); start.setDate(start.getDate() - 29);
+                      const startKey = dateToKey(start);
+                      onFrom(startKey < bounds.min ? bounds.min : startKey);
+                      onTo(bounds.max);
+                    }}
+                  >30 hari terakhir</Button>
+                  <Button size="sm" variant="ghost" className="h-8 text-xs" disabled={!from && !to} onClick={() => { onFrom(""); onTo(""); }}>Semua tanggal</Button>
+                </div>
+              </div>
+              <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-border/50 pt-2.5">
+                <Badge variant="secondary" className="text-[10px] font-medium">Rentang dipilih: {rangeLabel}</Badge>
+                <Badge variant="outline" className="text-[10px] font-medium">
+                  Data tersedia: {bounds.min ? `${formatDateID(bounds.min)} – ${formatDateID(bounds.max)}` : "belum ada"}
+                </Badge>
+                {invalidDateCount > 0 && (
+                  <Badge variant="outline" className="text-[10px] font-medium text-warning">{fmtN(invalidDateCount)} baris tanpa tanggal valid</Badge>
+                )}
               </div>
             </div>
           </div>
@@ -790,12 +821,16 @@ function ReportsPage() {
   const lastM = avail[avail.length - 1];
   const prevM = avail.length > 1 ? avail[avail.length - 2] : first;
 
-  const [wFrom, setWFrom] = useState(prevM);
-  const [wTo, setWTo] = useState(lastM);
   const [mFrom, setMFrom] = useState(first);
   const [mTo, setMTo] = useState(lastM);
-  const [cFrom, setCFrom] = useState(first);
-  const [cTo, setCTo] = useState(lastM);
+
+  const [wDFrom, setWDFrom] = useState(""); const [wDTo, setWDTo] = useState("");
+  // Weekly: satu kontrol saja — bulan + minggu ke-1..5
+  const [wkMonth, setWkMonth] = useState(lastM);
+  const [wkWeek, setWkWeek] = useState(1);
+  const weekSel = weekRange(wkMonth, wkWeek);
+  // Competitor Intel: satu kontrol saja — rentang tanggal
+  const [cDFrom, setCDFrom] = useState(""); const [cDTo, setCDTo] = useState("");
 
   // Sinkronkan range bila data baru punya bulan terakhir yang berbeda
   const monthRangeKey = `${first}-${lastM}`;
@@ -803,27 +838,22 @@ function ReportsPage() {
   useEffect(() => {
     if (syncKey === monthRangeKey) return;
     setSyncKey(monthRangeKey);
-    setWFrom(prevM); setWTo(lastM);
     setMFrom(first); setMTo(lastM);
-    setCFrom(first); setCTo(lastM);
     setWkMonth(lastM); setWkWeek(1);
-
+    setCDFrom(""); setCDTo("");
   }, [first, lastM, monthRangeKey, prevM, syncKey]);
 
-  const [wDFrom, setWDFrom] = useState(""); const [wDTo, setWDTo] = useState("");
-  // Weekly: pilih bulan + minggu ke-1..5
-  const [wkMonth, setWkMonth] = useState(lastM);
-  const [wkWeek, setWkWeek] = useState(1);
-  const weekSel = weekRange(wkMonth, wkWeek);
-  // Competitor Intel: rentang tanggal profiling
-  const [cDFrom, setCDFrom] = useState(""); const [cDTo, setCDTo] = useState("");
-  const cDFromEff = cDFrom || monthStartKey(cFrom);
-  const cDToEff = cDTo || monthEndKey(cTo);
+  const cDFromEff = cDFrom || monthStartKey(first);
+  const cDToEff = cDTo || monthEndKey(lastM);
+  const clampMonth = (i: number) => Math.min(Math.max(i, first), lastM);
+  const monthIdxOfKey = (k: string) => clampMonth(Number(k.slice(5, 7)) - 1);
+  const cFrom = monthIdxOfKey(cDFromEff);
+  const cTo = Math.max(cFrom, monthIdxOfKey(cDToEff));
 
   const analyst = useDataStore((s) => s.analyst);
 
   const clusterTicketMap = useMemo(() => ticketByClusterMap(effTickets), [effTickets]);
-  const weekly = useMemo(() => clusters.length ? computeStats(clusters, wFrom, wTo, ticketMap, clusterTicketMap) : null, [clusters, wFrom, wTo, ticketMap, clusterTicketMap]);
+  const weekly = useMemo(() => clusters.length ? computeStats(clusters, wkMonth, wkMonth, ticketMap, clusterTicketMap) : null, [clusters, wkMonth, ticketMap, clusterTicketMap]);
   const monthly = useMemo(() => clusters.length ? computeStats(clusters, mFrom, mTo, ticketMap, clusterTicketMap) : null, [clusters, mFrom, mTo, ticketMap, clusterTicketMap]);
   const compBase = useMemo(() => clusters.length ? computeStats(clusters, cFrom, cTo, ticketMap, clusterTicketMap) : null, [clusters, cFrom, cTo, ticketMap, clusterTicketMap]);
 
@@ -920,7 +950,9 @@ function ReportsPage() {
     setFrom: (i: number) => void, setTo: (i: number) => void,
     ref: React.RefObject<HTMLDivElement | null>,
   ) => {
-    const label = MONTHS[from].label + " → " + MONTHS[to].label + " 2026";
+    const label = kind === "weekly"
+      ? `${formatDateID(weekSel.from)} – ${formatDateID(weekSel.to)}`
+      : MONTHS[from].label + " → " + MONTHS[to].label + " 2026";
     const worst = s.worstRatio[0];
     const heavyPic = [...s.picPerf].sort((a, b) => b.ratio - a.ratio)[0];
     const insights = [
@@ -953,12 +985,11 @@ function ReportsPage() {
     return (
       <div className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex flex-wrap items-center gap-2">
+          {kind === "weekly" ? (
+            <WeekPicker month={wkMonth} week={wkWeek} onMonth={setWkMonth} onWeek={setWkWeek} avail={avail} />
+          ) : (
             <DateRange from={from} to={to} onFrom={setFrom} onTo={setTo} avail={avail} />
-            {kind === "weekly" && (
-              <WeekPicker month={wkMonth} week={wkWeek} onMonth={setWkMonth} onWeek={setWkWeek} avail={avail} />
-            )}
-          </div>
+          )}
           <Button size="sm" onClick={() => handlePrint(ref)}><Printer className="mr-1 h-4 w-4" /> Export PDF</Button>
         </div>
 
@@ -1119,7 +1150,7 @@ function ReportsPage() {
           </TabsContent>
 
           <TabsContent value="weekly" className="space-y-4">
-            {weekly && renderTab(weekly, "weekly", wFrom, wTo, setWFrom, setWTo, weeklyRef)}
+            {weekly && renderTab(weekly, "weekly", wkMonth, wkMonth, setWkMonth, setWkMonth, weeklyRef)}
           </TabsContent>
 
 
@@ -1137,23 +1168,22 @@ function ReportsPage() {
               </Card>
             ) : (
               <>
-                <DateRange from={cFrom} to={cTo} onFrom={setCFrom} onTo={setCTo} avail={avail} />
-
-                <div className="flex flex-wrap items-end gap-2 rounded-lg border bg-muted/30 p-2">
-                  <ReportDatePicker label="Tanggal mulai" value={cDFromEff} onChange={setCDFrom} max={cDToEff} />
-                  <ReportDatePicker label="Tanggal akhir" value={cDToEff} onChange={setCDTo} min={cDFromEff} />
-                  {(cDFrom || cDTo) && (
-                    <Button size="sm" variant="ghost" className="h-9" onClick={() => { setCDFrom(""); setCDTo(""); }}>Reset</Button>
-                  )}
+                <div className="rounded-xl border bg-muted/30 p-3">
+                  <div className="grid gap-3 sm:grid-cols-[auto_auto_1fr] sm:items-end">
+                    <ReportDatePicker label="Tanggal mulai" value={cDFromEff} onChange={setCDFrom} max={cDToEff} />
+                    <ReportDatePicker label="Tanggal akhir" value={cDToEff} onChange={setCDTo} min={cDFromEff} />
+                    <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                      <Badge variant="secondary" className="text-[10px]">
+                        Analisa pasar: {MONTHS[cFrom].label} → {MONTHS[cTo].label} 2026
+                      </Badge>
+                      {(cDFrom || cDTo) && (
+                        <Button size="sm" variant="ghost" className="h-8 text-xs" onClick={() => { setCDFrom(""); setCDTo(""); }}>Reset</Button>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
-                <ProfilingRangeSection
-                  analyst={analyst}
-                  from={cDFromEff}
-                  to={cDToEff}
-                  title="Ringkasan Profiling — Competitor Intel"
-                  periodLabel={`${formatDateID(cDFromEff)} – ${formatDateID(cDToEff)}`}
-                />
+
 
 
 
@@ -1293,6 +1323,14 @@ function ReportsPage() {
                     "Update pricing playbook bulanan berbasis data harga kompetitor terbaru.",
                   ]} />
                 </div>
+
+                <ProfilingRangeSection
+                  analyst={analyst}
+                  from={cDFromEff}
+                  to={cDToEff}
+                  title="Ringkasan Profiling — Competitor Intel"
+                  periodLabel={`${formatDateID(cDFromEff)} – ${formatDateID(cDToEff)}`}
+                />
               </>
             )}
           </TabsContent>
