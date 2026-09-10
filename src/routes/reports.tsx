@@ -964,6 +964,9 @@ function ReportsPage() {
   // Weekly: satu kontrol saja — bulan + minggu ke-1..5
   const [wkMonth, setWkMonth] = useState(lastM);
   const [wkWeek, setWkWeek] = useState(1);
+  const [cmpWeeks, setCmpWeeks] = useState<number[]>([1, 2]);
+  const toggleCmpWeek = (w: number) =>
+    setCmpWeeks((prev) => (prev.includes(w) ? prev.filter((x) => x !== w) : [...prev, w].sort((a, b) => a - b)));
   const weekSel = weekRange(wkMonth, wkWeek);
   // Competitor Intel: satu kontrol saja — rentang tanggal
   const [cDFrom, setCDFrom] = useState(""); const [cDTo, setCDTo] = useState("");
@@ -1287,6 +1290,7 @@ function ReportsPage() {
 
           <TabsContent value="weekly" className="space-y-4">
             {weekly && renderTab(weekly, "weekly", wkMonth, wkMonth, setWkMonth, setWkMonth, weeklyRef)}
+            <WeekCompare analyst={analyst} month={wkMonth} weeks={cmpWeeks} onToggle={toggleCmpWeek} />
           </TabsContent>
 
 
