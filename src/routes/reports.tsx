@@ -261,31 +261,39 @@ function RecommendationBox({ items }: { items: string[] }) {
   );
 }
 
-function computeStats(clusters: ClusterRow[], from: number, to: number) {
+function computeStats(
+  clusters: ClusterRow[],
+  from: number,
+  to: number,
+  ticketMap: Map<string, number> = new Map(),
+) {
   const range = MONTHS.slice(from, to + 1);
   const hcTrend = range.map((m) => ({
     bulan: m.label,
-    hc: clusters.reduce((a, c) => a + (Number(c[m.key as MonthKey]) || 0), 0),
+    hc: clusters.reduce((a, c) => a + hcOf(c, m.key), 0),
   }));
   const start = hcTrend[0]?.hc ?? 0;
   const end = hcTrend[hcTrend.length - 1]?.hc ?? 0;
   const growth = start > 0 ? ((end - start) / start) * 100 : 0;
   const totalTicket = clusters.reduce((a, c) => a + c.ticket, 0);
   const perCluster = clusters.map((c) => {
-    const hcStart = Number(c[range[0].key as MonthKey]) || 0;
-    const hcEnd = Number(c[range[range.length - 1].key as MonthKey]) || 0;
+    const hcStart = hcOf(c, range[0].key);
+    const hcEnd = hcOf(c, range[range.length - 1].key);
     return { ...c, hcStart, hcEnd, delta: hcEnd - hcStart };
   });
   const topGrowth = [...perCluster].sort((a, b) => b.delta - a.delta).slice(0, 5);
   const topDecline = [...perCluster].sort((a, b) => a.delta - b.delta).slice(0, 5);
   const topHC = [...perCluster].sort((a, b) => b.hcEnd - a.hcEnd).slice(0, 8).map((c) => ({ cluster: c.cluster, hc: c.hcEnd }));
   const topTicket = [...clusters].sort((a, b) => b.ticket - a.ticket).slice(0, 8).map((c) => ({ cluster: c.cluster, ticket: c.ticket }));
+  const hasRealTicket = range.some((m) => (ticketMap.get(m.key) ?? 0) > 0);
   const ticketTrend = range.map((m) => {
-    // proxy: distribute total ticket across months by HC weight
-    const monthHC = clusters.reduce((a, c) => a + (Number(c[m.key as MonthKey]) || 0), 0);
+    if (hasRealTicket) return { bulan: m.label, ticket: ticketMap.get(m.key) ?? 0 };
+    // fallback: distribusi total ticket berdasar bobot HC
+    const monthHC = clusters.reduce((a, c) => a + hcOf(c, m.key), 0);
     const totalHC = clusters.reduce((a, c) => a + c.grandTotal, 0);
     return { bulan: m.label, ticket: totalHC > 0 ? Math.round((monthHC / totalHC) * totalTicket) : 0 };
   });
+
   const picMap = new Map<string, { hc: number; ticket: number }>();
   perCluster.forEach((c) => {
     const p = c.pic || "-";
