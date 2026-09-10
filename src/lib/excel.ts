@@ -331,7 +331,7 @@ export async function parseClusterFile(
 
       const totalTicket = toNum(pick(r, ["Total Ticket", "TOTAL TICKET", "ticket", "TICKET"]))
         || MONTH_KEYS.reduce((a, m) => a + ticketM[m], 0);
-      const target = toNum(pick(r, ["TOTAL HC 2026", "TOTAL HC"])) || homepass;
+      const target = toNum(pick(r, ["TOTAL HC 2026"])) || homepass || toNum(pick(r, ["TOTAL HC"]));
 
       return {
         id: `${idx}-${cluster}`,
