@@ -53,10 +53,14 @@ type Kind = "cluster" | "province" | "month";
 export default function DashboardCharts({
   stats: s,
   onSelect,
+  labels,
 }: {
   stats: Stats;
   onSelect?: (kind: Kind, data: Record<string, unknown>) => void;
+  labels?: { cur: string; prev: string };
 }) {
+  const curLabel = labels?.cur ?? "Juni";
+  const prevLabel = labels?.prev ?? "Mei";
   const handleBar = (kind: Kind) => (p: ChartClick) => {
     const d = p?.activePayload?.[0]?.payload;
     if (d && onSelect) onSelect(kind, d);
@@ -121,7 +125,7 @@ export default function DashboardCharts({
   const HcTip = makeTooltip<(typeof topHc)[number]>((d) => ({
     title: `#${d.rank} ${d.cluster}`,
     rows: [
-      { label: "HC Juni", value: fmtFull(d.juni), color: C.primary, strong: true },
+      { label: `HC ${curLabel}`, value: fmtFull(d.juni), color: C.primary, strong: true },
       { label: "Kabupaten", value: d.kabupaten || "-" },
       { label: "PIC", value: d.pic || "-" },
     ],
@@ -132,8 +136,8 @@ export default function DashboardCharts({
     return {
       title: d.cluster,
       rows: [
-        { label: "HC Mei", value: fmtFull(d.mei ?? 0) },
-        { label: "HC Juni", value: fmtFull(d.juni) },
+        { label: `HC ${prevLabel}`, value: fmtFull(d.mei ?? 0) },
+        { label: `HC ${curLabel}`, value: fmtFull(d.juni) },
         {
           label: "Delta",
           value: fmtSigned(d.deltaMeiJuni),
@@ -161,7 +165,7 @@ export default function DashboardCharts({
       <ChartCard
         icon={Activity}
         title="HC Trend"
-        subtitle="Pergerakan HC Januari–Juni"
+        subtitle={`Pergerakan HC hingga ${curLabel}`}
         badge={last ? <DeltaBadge value={last.growth} label=" vs bulan lalu" /> : undefined}
         height={300}
         footer={peak ? `HC tertinggi terjadi pada ${peak.month} (${fmtFull(peak.hc)}).` : undefined}
@@ -195,7 +199,7 @@ export default function DashboardCharts({
       <ChartCard
         icon={BarChart3}
         title="Top 10 Cluster by HC"
-        subtitle="Cluster dengan HC terbesar bulan Juni"
+        subtitle={`Cluster dengan HC terbesar bulan ${curLabel}`}
         height={340}
         footer={topHc[0] ? `${topHc[0].cluster} memimpin dengan ${fmtFull(topHc[0].juni)} HC.` : undefined}
       >
@@ -234,7 +238,7 @@ export default function DashboardCharts({
       {/* HC GROWTH */}
       <ChartCard
         icon={TrendingUp}
-        title="HC Growth (Delta Mei–Juni)"
+        title={`HC Growth (Delta ${prevLabel}–${curLabel})`}
         subtitle="Perubahan HC terbesar antar dua bulan terakhir"
         height={340}
         footer={`${posCount} dari ${growth.length} cluster mencatat pertumbuhan positif.`}
