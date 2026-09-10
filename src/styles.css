@@ -294,26 +294,7 @@
   animation: sidebar-toggle-float 2.8s ease-in-out infinite;
 }
 
-@keyframes sidebar-toggle-spin {
-  to { transform: rotate(360deg); }
-}
-
-@keyframes sidebar-toggle-pulse {
-  0%, 100% { opacity: 0.45; transform: scale(1); }
-  50% { opacity: 0.9; transform: scale(1.18); }
-}
-
-.sidebar-toggle-orbit {
-  animation: sidebar-toggle-spin 9s linear infinite;
-}
-
-.sidebar-toggle-halo {
-  animation: sidebar-toggle-pulse 2.6s ease-in-out infinite;
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .sidebar-toggle-orbit,
-  .sidebar-toggle-halo,
   .sidebar-toggle-float {
     animation: none;
   }
