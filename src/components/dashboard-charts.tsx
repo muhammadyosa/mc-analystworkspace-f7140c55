@@ -319,57 +319,17 @@ export default function DashboardCharts({
 
       {/* PROVINCE */}
       <ChartCard
-        icon={PieIcon}
+        icon={MapPin}
         title="Distribusi HC per Provinsi"
         subtitle="Kontribusi HC tiap provinsi"
-        height={330}
+        height={300}
         className="lg:col-span-2"
-        footer={
-          topProv
-            ? `${topProv.name} menyumbang ${fmtPct((topProv.value / provTotal) * 100)} dari total HC.`
-            : undefined
-        }
+        footer={provAnalysis}
       >
-        <div className="grid h-full grid-cols-1 items-center gap-4 md:grid-cols-[minmax(0,1fr)_260px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={provDist}
-                dataKey="value"
-                nameKey="name"
-                innerRadius={68}
-                outerRadius={104}
-                paddingAngle={2}
-                stroke="none"
-                isAnimationActive={false}
-                onClick={handlePie("province")}
-                {...cursor}
-              >
-                {provDist.map((_, i) => (
-                  <Cell key={i} fill={CATEGORICAL[i % CATEGORICAL.length]} />
-                ))}
-              </Pie>
-              <Tooltip content={ProvTip} />
-            </PieChart>
-          </ResponsiveContainer>
-          <ul className="max-h-[260px] space-y-1.5 overflow-y-auto pr-1">
-            {provDist.map((p, i) => (
-              <li key={p.name} className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 text-xs">
-                <span
-                  className="h-2.5 w-2.5 shrink-0 rounded-[3px]"
-                  style={{ background: CATEGORICAL[i % CATEGORICAL.length] }}
-                />
-                <span className="truncate text-muted-foreground">{p.name}</span>
-                <span className="shrink-0 font-semibold tabular-nums">
-                  {fmtFull(p.value)}{" "}
-                  <span className="font-normal text-muted-foreground">
-                    ({((p.value / provTotal) * 100).toFixed(0)}%)
-                  </span>
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <ArcDistribution
+          items={provItems}
+          onSelect={onSelect ? (it) => handlePie("province")({ name: it.name, value: it.value }) : undefined}
+        />
       </ChartCard>
     </div>
   );
