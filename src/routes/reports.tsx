@@ -303,6 +303,10 @@ function ProfilingRangeSection({
 }
 
 /** Hitung rentang tanggal minggu ke-n pada sebuah bulan (2026). */
+const monthStartKey = (monthIndex: number, year = 2026) => `${year}-${String(monthIndex + 1).padStart(2, "0")}-01`;
+const monthEndKey = (monthIndex: number, year = 2026) =>
+  `${year}-${String(monthIndex + 1).padStart(2, "0")}-${String(new Date(year, monthIndex + 1, 0).getDate()).padStart(2, "0")}`;
+
 function weekRange(monthIndex: number, week: number, year = 2026): { from: string; to: string } {
   const lastDay = new Date(year, monthIndex + 1, 0).getDate();
   const start = Math.min((week - 1) * 7 + 1, lastDay);
