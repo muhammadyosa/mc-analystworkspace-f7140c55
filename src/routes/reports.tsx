@@ -656,7 +656,7 @@ function ReportsPage() {
   const [cDFrom, setCDFrom] = useState(""); const [cDTo, setCDTo] = useState("");
   const analyst = useDataStore((s) => s.analyst);
 
-  const clusterTicketMap = useMemo(() => ticketByClusterMap(tickets), [tickets]);
+  const clusterTicketMap = useMemo(() => ticketByClusterMap(effTickets), [effTickets]);
   const weekly = useMemo(() => clusters.length ? computeStats(clusters, wFrom, wTo, ticketMap, clusterTicketMap) : null, [clusters, wFrom, wTo, ticketMap, clusterTicketMap]);
   const monthly = useMemo(() => clusters.length ? computeStats(clusters, mFrom, mTo, ticketMap, clusterTicketMap) : null, [clusters, mFrom, mTo, ticketMap, clusterTicketMap]);
   const compBase = useMemo(() => clusters.length ? computeStats(clusters, cFrom, cTo, ticketMap, clusterTicketMap) : null, [clusters, cFrom, cTo, ticketMap, clusterTicketMap]);
