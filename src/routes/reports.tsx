@@ -1164,7 +1164,7 @@ function ReportsPage() {
   const totalA = runningA + doneA + belumA;
 
   const renderTab = (
-    s: NonNullable<ReturnType<typeof computeStats>>,
+    sRaw: NonNullable<ReturnType<typeof computeStats>>,
     kind: "weekly" | "monthly",
     from: number, to: number,
     setFrom: (i: number) => void, setTo: (i: number) => void,
@@ -1187,9 +1187,24 @@ function ReportsPage() {
     const rangeDays = daysBetween(rFrom, rTo);
     const monthDays = kind === "weekly" ? new Date(2026, wkMonth + 1, 0).getDate() : 0;
     // Data ticket hanya tersedia per bulan; untuk minggu terpilih diskalakan sesuai jumlah hari.
-    const ticketScaled = kind === "weekly" && monthDays
-      ? Math.round((s.totalTicket * rangeDays) / monthDays)
-      : s.totalTicket;
+    const wkFrac = kind === "weekly" && monthDays ? Math.min(1, rangeDays / monthDays) : 1;
+    const weekLabel = `Minggu ${wkWeek}`;
+    // Semua angka pada tab Weekly diproporsikan ke minggu yang dipilih saja.
+    const s = kind === "weekly"
+      ? {
+          ...sRaw,
+          totalTicket: Math.round(sRaw.totalTicket * wkFrac),
+          avgTicketPerMonth: Math.round(sRaw.totalTicket * wkFrac),
+          ticketPer100HC: sRaw.ticketPer100HC * wkFrac,
+          peakTicket: { bulan: weekLabel, ticket: Math.round(sRaw.totalTicket * wkFrac) },
+          ticketTrend: [{ bulan: weekLabel, ticket: Math.round(sRaw.totalTicket * wkFrac) }],
+          topTicket: sRaw.topTicket.map((t) => ({ ...t, ticket: Math.round(t.ticket * wkFrac) })),
+          perCluster: sRaw.perCluster.map((c) => ({ ...c, ticket: Math.round(c.ticket * wkFrac) })),
+          worstRatio: sRaw.worstRatio.map((w) => ({ ...w, ticketPer100HC: w.ticketPer100HC * wkFrac })),
+          picPerf: sRaw.picPerf.map((p) => ({ ...p, ticket: Math.round(p.ticket * wkFrac), ratio: p.ratio * wkFrac })),
+        }
+      : sRaw;
+    const ticketScaled = s.totalTicket;
     const worst = s.worstRatio[0];
     const heavyPic = [...s.picPerf].sort((a, b) => b.ratio - a.ratio)[0];
     const insights = [
