@@ -164,19 +164,19 @@ function Dashboard() {
     }));
 
 
-    const topHc = [...clusters].sort((a, b) => b.juni - a.juni).slice(0, 10);
-    const growth = [...clusters]
+    const topHc = [...rows].sort((a, b) => b.juni - a.juni).slice(0, 10);
+    const growth = [...rows]
       .filter((c) => c.deltaMeiJuni !== 0)
       .sort((a, b) => Math.abs(b.deltaMeiJuni) - Math.abs(a.deltaMeiJuni))
       .slice(0, 12);
-    const topTicket = [...clusters].sort((a, b) => b.ticket - a.ticket).slice(0, 8);
+    const topTicket = [...rows].sort((a, b) => b.ticket - a.ticket).slice(0, 8);
 
     const provMap = new Map<string, number>();
-    clusters.forEach((c) => provMap.set(c.provinsi || "N/A", (provMap.get(c.provinsi || "N/A") ?? 0) + c.juni));
+    rows.forEach((c) => provMap.set(c.provinsi || "N/A", (provMap.get(c.provinsi || "N/A") ?? 0) + c.juni));
     const provDist = [...provMap.entries()].map(([name, value]) => ({ name, value }));
 
     const picMap = new Map<string, { pic: string; hc: number; ticket: number; clusters: number; growth: number }>();
-    clusters.forEach((c) => {
+    rows.forEach((c) => {
       const key = c.pic || "N/A";
       const cur = picMap.get(key) ?? { pic: key, hc: 0, ticket: 0, clusters: 0, growth: 0 };
       cur.hc += c.juni;
@@ -187,8 +187,8 @@ function Dashboard() {
     });
     const pics = [...picMap.values()].sort((a, b) => b.hc - a.hc).slice(0, 8);
 
-    const declines = [...clusters].sort((a, b) => a.deltaMeiJuni - b.deltaMeiJuni).slice(0, 3);
-    const risingTicket = [...clusters].sort((a, b) => b.ticket - a.ticket).slice(0, 3);
+    const declines = [...rows].sort((a, b) => a.deltaMeiJuni - b.deltaMeiJuni).slice(0, 3);
+    const risingTicket = [...rows].sort((a, b) => b.ticket - a.ticket).slice(0, 3);
 
     return {
       totalCluster,
@@ -210,7 +210,7 @@ function Dashboard() {
       declines,
       risingTicket,
     };
-  }, [clusters]);
+  }, [rows, period]);
 
   if (!clusters.length) {
     return (
@@ -297,8 +297,8 @@ function Dashboard() {
 
   const [drill, setDrill] = useState<DrilldownState>(null);
 
-  const maxTicket = Math.max(...clusters.map((c) => c.ticket), 1);
-  const priorities = clusters.map((c) => ({ ...c, ...computePriority(c, maxTicket) }));
+  const maxTicket = Math.max(...rows.map((c) => c.ticket), 1);
+  const priorities = rows.map((c) => ({ ...c, ...computePriority(c, maxTicket) }));
 
   const colClusterBasic = [
     { key: "cluster", label: "Cluster" },
@@ -310,13 +310,13 @@ function Dashboard() {
   ];
 
   const openTop = (title: string, sortKey: "juni" | "mei" | "ticket" | "deltaMeiJuni", desc = true) => {
-    const rows = [...clusters].sort((a, b) => (desc ? Number(b[sortKey]) - Number(a[sortKey]) : Number(a[sortKey]) - Number(b[sortKey]))).slice(0, 50);
+    const rows = [...rows].sort((a, b) => (desc ? Number(b[sortKey]) - Number(a[sortKey]) : Number(a[sortKey]) - Number(b[sortKey]))).slice(0, 50);
     setDrill({ title, description: "Menampilkan hingga 50 cluster teratas", columns: colClusterBasic, rows: rows as unknown as Record<string, unknown>[] });
   };
 
   const openGrouped = (title: string, key: "kabupaten" | "provinsi" | "pic") => {
     const map = new Map<string, { name: string; clusters: number; hc: number; ticket: number }>();
-    clusters.forEach((c) => {
+    rows.forEach((c) => {
       const k = (c[key] as string) || "N/A";
       const cur = map.get(k) ?? { name: k, clusters: 0, hc: 0, ticket: 0 };
       cur.clusters += 1;
@@ -466,7 +466,7 @@ function Dashboard() {
                 onSelect={(kind, d) => {
                   if (kind === "cluster") {
                     const name = d.cluster as string;
-                    const row = clusters.find((c) => c.cluster === name);
+                    const row = rows.find((c) => c.cluster === name);
                     if (row) {
                       setDrill({
                         title: `Detail Cluster — ${name}`,
@@ -491,7 +491,7 @@ function Dashboard() {
                     }
                   } else if (kind === "province") {
                     const name = d.name as string;
-                    const rows = clusters.filter((c) => (c.provinsi || "N/A") === name);
+                    const rows = rows.filter((c) => (c.provinsi || "N/A") === name);
                     setDrill({
                       title: `Provinsi — ${name}`,
                       description: `${rows.length} cluster di provinsi ini.`,
@@ -502,7 +502,7 @@ function Dashboard() {
                     setDrill({
                       title: `HC Bulan ${d.month}`,
                       columns: colClusterBasic,
-                      rows: [...clusters].sort((a, b) => b.juni - a.juni).slice(0, 50) as unknown as Record<string, unknown>[],
+                      rows: [...rows].sort((a, b) => b.juni - a.juni).slice(0, 50) as unknown as Record<string, unknown>[],
                     });
                   }
                 }}
