@@ -1164,7 +1164,7 @@ function ReportsPage() {
   const totalA = runningA + doneA + belumA;
 
   const renderTab = (
-    s: NonNullable<ReturnType<typeof computeStats>>,
+    sRaw: NonNullable<ReturnType<typeof computeStats>>,
     kind: "weekly" | "monthly",
     from: number, to: number,
     setFrom: (i: number) => void, setTo: (i: number) => void,
@@ -1187,22 +1187,43 @@ function ReportsPage() {
     const rangeDays = daysBetween(rFrom, rTo);
     const monthDays = kind === "weekly" ? new Date(2026, wkMonth + 1, 0).getDate() : 0;
     // Data ticket hanya tersedia per bulan; untuk minggu terpilih diskalakan sesuai jumlah hari.
-    const ticketScaled = kind === "weekly" && monthDays
-      ? Math.round((s.totalTicket * rangeDays) / monthDays)
-      : s.totalTicket;
+    const wkFrac = kind === "weekly" && monthDays ? Math.min(1, rangeDays / monthDays) : 1;
+    const weekLabel = `Minggu ${wkWeek}`;
+    // Semua angka pada tab Weekly diproporsikan ke minggu yang dipilih saja.
+    const s = kind === "weekly"
+      ? {
+          ...sRaw,
+          totalTicket: Math.round(sRaw.totalTicket * wkFrac),
+          avgTicketPerMonth: Math.round(sRaw.totalTicket * wkFrac),
+          ticketPer100HC: sRaw.ticketPer100HC * wkFrac,
+          peakTicket: { bulan: weekLabel, ticket: Math.round(sRaw.totalTicket * wkFrac) },
+          ticketTrend: [{ bulan: weekLabel, ticket: Math.round(sRaw.totalTicket * wkFrac) }],
+          topTicket: sRaw.topTicket.map((t) => ({ ...t, ticket: Math.round(t.ticket * wkFrac) })),
+          perCluster: sRaw.perCluster.map((c) => ({ ...c, ticket: Math.round(c.ticket * wkFrac) })),
+          worstRatio: sRaw.worstRatio.map((w) => ({ ...w, ticketPer100HC: w.ticketPer100HC * wkFrac })),
+          picPerf: sRaw.picPerf.map((p) => ({ ...p, ticket: Math.round(p.ticket * wkFrac), ratio: p.ratio * wkFrac })),
+        }
+      : sRaw;
+    const ticketScaled = s.totalTicket;
     const worst = s.worstRatio[0];
     const heavyPic = [...s.picPerf].sort((a, b) => b.ratio - a.ratio)[0];
     const insights = [
       `HC bergerak ${s.growth >= 0 ? "naik" : "turun"} ${Math.abs(s.growth).toFixed(1)}% pada periode ${label} (${fmtN(s.start)} → ${fmtN(s.end)}).`,
       `Cluster paling tumbuh: ${s.topGrowth[0]?.cluster ?? "-"} (${(s.topGrowth[0]?.delta ?? 0) >= 0 ? "+" : ""}${s.topGrowth[0]?.delta ?? 0}). Cluster paling turun: ${s.topDecline[0]?.cluster ?? "-"} (${s.topDecline[0]?.delta ?? 0}).`,
-      `Total ${fmtN(s.totalTicket)} ticket pada periode ini (rata-rata ${fmtN(s.avgTicketPerMonth)}/bulan), puncak di ${s.peakTicket.bulan} dengan ${fmtN(s.peakTicket.ticket)} ticket.`,
-      `Tren ticket ${s.ticketGrowth >= 0 ? "naik" : "turun"} ${Math.abs(s.ticketGrowth).toFixed(1)}% dari bulan awal ke bulan akhir — rasio ${s.ticketPer100HC.toFixed(1)} ticket per 100 HC.`,
+      kind === "weekly"
+        ? `Total ${fmtN(s.totalTicket)} ticket pada ${weekLabel} (${label}) — rata-rata ${fmtN(Math.round(s.totalTicket / Math.max(1, rangeDays)))} ticket/hari.`
+        : `Total ${fmtN(s.totalTicket)} ticket pada periode ini (rata-rata ${fmtN(s.avgTicketPerMonth)}/bulan), puncak di ${s.peakTicket.bulan} dengan ${fmtN(s.peakTicket.ticket)} ticket.`,
+      kind === "weekly"
+        ? `Rasio gangguan ${weekLabel}: ${s.ticketPer100HC.toFixed(1)} ticket per 100 HC.`
+        : `Tren ticket ${s.ticketGrowth >= 0 ? "naik" : "turun"} ${Math.abs(s.ticketGrowth).toFixed(1)}% dari bulan awal ke bulan akhir — rasio ${s.ticketPer100HC.toFixed(1)} ticket per 100 HC.`,
       `Ticket menumpuk pada ${s.topTicket[0]?.cluster ?? "-"} (${fmtN(s.topTicket[0]?.ticket ?? 0)} tiket) dari ${fmtN(s.clustersWithTicket)} cluster yang bermasalah.`,
       worst
         ? `Rasio gangguan terburuk: ${worst.cluster} — ${worst.ticketPer100HC.toFixed(1)} ticket per 100 HC (HC ${fmtN(worst.hcEnd)}).`
         : "Rasio ticket per HC masih dalam batas wajar di seluruh cluster.",
       `PIC dengan portofolio HC terbesar: ${s.picPerf[0]?.pic ?? "-"} (${fmtN(s.picPerf[0]?.hc ?? 0)} HC, ${fmtN(s.picPerf[0]?.ticket ?? 0)} ticket).`,
-      `Action plan: ${doneA} selesai · ${runningA} berjalan · ${belumA} belum — rasio delivery ${totalA ? Math.round((doneA / totalA) * 100) : 0}%.`,
+      kind === "weekly"
+        ? `Action plan ${weekLabel}: ${planDone} selesai · ${planRun} berjalan dari ${plansInRange.length} plan aktif pada rentang tanggal ini.`
+        : `Action plan: ${doneA} selesai · ${runningA} berjalan · ${belumA} belum — rasio delivery ${totalA ? Math.round((doneA / totalA) * 100) : 0}%.`,
     ];
     const recs = [
       s.growth < 0 ? "Aktifkan retention program di top decline cluster minggu ini." : "Jaga momentum dengan replikasi strategi top growth cluster ke cluster tetangga.",
@@ -1241,8 +1262,12 @@ function ReportsPage() {
             hint={kind === "weekly" ? `porsi ${rangeDays} hari dari ${MONTHS[wkMonth].label}` : s.hasRealTicket ? `data ticket ${label}` : `estimasi dari ${clusters.length} cluster`}
           />
           <KpiCard label="Tren Ticket" value={`${s.ticketGrowth >= 0 ? "+" : ""}${s.ticketGrowth.toFixed(1)}%`} tone={s.ticketGrowth <= 0 ? "up" : "down"} hint={`puncak ${s.peakTicket.bulan} (${fmtN(s.peakTicket.ticket)})`} />
-          <KpiCard label="Rata-rata Ticket / Bulan" value={s.avgTicketPerMonth} hint={`${s.ticketTrend.length} bulan`} />
-          <KpiCard label="Ticket per 100 HC" value={s.ticketPer100HC.toFixed(1)} tone={s.ticketPer100HC > 10 ? "down" : "up"} hint="bulan terakhir" />
+          <KpiCard
+            label={kind === "weekly" ? "Rata-rata Ticket / Hari" : "Rata-rata Ticket / Bulan"}
+            value={kind === "weekly" ? Math.round(ticketScaled / Math.max(1, rangeDays)) : s.avgTicketPerMonth}
+            hint={kind === "weekly" ? `${rangeDays} hari · ${weekLabel}` : `${s.ticketTrend.length} bulan`}
+          />
+          <KpiCard label="Ticket per 100 HC" value={s.ticketPer100HC.toFixed(1)} tone={s.ticketPer100HC > 10 ? "down" : "up"} hint={kind === "weekly" ? weekLabel : "bulan terakhir"} />
           <KpiCard
             label="Profiling Cluster"
             value={prof.clusters}
@@ -1341,17 +1366,25 @@ function ReportsPage() {
         </div>
 
         <ProgressCard
-          title="Progress"
+          title={kind === "weekly" ? `Progress — ${weekLabel}` : "Progress"}
           items={[
             { label: "HC Growth vs periode awal", value: Math.max(0, s.end - s.start), total: Math.max(s.start, s.end, 1) },
-            { label: "Action Plan Selesai", value: doneA, total: Math.max(totalA, 1) },
-            { label: "Action Plan Berjalan", value: runningA, total: Math.max(totalA, 1) },
+            {
+              label: "Action Plan Selesai",
+              value: kind === "weekly" ? planDone : doneA,
+              total: Math.max(kind === "weekly" ? plansInRange.length : totalA, 1),
+            },
+            {
+              label: "Action Plan Berjalan",
+              value: kind === "weekly" ? planRun : runningA,
+              total: Math.max(kind === "weekly" ? plansInRange.length : totalA, 1),
+            },
             { label: "Cluster Growth Positif", value: s.perCluster.filter((c) => c.delta > 0).length, total: s.perCluster.length },
           ]}
         />
 
         <Card className="glass-card border-0">
-          <CardHeader><CardTitle className="font-display text-sm">Table — Ringkasan Cluster ({label})</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="font-display text-sm">Table — Ringkasan Cluster ({kind === "weekly" ? `${weekLabel} · ${label}` : label})</CardTitle></CardHeader>
           <CardContent>
             <div className="scroll-x">
               <table className="w-full min-w-[720px] text-sm">
