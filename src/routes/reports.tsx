@@ -945,7 +945,7 @@ function ReportsPage() {
 
   return (
     <>
-      <AppHeader title="Reports" subtitle="Weekly · Monthly · Competitor Intelligence" />
+      <AppHeader title="Reports" subtitle="Weekly · Day · Monthly · Competitor Intelligence" />
       <div className="space-y-4 p-4 sm:p-6">
         <Tabs defaultValue="weekly">
           <TabsList>
