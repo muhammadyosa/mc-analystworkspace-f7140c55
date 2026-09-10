@@ -601,15 +601,20 @@ function WeeklyDailyAnalysis({ analyst, from, to, onFrom, onTo }: { analyst: Ana
               </div>
             </div>
 
-            <div className="rounded-xl border bg-muted/30 p-3">
-              <div className="grid gap-3 sm:grid-cols-[auto_auto_1fr] sm:items-end">
-                <ReportDatePicker label="Tanggal mulai" value={effectiveFrom} onChange={onFrom} min={bounds.min} max={effectiveTo || bounds.max} />
-                <ReportDatePicker label="Tanggal akhir" value={effectiveTo} onChange={onTo} min={effectiveFrom || bounds.min} max={bounds.max} />
-                <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+            <DateRangeFields
+              title="Filter tanggal profiling"
+              from={effectiveFrom}
+              to={effectiveTo}
+              onFrom={onFrom}
+              onTo={onTo}
+              min={bounds.min}
+              max={bounds.max}
+              actions={
+                <>
                   <Button
                     size="sm"
                     variant="outline"
-                    className="h-8 text-xs"
+                    className="h-9 text-xs"
                     disabled={!bounds.max}
                     onClick={() => {
                       const end = new Date(`${bounds.max}T00:00:00`);
@@ -618,11 +623,11 @@ function WeeklyDailyAnalysis({ analyst, from, to, onFrom, onTo }: { analyst: Ana
                       onFrom(startKey < bounds.min ? bounds.min : startKey);
                       onTo(bounds.max);
                     }}
-                  >7 hari terakhir</Button>
+                  >7 hari</Button>
                   <Button
                     size="sm"
                     variant="outline"
-                    className="h-8 text-xs"
+                    className="h-9 text-xs"
                     disabled={!bounds.max}
                     onClick={() => {
                       const end = new Date(`${bounds.max}T00:00:00`);
@@ -631,20 +636,23 @@ function WeeklyDailyAnalysis({ analyst, from, to, onFrom, onTo }: { analyst: Ana
                       onFrom(startKey < bounds.min ? bounds.min : startKey);
                       onTo(bounds.max);
                     }}
-                  >30 hari terakhir</Button>
-                  <Button size="sm" variant="ghost" className="h-8 text-xs" disabled={!from && !to} onClick={() => { onFrom(""); onTo(""); }}>Semua tanggal</Button>
-                </div>
-              </div>
-              <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-border/50 pt-2.5">
-                <Badge variant="secondary" className="text-[10px] font-medium">Rentang dipilih: {rangeLabel}</Badge>
-                <Badge variant="outline" className="text-[10px] font-medium">
-                  Data tersedia: {bounds.min ? `${formatDateID(bounds.min)} – ${formatDateID(bounds.max)}` : "belum ada"}
-                </Badge>
-                {invalidDateCount > 0 && (
-                  <Badge variant="outline" className="text-[10px] font-medium text-warning">{fmtN(invalidDateCount)} baris tanpa tanggal valid</Badge>
-                )}
-              </div>
-            </div>
+                  >30 hari</Button>
+                  <Button size="sm" variant="ghost" className="h-9 text-xs" disabled={!from && !to} onClick={() => { onFrom(""); onTo(""); }}>Semua tanggal</Button>
+                </>
+              }
+              info={
+                <>
+                  <Badge variant="secondary" className="text-[10px] font-medium">Rentang dipilih: {rangeLabel}</Badge>
+                  <Badge variant="outline" className="text-[10px] font-medium">
+                    Data tersedia: {bounds.min ? `${formatDateID(bounds.min)} – ${formatDateID(bounds.max)}` : "belum ada"}
+                  </Badge>
+                  {invalidDateCount > 0 && (
+                    <Badge variant="outline" className="text-[10px] font-medium text-warning">{fmtN(invalidDateCount)} baris tanpa tanggal valid</Badge>
+                  )}
+                </>
+              }
+            />
+
           </div>
         </CardHeader>
       </Card>
