@@ -1447,15 +1447,9 @@ function ReportsPage() {
                   }
                 />
 
-
-
-
-
-
-
                 <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-                  <KpiCard label="Cluster Terpantau" value={compCharts.totalClusters} />
-                  <KpiCard label="Kompetitor Unik" value={compCharts.totalCompetitors} />
+                  <KpiCard label="Cluster Terpantau" value={compCharts.totalClusters} hint={`${formatDateID(cDFromEff, true)} – ${formatDateID(cDToEff, true)}`} />
+                  <KpiCard label="Kompetitor Unik" value={compCharts.totalCompetitors} hint={compScope.filtered ? "pada cluster terpilih" : "seluruh data"} />
                   <KpiCard label="Ancaman Tinggi" value={compCharts.highThreat} tone="down" hint="threat ≥ 71" />
                   <KpiCard label="Avg Harga Kompetitor" value={fmtRp(compCharts.avgPriceAll)} tone="warn" />
                   <KpiCard label="Cluster Kritis" value={compRisk?.critical.length ?? 0} tone="down" hint="ancaman tinggi + HC turun" />
