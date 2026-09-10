@@ -285,6 +285,7 @@ function computeStats(
   from: number,
   to: number,
   ticketMap: Map<string, number> = new Map(),
+  clusterTicketMap: Map<string, Map<string, number>> = new Map(),
 ) {
   const range = MONTHS.slice(from, to + 1);
   const hcTrend = range.map((m) => ({
@@ -294,24 +295,59 @@ function computeStats(
   const start = hcTrend[0]?.hc ?? 0;
   const end = hcTrend[hcTrend.length - 1]?.hc ?? 0;
   const growth = start > 0 ? ((end - start) / start) * 100 : 0;
-  const totalTicket = clusters.reduce((a, c) => a + c.ticket, 0);
+
+  const hasRealTicket = range.some((m) => (ticketMap.get(m.key) ?? 0) > 0);
+  const fallbackTotalTicket = clusters.reduce((a, c) => a + c.ticket, 0);
+  const totalHCAll = clusters.reduce((a, c) => a + c.grandTotal, 0);
+
+  // Ticket per cluster mengikuti range bulan yang dipilih (bila data ticket ada)
+  const ticketOf = (cluster: string) => {
+    if (!hasRealTicket) return 0;
+    const inner = clusterTicketMap.get((cluster || "").trim().toUpperCase());
+    if (!inner) return 0;
+    return range.reduce((a, m) => a + (inner.get(m.key) ?? 0), 0);
+  };
+
   const perCluster = clusters.map((c) => {
     const hcStart = hcOf(c, range[0].key);
     const hcEnd = hcOf(c, range[range.length - 1].key);
-    return { ...c, hcStart, hcEnd, delta: hcEnd - hcStart };
+    const rangeTicket = hasRealTicket ? ticketOf(c.cluster) : c.ticket;
+    return {
+      ...c,
+      ticket: rangeTicket,
+      hcStart,
+      hcEnd,
+      delta: hcEnd - hcStart,
+      ticketPer100HC: hcEnd > 0 ? (rangeTicket / hcEnd) * 100 : 0,
+    };
   });
+
+  const totalTicket = hasRealTicket
+    ? range.reduce((a, m) => a + (ticketMap.get(m.key) ?? 0), 0)
+    : fallbackTotalTicket;
+
   const topGrowth = [...perCluster].sort((a, b) => b.delta - a.delta).slice(0, 5);
   const topDecline = [...perCluster].sort((a, b) => a.delta - b.delta).slice(0, 5);
   const topHC = [...perCluster].sort((a, b) => b.hcEnd - a.hcEnd).slice(0, 8).map((c) => ({ cluster: c.cluster, hc: c.hcEnd }));
-  const topTicket = [...clusters].sort((a, b) => b.ticket - a.ticket).slice(0, 8).map((c) => ({ cluster: c.cluster, ticket: c.ticket }));
-  const hasRealTicket = range.some((m) => (ticketMap.get(m.key) ?? 0) > 0);
+  const topTicket = [...perCluster].sort((a, b) => b.ticket - a.ticket).slice(0, 8).map((c) => ({ cluster: c.cluster, ticket: c.ticket }));
+  const worstRatio = [...perCluster]
+    .filter((c) => c.hcEnd >= 20 && c.ticket > 0)
+    .sort((a, b) => b.ticketPer100HC - a.ticketPer100HC)
+    .slice(0, 5);
+
   const ticketTrend = range.map((m) => {
     if (hasRealTicket) return { bulan: m.label, ticket: ticketMap.get(m.key) ?? 0 };
     // fallback: distribusi total ticket berdasar bobot HC
     const monthHC = clusters.reduce((a, c) => a + hcOf(c, m.key), 0);
-    const totalHC = clusters.reduce((a, c) => a + c.grandTotal, 0);
-    return { bulan: m.label, ticket: totalHC > 0 ? Math.round((monthHC / totalHC) * totalTicket) : 0 };
+    return { bulan: m.label, ticket: totalHCAll > 0 ? Math.round((monthHC / totalHCAll) * fallbackTotalTicket) : 0 };
   });
+  const tStart = ticketTrend[0]?.ticket ?? 0;
+  const tEnd = ticketTrend[ticketTrend.length - 1]?.ticket ?? 0;
+  const ticketGrowth = tStart > 0 ? ((tEnd - tStart) / tStart) * 100 : 0;
+  const peakTicket = [...ticketTrend].sort((a, b) => b.ticket - a.ticket)[0] ?? { bulan: "-", ticket: 0 };
+  const avgTicketPerMonth = ticketTrend.length ? Math.round(totalTicket / ticketTrend.length) : 0;
+  const ticketPer100HC = end > 0 ? (tEnd / end) * 100 : 0;
+  const clustersWithTicket = perCluster.filter((c) => c.ticket > 0).length;
 
   const picMap = new Map<string, { hc: number; ticket: number }>();
   perCluster.forEach((c) => {
@@ -319,9 +355,16 @@ function computeStats(
     const cur = picMap.get(p) ?? { hc: 0, ticket: 0 };
     cur.hc += c.hcEnd; cur.ticket += c.ticket; picMap.set(p, cur);
   });
-  const picPerf = Array.from(picMap.entries()).map(([pic, v]) => ({ pic, ...v }))
-    .sort((a, b) => b.hc - a.hc).slice(0, 8);
-  return { hcTrend, ticketTrend, start, end, growth, totalTicket, topGrowth, topDecline, topHC, topTicket, picPerf, perCluster };
+  const picPerf = Array.from(picMap.entries())
+    .map(([pic, v]) => ({ pic, ...v, ratio: v.hc > 0 ? (v.ticket / v.hc) * 100 : 0 }))
+    .sort((a, b) => b.hc - a.hc)
+    .slice(0, 8);
+
+  return {
+    hcTrend, ticketTrend, start, end, growth, totalTicket, topGrowth, topDecline, topHC, topTicket,
+    picPerf, perCluster, hasRealTicket, ticketGrowth, peakTicket, avgTicketPerMonth,
+    ticketPer100HC, clustersWithTicket, worstRatio,
+  };
 }
 
 function ReportsPage() {
