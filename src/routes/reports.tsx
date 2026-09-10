@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { ArcDistribution } from "@/components/chart-kit";
 import { useDataStore } from "@/lib/store";
 import type { AnalystRow, ClusterRow, CompetitorRow, PromoCategory, TicketRow } from "@/lib/excel";
 
@@ -1255,7 +1256,6 @@ function ReportsPage() {
                           { name: "Rendah", value: compCharts.threatBuckets[0].value, color: "#22c55e", icon: "✅" },
                           { name: "Sedang", value: compCharts.threatBuckets[1].value, color: "#f59e0b", icon: "⏳" },
                           { name: "Tinggi", value: compCharts.threatBuckets[2].value, color: "#ef4444", icon: "🔥" },
-                          { name: "Total Cluster", value: compCharts.totalClusters, color: "#3b82f6", icon: "⚙️" },
                         ]}
                       />
                     </CardContent>
