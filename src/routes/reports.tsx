@@ -1360,17 +1360,25 @@ function ReportsPage() {
         </div>
 
         <ProgressCard
-          title="Progress"
+          title={kind === "weekly" ? `Progress — ${weekLabel}` : "Progress"}
           items={[
             { label: "HC Growth vs periode awal", value: Math.max(0, s.end - s.start), total: Math.max(s.start, s.end, 1) },
-            { label: "Action Plan Selesai", value: doneA, total: Math.max(totalA, 1) },
-            { label: "Action Plan Berjalan", value: runningA, total: Math.max(totalA, 1) },
+            {
+              label: "Action Plan Selesai",
+              value: kind === "weekly" ? planDone : doneA,
+              total: Math.max(kind === "weekly" ? plansInRange.length : totalA, 1),
+            },
+            {
+              label: "Action Plan Berjalan",
+              value: kind === "weekly" ? planRun : runningA,
+              total: Math.max(kind === "weekly" ? plansInRange.length : totalA, 1),
+            },
             { label: "Cluster Growth Positif", value: s.perCluster.filter((c) => c.delta > 0).length, total: s.perCluster.length },
           ]}
         />
 
         <Card className="glass-card border-0">
-          <CardHeader><CardTitle className="font-display text-sm">Table — Ringkasan Cluster ({label})</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="font-display text-sm">Table — Ringkasan Cluster ({kind === "weekly" ? `${weekLabel} · ${label}` : label})</CardTitle></CardHeader>
           <CardContent>
             <div className="scroll-x">
               <table className="w-full min-w-[720px] text-sm">
