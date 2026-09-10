@@ -16,7 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { useDataStore } from "@/lib/store";
-import type { AnalystRow, ClusterRow, CompetitorRow, PromoCategory } from "@/lib/excel";
+import type { AnalystRow, ClusterRow, CompetitorRow, PromoCategory, TicketRow } from "@/lib/excel";
 
 // Parse various profiling date formats to a Date (or null)
 function parseProfilingDate(s: string): Date | null {
@@ -137,8 +137,39 @@ const MONTHS = [
   { key: "april", label: "Apr" },
   { key: "mei", label: "Mei" },
   { key: "juni", label: "Jun" },
+  { key: "juli", label: "Jul" },
+  { key: "agustus", label: "Agt" },
+  { key: "september", label: "Sep" },
+  { key: "oktober", label: "Okt" },
+  { key: "november", label: "Nov" },
+  { key: "desember", label: "Des" },
 ] as const;
 type MonthKey = typeof MONTHS[number]["key"];
+
+const hcOf = (c: ClusterRow, key: MonthKey): number =>
+  Number((c as unknown as Record<string, unknown>)[key]) || 0;
+
+// Bulan yang benar-benar punya data (HC cluster atau ticket) — supaya range
+// mengikuti bulan terakhir pada file yang diupload, bukan dipatok sampai Juni.
+function ticketByMonthMap(tickets: TicketRow[]): Map<string, number> {
+  const m = new Map<string, number>();
+  for (const t of tickets) {
+    const k = (t.bulan || "").toLowerCase();
+    if (!k) continue;
+    m.set(k, (m.get(k) ?? 0) + (t.ticket || 0));
+  }
+  return m;
+}
+
+function availableMonths(clusters: ClusterRow[], ticketMap: Map<string, number>): number[] {
+  const idx = MONTHS.map((m, i) => {
+    const hc = clusters.reduce((a, c) => a + (Number((c as unknown as Record<string, unknown>)[m.key]) || 0), 0);
+    const tk = ticketMap.get(m.key) ?? 0;
+    return hc > 0 || tk > 0 ? i : -1;
+  }).filter((i) => i >= 0);
+  return idx.length ? idx : [0, 1, 2, 3, 4, 5];
+}
+
 
 const fmtRp = (n: number) => (!n ? "-" : `Rp${n.toLocaleString("id-ID")}`);
 const fmtN = (n: number) => n.toLocaleString("id-ID");
@@ -153,23 +184,25 @@ function threatScore(rows: CompetitorRow[]): number {
   return Math.round(countScore * 0.4 + priceScore * 0.3 + promoScore * 0.3);
 }
 
-function DateRange({ from, to, onFrom, onTo }: { from: number; to: number; onFrom: (i: number) => void; onTo: (i: number) => void }) {
+function DateRange({ from, to, onFrom, onTo, avail }: { from: number; to: number; onFrom: (i: number) => void; onTo: (i: number) => void; avail: number[] }) {
+  const opts = avail.map((i) => ({ i, ...MONTHS[i] }));
   return (
     <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-muted/30 p-2">
       <Calendar className="h-4 w-4 text-muted-foreground" />
       <span className="text-xs font-medium text-muted-foreground">Range:</span>
       <Select value={String(from)} onValueChange={(v) => onFrom(Number(v))}>
         <SelectTrigger className="h-8 w-[110px] text-xs"><SelectValue /></SelectTrigger>
-        <SelectContent>{MONTHS.map((m, i) => <SelectItem key={m.key} value={String(i)} disabled={i > to}>{m.label} 2026</SelectItem>)}</SelectContent>
+        <SelectContent>{opts.map((m) => <SelectItem key={m.key} value={String(m.i)} disabled={m.i > to}>{m.label} 2026</SelectItem>)}</SelectContent>
       </Select>
       <span className="text-xs text-muted-foreground">→</span>
       <Select value={String(to)} onValueChange={(v) => onTo(Number(v))}>
         <SelectTrigger className="h-8 w-[110px] text-xs"><SelectValue /></SelectTrigger>
-        <SelectContent>{MONTHS.map((m, i) => <SelectItem key={m.key} value={String(i)} disabled={i < from}>{m.label} 2026</SelectItem>)}</SelectContent>
+        <SelectContent>{opts.map((m) => <SelectItem key={m.key} value={String(m.i)} disabled={m.i < from}>{m.label} 2026</SelectItem>)}</SelectContent>
       </Select>
     </div>
   );
 }
+
 
 function KpiCard({ label, value, hint, tone }: { label: string; value: string | number; hint?: string; tone?: "up" | "down" | "warn" }) {
   const toneCls = tone === "up" ? "text-success" : tone === "down" ? "text-destructive" : tone === "warn" ? "text-warning" : "";
@@ -233,31 +266,39 @@ function RecommendationBox({ items }: { items: string[] }) {
   );
 }
 
-function computeStats(clusters: ClusterRow[], from: number, to: number) {
+function computeStats(
+  clusters: ClusterRow[],
+  from: number,
+  to: number,
+  ticketMap: Map<string, number> = new Map(),
+) {
   const range = MONTHS.slice(from, to + 1);
   const hcTrend = range.map((m) => ({
     bulan: m.label,
-    hc: clusters.reduce((a, c) => a + (Number(c[m.key as MonthKey]) || 0), 0),
+    hc: clusters.reduce((a, c) => a + hcOf(c, m.key), 0),
   }));
   const start = hcTrend[0]?.hc ?? 0;
   const end = hcTrend[hcTrend.length - 1]?.hc ?? 0;
   const growth = start > 0 ? ((end - start) / start) * 100 : 0;
   const totalTicket = clusters.reduce((a, c) => a + c.ticket, 0);
   const perCluster = clusters.map((c) => {
-    const hcStart = Number(c[range[0].key as MonthKey]) || 0;
-    const hcEnd = Number(c[range[range.length - 1].key as MonthKey]) || 0;
+    const hcStart = hcOf(c, range[0].key);
+    const hcEnd = hcOf(c, range[range.length - 1].key);
     return { ...c, hcStart, hcEnd, delta: hcEnd - hcStart };
   });
   const topGrowth = [...perCluster].sort((a, b) => b.delta - a.delta).slice(0, 5);
   const topDecline = [...perCluster].sort((a, b) => a.delta - b.delta).slice(0, 5);
   const topHC = [...perCluster].sort((a, b) => b.hcEnd - a.hcEnd).slice(0, 8).map((c) => ({ cluster: c.cluster, hc: c.hcEnd }));
   const topTicket = [...clusters].sort((a, b) => b.ticket - a.ticket).slice(0, 8).map((c) => ({ cluster: c.cluster, ticket: c.ticket }));
+  const hasRealTicket = range.some((m) => (ticketMap.get(m.key) ?? 0) > 0);
   const ticketTrend = range.map((m) => {
-    // proxy: distribute total ticket across months by HC weight
-    const monthHC = clusters.reduce((a, c) => a + (Number(c[m.key as MonthKey]) || 0), 0);
+    if (hasRealTicket) return { bulan: m.label, ticket: ticketMap.get(m.key) ?? 0 };
+    // fallback: distribusi total ticket berdasar bobot HC
+    const monthHC = clusters.reduce((a, c) => a + hcOf(c, m.key), 0);
     const totalHC = clusters.reduce((a, c) => a + c.grandTotal, 0);
     return { bulan: m.label, ticket: totalHC > 0 ? Math.round((monthHC / totalHC) * totalTicket) : 0 };
   });
+
   const picMap = new Map<string, { hc: number; ticket: number }>();
   perCluster.forEach((c) => {
     const p = c.pic || "-";
@@ -273,24 +314,41 @@ function ReportsPage() {
   const clusters = useDataStore((s) => s.clusters);
   const actions = useDataStore((s) => s.actions);
   const competitorData = useDataStore((s) => s.competitorData);
+  const tickets = useDataStore((s) => s.tickets);
   const weeklyRef = useRef<HTMLDivElement>(null);
   const monthlyRef = useRef<HTMLDivElement>(null);
 
-  const [wFrom, setWFrom] = useState(4); // Mei
-  const [wTo, setWTo] = useState(5);     // Jun
-  const [mFrom, setMFrom] = useState(0); // Jan
-  const [mTo, setMTo] = useState(5);     // Jun
-  const [cFrom, setCFrom] = useState(0);
-  const [cTo, setCTo] = useState(5);
+  const ticketMap = useMemo(() => ticketByMonthMap(tickets), [tickets]);
+  const avail = useMemo(() => availableMonths(clusters, ticketMap), [clusters, ticketMap]);
+  const first = avail[0];
+  const lastM = avail[avail.length - 1];
+  const prevM = avail.length > 1 ? avail[avail.length - 2] : first;
+
+  const [wFrom, setWFrom] = useState(prevM);
+  const [wTo, setWTo] = useState(lastM);
+  const [mFrom, setMFrom] = useState(first);
+  const [mTo, setMTo] = useState(lastM);
+  const [cFrom, setCFrom] = useState(first);
+  const [cTo, setCTo] = useState(lastM);
+
+  // Sinkronkan range bila data baru punya bulan terakhir yang berbeda
+  const [syncKey, setSyncKey] = useState(`${first}-${lastM}`);
+  if (syncKey !== `${first}-${lastM}`) {
+    setSyncKey(`${first}-${lastM}`);
+    setWFrom(prevM); setWTo(lastM);
+    setMFrom(first); setMTo(lastM);
+    setCFrom(first); setCTo(lastM);
+  }
 
   const [wDFrom, setWDFrom] = useState(""); const [wDTo, setWDTo] = useState("");
   const [mDFrom, setMDFrom] = useState(""); const [mDTo, setMDTo] = useState("");
   const [cDFrom, setCDFrom] = useState(""); const [cDTo, setCDTo] = useState("");
   const analyst = useDataStore((s) => s.analyst);
 
-  const weekly = useMemo(() => clusters.length ? computeStats(clusters, wFrom, wTo) : null, [clusters, wFrom, wTo]);
-  const monthly = useMemo(() => clusters.length ? computeStats(clusters, mFrom, mTo) : null, [clusters, mFrom, mTo]);
-  const compBase = useMemo(() => clusters.length ? computeStats(clusters, cFrom, cTo) : null, [clusters, cFrom, cTo]);
+  const weekly = useMemo(() => clusters.length ? computeStats(clusters, wFrom, wTo, ticketMap) : null, [clusters, wFrom, wTo, ticketMap]);
+  const monthly = useMemo(() => clusters.length ? computeStats(clusters, mFrom, mTo, ticketMap) : null, [clusters, mFrom, mTo, ticketMap]);
+  const compBase = useMemo(() => clusters.length ? computeStats(clusters, cFrom, cTo, ticketMap) : null, [clusters, cFrom, cTo, ticketMap]);
+
 
   const compCharts = useMemo(() => {
     if (!competitorData.length) return null;
@@ -379,7 +437,7 @@ function ReportsPage() {
     return (
       <div className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <DateRange from={from} to={to} onFrom={setFrom} onTo={setTo} />
+          <DateRange from={from} to={to} onFrom={setFrom} onTo={setTo} avail={avail} />
           <Button size="sm" onClick={() => handlePrint(ref)}><Printer className="mr-1 h-4 w-4" /> Export PDF</Button>
         </div>
 
@@ -528,7 +586,7 @@ function ReportsPage() {
               </Card>
             ) : (
               <>
-                <DateRange from={cFrom} to={cTo} onFrom={setCFrom} onTo={setCTo} />
+                <DateRange from={cFrom} to={cTo} onFrom={setCFrom} onTo={setCTo} avail={avail} />
 
                 <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
                   <KpiCard label="Cluster Terpantau" value={compCharts.totalClusters} />
