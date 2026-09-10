@@ -78,7 +78,7 @@ export function AppSidebar() {
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sidebar-toggle-ring)]",
               state === "expanded"
                 ? "sidebar-toggle-float -right-3.5 -translate-y-1/2 rounded-full"
-                : "-right-2.5 -translate-y-1/2 translate-x-1/2 rounded-r-full rounded-l-none border-l-0 shadow-[0_0_6px_var(--sidebar-toggle-glow)]",
+                : "-right-1 -translate-y-1/2 rounded-l-full rounded-r-md shadow-[0_0_6px_var(--sidebar-toggle-glow)]",
             )}
           >
             <span
