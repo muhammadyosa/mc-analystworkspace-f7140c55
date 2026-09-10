@@ -69,13 +69,16 @@ export function AppSidebar() {
             onClick={toggleSidebar}
             aria-label={state === "expanded" ? "Tutup menu" : "Buka menu"}
             className={cn(
-              "group/toggle absolute -right-3.5 top-1/2 z-50 hidden h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full md:flex",
+              "group/toggle absolute top-1/2 z-50 hidden h-8 w-8 items-center justify-center md:flex",
               "sm:h-8 sm:w-8 lg:h-9 lg:w-9",
               "border border-[var(--sidebar-toggle-ring)] bg-[var(--sidebar-toggle-bg)]",
               "text-[var(--sidebar-toggle-ring)] shadow-[0_0_10px_var(--sidebar-toggle-glow)]",
               "transition-all duration-300 ease-out active:scale-95",
               "hover:scale-110 hover:shadow-[0_0_22px_var(--sidebar-toggle-glow)] hover:brightness-110",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sidebar-toggle-ring)]",
+              state === "expanded"
+                ? "sidebar-toggle-float -right-3.5 -translate-y-1/2 rounded-full"
+                : "-right-2.5 -translate-y-1/2 translate-x-1/2 rounded-r-full rounded-l-none border-l-0 shadow-[0_0_6px_var(--sidebar-toggle-glow)]",
             )}
           >
             <span
