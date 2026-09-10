@@ -73,6 +73,18 @@ function formatDateID(key: string, compact = false): string {
   }
 }
 
+/** Tanggal lengkap dengan nama hari, mis. "Senin, 08 September 2026". */
+function formatDateFullID(key: string): string {
+  if (!key) return "Tanggal tidak valid";
+  const date = new Date(`${key}T00:00:00`);
+  if (isNaN(date.getTime())) return "Tanggal tidak valid";
+  try {
+    return format(date, "EEEE, dd MMMM yyyy", { locale: idLocale });
+  } catch {
+    return "Tanggal tidak valid";
+  }
+}
+
 function ReportDatePicker({ label, value, onChange, min, max }: { label: string; value: string; onChange: (value: string) => void; min?: string; max?: string }) {
   const toValidDate = (key: string | undefined, endOfDay = false): Date | undefined => {
     if (!key) return undefined;
