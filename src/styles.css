@@ -140,6 +140,86 @@
   --shadow-glass: 0 8px 32px -8px oklch(0 0 0 / 0.5);
 }
 
+/* Pilihan aksen warna. Mode terang/gelap tetap memakai tingkat kontras yang sama. */
+[data-color-theme="cyber"] {
+  --primary: oklch(0.62 0.18 235);
+  --ring: oklch(0.62 0.18 235);
+  --accent: oklch(0.94 0.04 225);
+  --accent-foreground: oklch(0.2 0.07 235);
+  --chart-1: oklch(0.62 0.18 235);
+  --chart-2: oklch(0.72 0.16 180);
+  --sidebar-primary: oklch(0.62 0.18 235);
+  --sidebar-ring: oklch(0.62 0.18 235);
+}
+
+[data-color-theme="emerald"] {
+  --primary: oklch(0.58 0.17 155);
+  --ring: oklch(0.58 0.17 155);
+  --accent: oklch(0.94 0.04 145);
+  --accent-foreground: oklch(0.2 0.07 155);
+  --chart-1: oklch(0.58 0.17 155);
+  --chart-2: oklch(0.78 0.17 90);
+  --sidebar-primary: oklch(0.58 0.17 155);
+  --sidebar-ring: oklch(0.58 0.17 155);
+}
+
+[data-color-theme="amethyst"] {
+  --primary: oklch(0.58 0.22 305);
+  --ring: oklch(0.58 0.22 305);
+  --accent: oklch(0.94 0.04 310);
+  --accent-foreground: oklch(0.22 0.07 305);
+  --chart-1: oklch(0.58 0.22 305);
+  --chart-2: oklch(0.72 0.16 195);
+  --sidebar-primary: oklch(0.58 0.22 305);
+  --sidebar-ring: oklch(0.58 0.22 305);
+}
+
+[data-color-theme="crimson"] {
+  --primary: oklch(0.58 0.22 25);
+  --ring: oklch(0.58 0.22 25);
+  --accent: oklch(0.94 0.04 25);
+  --accent-foreground: oklch(0.2 0.07 25);
+  --chart-1: oklch(0.58 0.22 25);
+  --chart-2: oklch(0.66 0.18 250);
+  --sidebar-primary: oklch(0.58 0.22 25);
+  --sidebar-ring: oklch(0.58 0.22 25);
+}
+
+.dark[data-color-theme="cyber"], .dark[data-color-theme="emerald"],
+.dark[data-color-theme="amethyst"], .dark[data-color-theme="crimson"] {
+  --primary-foreground: oklch(0.14 0.02 265);
+  --accent-foreground: oklch(0.97 0.005 260);
+}
+
+@utility theme-swatch {
+  display: inline-block;
+  width: 1.25rem;
+  height: 0.65rem;
+  flex: none;
+  border-radius: 9999px;
+  border: 1px solid color-mix(in oklch, var(--color-border) 60%, transparent);
+}
+
+@utility theme-swatch-slate {
+  background: linear-gradient(90deg, oklch(0.28 0.04 250) 0 34%, oklch(0.58 0.18 225) 34% 67%, oklch(0.67 0.18 165) 67%);
+}
+
+@utility theme-swatch-cyber {
+  background: linear-gradient(90deg, oklch(0.25 0.06 255) 0 34%, oklch(0.63 0.22 285) 34% 67%, oklch(0.72 0.16 190) 67%);
+}
+
+@utility theme-swatch-emerald {
+  background: linear-gradient(90deg, oklch(0.3 0.1 155) 0 34%, oklch(0.62 0.18 160) 34% 67%, oklch(0.84 0.18 95) 67%);
+}
+
+@utility theme-swatch-amethyst {
+  background: linear-gradient(90deg, oklch(0.34 0.15 310) 0 34%, oklch(0.62 0.23 300) 34% 67%, oklch(0.72 0.16 190) 67%);
+}
+
+@utility theme-swatch-crimson {
+  background: linear-gradient(90deg, oklch(0.25 0.04 255) 0 34%, oklch(0.58 0.23 25) 34% 67%, oklch(0.68 0.19 255) 67%);
+}
+
 @layer base {
   * {
     border-color: var(--color-border);

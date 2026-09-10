@@ -1,4 +1,4 @@
-import { Moon, Sun, RefreshCw, LogOut, ShieldCheck, UserRound } from "lucide-react";
+import { RefreshCw, LogOut, ShieldCheck, UserRound } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
@@ -29,7 +29,7 @@ type UserInfo = {
 };
 
 export function AppHeader({ title, subtitle }: { title: string; subtitle?: string }) {
-  const { theme, toggle } = useTheme();
+  const { theme } = useTheme();
   const lastUpdated = useDataStore((s) => s.lastUpdated);
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -87,9 +87,6 @@ export function AppHeader({ title, subtitle }: { title: string; subtitle?: strin
           Updated {formatDistanceToNow(lastUpdated, { addSuffix: true })}
         </div>
       )}
-      <Button variant="ghost" size="icon" onClick={toggle} aria-label="Toggle theme">
-        {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-      </Button>
       {user && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
