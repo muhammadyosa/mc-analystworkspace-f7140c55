@@ -43,8 +43,12 @@ export const Route = createFileRoute("/")({
   component: Dashboard,
 });
 
-const MONTHS = ["januari", "februari", "maret", "april", "mei", "juni"] as const;
-const MONTH_LABEL = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun"];
+const MONTHS = [
+  "januari", "februari", "maret", "april", "mei", "juni",
+  "juli", "agustus", "september", "oktober", "november", "desember",
+] as const;
+const MONTH_LABEL = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+const MONTH_FULL = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
 
 const KpiCard = memo(function KpiCard({
   label,
