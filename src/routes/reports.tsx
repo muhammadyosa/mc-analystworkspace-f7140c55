@@ -950,7 +950,9 @@ function ReportsPage() {
     setFrom: (i: number) => void, setTo: (i: number) => void,
     ref: React.RefObject<HTMLDivElement | null>,
   ) => {
-    const label = MONTHS[from].label + " → " + MONTHS[to].label + " 2026";
+    const label = kind === "weekly"
+      ? `${formatDateID(weekSel.from)} – ${formatDateID(weekSel.to)}`
+      : MONTHS[from].label + " → " + MONTHS[to].label + " 2026";
     const worst = s.worstRatio[0];
     const heavyPic = [...s.picPerf].sort((a, b) => b.ratio - a.ratio)[0];
     const insights = [
@@ -983,12 +985,11 @@ function ReportsPage() {
     return (
       <div className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex flex-wrap items-center gap-2">
+          {kind === "weekly" ? (
+            <WeekPicker month={wkMonth} week={wkWeek} onMonth={setWkMonth} onWeek={setWkWeek} avail={avail} />
+          ) : (
             <DateRange from={from} to={to} onFrom={setFrom} onTo={setTo} avail={avail} />
-            {kind === "weekly" && (
-              <WeekPicker month={wkMonth} week={wkWeek} onMonth={setWkMonth} onWeek={setWkWeek} avail={avail} />
-            )}
-          </div>
+          )}
           <Button size="sm" onClick={() => handlePrint(ref)}><Printer className="mr-1 h-4 w-4" /> Export PDF</Button>
         </div>
 
@@ -1149,7 +1150,7 @@ function ReportsPage() {
           </TabsContent>
 
           <TabsContent value="weekly" className="space-y-4">
-            {weekly && renderTab(weekly, "weekly", wFrom, wTo, setWFrom, setWTo, weeklyRef)}
+            {weekly && renderTab(weekly, "weekly", wkMonth, wkMonth, setWkMonth, setWkMonth, weeklyRef)}
           </TabsContent>
 
 
@@ -1167,23 +1168,22 @@ function ReportsPage() {
               </Card>
             ) : (
               <>
-                <DateRange from={cFrom} to={cTo} onFrom={setCFrom} onTo={setCTo} avail={avail} />
-
-                <div className="flex flex-wrap items-end gap-2 rounded-lg border bg-muted/30 p-2">
-                  <ReportDatePicker label="Tanggal mulai" value={cDFromEff} onChange={setCDFrom} max={cDToEff} />
-                  <ReportDatePicker label="Tanggal akhir" value={cDToEff} onChange={setCDTo} min={cDFromEff} />
-                  {(cDFrom || cDTo) && (
-                    <Button size="sm" variant="ghost" className="h-9" onClick={() => { setCDFrom(""); setCDTo(""); }}>Reset</Button>
-                  )}
+                <div className="rounded-xl border bg-muted/30 p-3">
+                  <div className="grid gap-3 sm:grid-cols-[auto_auto_1fr] sm:items-end">
+                    <ReportDatePicker label="Tanggal mulai" value={cDFromEff} onChange={setCDFrom} max={cDToEff} />
+                    <ReportDatePicker label="Tanggal akhir" value={cDToEff} onChange={setCDTo} min={cDFromEff} />
+                    <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                      <Badge variant="secondary" className="text-[10px]">
+                        Analisa pasar: {MONTHS[cFrom].label} → {MONTHS[cTo].label} 2026
+                      </Badge>
+                      {(cDFrom || cDTo) && (
+                        <Button size="sm" variant="ghost" className="h-8 text-xs" onClick={() => { setCDFrom(""); setCDTo(""); }}>Reset</Button>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
-                <ProfilingRangeSection
-                  analyst={analyst}
-                  from={cDFromEff}
-                  to={cDToEff}
-                  title="Ringkasan Profiling — Competitor Intel"
-                  periodLabel={`${formatDateID(cDFromEff)} – ${formatDateID(cDToEff)}`}
-                />
+
 
 
 
