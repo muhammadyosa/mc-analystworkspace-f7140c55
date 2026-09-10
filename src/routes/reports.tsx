@@ -263,14 +263,26 @@ function WeeklyDailyAnalysis({ analyst, from, to, onFrom, onTo }: { analyst: Ana
       <Card className="glass-card border-0">
         <CardHeader className="pb-3">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-            <div>
+            <div className="space-y-2">
               <CardTitle id="weekly-daily-title" className="font-display text-base">Analisis Profiling Harian</CardTitle>
-              <p className="mt-1 text-xs text-muted-foreground">Analisis Weekly mengikuti tanggal aktual pada file profiling.</p>
+              <p className="text-xs text-muted-foreground">Analisis mengikuti tanggal aktual pada file profiling.</p>
+              <div className="flex flex-wrap items-center gap-1.5">
+                <Badge variant="secondary" className="text-[10px] font-medium">
+                  Data valid: {bounds.min ? `${formatDateID(bounds.min)} – ${formatDateID(bounds.max)}` : "belum ada"}
+                </Badge>
+                <Badge variant="secondary" className="text-[10px] font-medium">Rentang dipilih: {rangeLabel}</Badge>
+                {invalidDateCount > 0 && (
+                  <Badge variant="outline" className="text-[10px] font-medium text-warning">{fmtN(invalidDateCount)} baris tanpa tanggal valid (dilewati)</Badge>
+                )}
+              </div>
             </div>
             <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
               <ReportDatePicker label="Tanggal mulai" value={effectiveFrom} onChange={onFrom} min={bounds.min} max={effectiveTo || bounds.max} />
               <ReportDatePicker label="Tanggal akhir" value={effectiveTo} onChange={onTo} min={effectiveFrom || bounds.min} max={bounds.max} />
               <div className="flex gap-2">
+                {(from || to) && (
+                  <Button size="sm" variant="ghost" className="h-9" onClick={() => { onFrom(""); onTo(""); }}>Reset</Button>
+                )}
                 <Button size="sm" variant="outline" className="h-9" disabled={!exportRows.length} onClick={() => exportProfilingExcel(exportRows, `${effectiveFrom}-${effectiveTo}`)}><FileText /> Excel</Button>
                 <Button size="sm" variant="outline" className="h-9" disabled={!exportRows.length} onClick={() => exportProfilingPDF(exportRows, rangeLabel)}><Printer /> PDF</Button>
               </div>
