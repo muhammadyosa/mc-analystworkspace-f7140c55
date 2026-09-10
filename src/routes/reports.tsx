@@ -805,11 +805,21 @@ function ReportsPage() {
                     `${compCharts.highThreat} cluster masuk kategori ancaman TINGGI (threat ≥ 71).`,
                     `Harga rata-rata kompetitor Rp${compCharts.avgPriceAll.toLocaleString("id-ID")} — ${compCharts.avgPriceAll < 200000 ? "tekanan harga tinggi" : "masih dalam batas wajar"}.`,
                     `Promo teraktif: ${[...compCharts.promoBreakdown].sort((a, b) => b.value - a.value)[0]?.name ?? "-"}.`,
+                    compRisk?.critical.length
+                      ? `${compRisk.critical.length} cluster kritis (ancaman tinggi + HC turun) kehilangan ${fmtN(compRisk.lostHC)} HC pada ${MONTHS[cFrom].label} → ${MONTHS[cTo].label}.`
+                      : "Belum ada cluster ancaman tinggi yang sekaligus kehilangan HC — posisi pasar masih aman.",
+                    compRisk?.ticketHeavy
+                      ? `Gangguan terbanyak di area kompetitif: ${compRisk.ticketHeavy.cluster} (${fmtN(compRisk.ticketHeavy.ticket)} ticket, threat ${compRisk.ticketHeavy.score}) — risiko churn ke kompetitor.`
+                      : `Total ${fmtN(compBase.totalTicket)} ticket tercatat di periode yang sama.`,
+                    `Risiko tertinggi gabungan: ${compRisk?.rows[0]?.cluster ?? "-"} (skor risiko ${compRisk?.rows[0]?.risk ?? 0}).`,
                   ]} />
                   <RecommendationBox items={[
-                    `Prioritas defense di ${compCharts.topThreats[0]?.cluster ?? "cluster ancaman tinggi"} — deploy retention bundle.`,
+                    `Prioritas defense di ${compRisk?.rows[0]?.cluster ?? compCharts.topThreats[0]?.cluster ?? "cluster ancaman tinggi"} — deploy retention bundle.`,
                     "Counter promo kompetitor dengan penawaran serupa (gratis instalasi / cashback) selama 30 hari.",
                     "Naikkan value proposition (bundling speed & konten) di cluster dengan harga kompetitor < Rp200K.",
+                    compRisk?.ticketHeavy
+                      ? `Perbaiki kualitas jaringan di ${compRisk.ticketHeavy.cluster} sebelum kompetitor memanfaatkan keluhan pelanggan.`
+                      : "Jaga kualitas jaringan agar tidak memberi celah bagi kompetitor.",
                     `Site visit mingguan ke ${compCharts.dominant}-heavy cluster untuk profiling lanjutan.`,
                     "Update pricing playbook bulanan berbasis data harga kompetitor terbaru.",
                   ]} />
