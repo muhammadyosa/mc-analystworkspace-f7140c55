@@ -38,6 +38,8 @@ function parseProfilingDate(value: unknown): Date | null {
   }
   const t = String(value).trim();
   if (!t) return null;
+  // Angka murni (mis. "46216" atau "46216.93") = serial Excel / unix timestamp
+  if (/^\d+(\.\d+)?$/.test(t)) return parseProfilingDate(Number(t));
   // ISO first
   const iso = new Date(t);
   if (!isNaN(iso.getTime()) && /^\d{4}-\d{1,2}-\d{1,2}/.test(t)) return iso;
