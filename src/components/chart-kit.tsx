@@ -313,7 +313,15 @@ export function ProgressStat({
 export type ArcItem = { name: string; value: number; color: string; icon?: string };
 
 /** Semi-circular concentric arcs with a value legend — compact, readable share view. */
-export function ArcDistribution({ items, className = "" }: { items: ArcItem[]; className?: string }) {
+export function ArcDistribution({
+  items,
+  className = "",
+  onSelect,
+}: {
+  items: ArcItem[];
+  className?: string;
+  onSelect?: (item: ArcItem) => void;
+}) {
   const total = items.reduce((a, b) => a + b.value, 0);
   const W = 260;
   const H = 150;
@@ -345,20 +353,29 @@ export function ArcDistribution({ items, className = "" }: { items: ArcItem[]; c
           })}
         </svg>
       </div>
-      <ul className="space-y-2.5">
+      <ul className="max-h-[220px] space-y-2 overflow-y-auto pr-1">
         {items.map((it) => (
-          <li key={it.name} className="grid grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-2 text-xs">
-            <span className="w-8 text-right font-display text-sm font-bold tabular-nums" style={{ color: it.color }}>
-              {fmtFull(it.value)}
-            </span>
-            <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: it.color }} />
-            <span className="truncate font-medium" style={{ color: it.color }}>
-              {it.icon ? `${it.icon} ` : ""}
-              {it.name}
-            </span>
-            <span className="shrink-0 text-muted-foreground tabular-nums">
-              ({total ? Math.round((it.value / total) * 100) : 0}%)
-            </span>
+          <li key={it.name}>
+            <button
+              type="button"
+              disabled={!onSelect}
+              onClick={() => onSelect?.(it)}
+              className={`grid w-full grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-2 rounded-md px-1.5 py-1 text-left text-xs ${
+                onSelect ? "cursor-pointer transition-colors hover:bg-muted/60" : ""
+              }`}
+            >
+              <span className="w-10 text-right font-display text-sm font-bold tabular-nums" style={{ color: it.color }}>
+                {fmtFull(it.value)}
+              </span>
+              <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: it.color }} />
+              <span className="truncate font-medium" style={{ color: it.color }}>
+                {it.icon ? `${it.icon} ` : ""}
+                {it.name}
+              </span>
+              <span className="shrink-0 text-muted-foreground tabular-nums">
+                ({total ? Math.round((it.value / total) * 100) : 0}%)
+              </span>
+            </button>
           </li>
         ))}
       </ul>

@@ -7,15 +7,14 @@ import {
   ComposedChart,
   LabelList,
   Line,
-  Pie,
-  PieChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
-import { Activity, BarChart3, PieChart as PieIcon, Ticket, TrendingUp } from "lucide-react";
+import { Activity, BarChart3, MapPin, Ticket, TrendingUp } from "lucide-react";
 import {
+  ArcDistribution,
   C,
   CATEGORICAL,
   ChartCard,
@@ -54,10 +53,14 @@ type Kind = "cluster" | "province" | "month";
 export default function DashboardCharts({
   stats: s,
   onSelect,
+  labels,
 }: {
   stats: Stats;
   onSelect?: (kind: Kind, data: Record<string, unknown>) => void;
+  labels?: { cur: string; prev: string };
 }) {
+  const curLabel = labels?.cur ?? "Juni";
+  const prevLabel = labels?.prev ?? "Mei";
   const handleBar = (kind: Kind) => (p: ChartClick) => {
     const d = p?.activePayload?.[0]?.payload;
     if (d && onSelect) onSelect(kind, d);
@@ -97,6 +100,17 @@ export default function DashboardCharts({
   const provTotal = s.provDist.reduce((a, b) => a + b.value, 0) || 1;
   const provDist = useMemo(() => [...s.provDist].sort((a, b) => b.value - a.value), [s.provDist]);
   const topProv = provDist[0];
+  const provItems = useMemo(
+    () => provDist.map((p, i) => ({ name: p.name, value: p.value, color: CATEGORICAL[i % CATEGORICAL.length] })),
+    [provDist],
+  );
+  const provAnalysis = useMemo(() => {
+    if (!provDist.length) return undefined;
+    const top2 = provDist.slice(0, 2).reduce((a, b) => a + b.value, 0);
+    const smallest = provDist[provDist.length - 1];
+    const conc = (top2 / provTotal) * 100;
+    return `${provDist.length} provinsi aktif. ${topProv.name} dominan ${fmtPct((topProv.value / provTotal) * 100)} dari ${fmtFull(provTotal)} HC; 2 provinsi teratas menguasai ${fmtPct(conc)} (${conc >= 70 ? "konsentrasi tinggi — perlu diversifikasi pasar" : "distribusi relatif merata"}). Kontribusi terkecil: ${smallest.name} ${fmtPct((smallest.value / provTotal) * 100)} — peluang ekspansi.`;
+  }, [provDist, provTotal, topProv]);
 
   /* ---- tooltips ---- */
   const TrendTip = makeTooltip<(typeof trend)[number]>((d) => ({
@@ -111,7 +125,7 @@ export default function DashboardCharts({
   const HcTip = makeTooltip<(typeof topHc)[number]>((d) => ({
     title: `#${d.rank} ${d.cluster}`,
     rows: [
-      { label: "HC Juni", value: fmtFull(d.juni), color: C.primary, strong: true },
+      { label: `HC ${curLabel}`, value: fmtFull(d.juni), color: C.primary, strong: true },
       { label: "Kabupaten", value: d.kabupaten || "-" },
       { label: "PIC", value: d.pic || "-" },
     ],
@@ -122,8 +136,8 @@ export default function DashboardCharts({
     return {
       title: d.cluster,
       rows: [
-        { label: "HC Mei", value: fmtFull(d.mei ?? 0) },
-        { label: "HC Juni", value: fmtFull(d.juni) },
+        { label: `HC ${prevLabel}`, value: fmtFull(d.mei ?? 0) },
+        { label: `HC ${curLabel}`, value: fmtFull(d.juni) },
         {
           label: "Delta",
           value: fmtSigned(d.deltaMeiJuni),
@@ -145,21 +159,13 @@ export default function DashboardCharts({
     ],
   }));
 
-  const ProvTip = makeTooltip<{ name: string; value: number }>((d) => ({
-    title: d.name,
-    rows: [
-      { label: "Total HC", value: fmtFull(d.value), color: C.primary, strong: true },
-      { label: "Porsi", value: fmtPct((d.value / provTotal) * 100) },
-    ],
-  }));
-
   return (
     <div className="grid gap-5 lg:grid-cols-2">
       {/* HC TREND */}
       <ChartCard
         icon={Activity}
         title="HC Trend"
-        subtitle="Pergerakan HC Januari–Juni"
+        subtitle={`Pergerakan HC hingga ${curLabel}`}
         badge={last ? <DeltaBadge value={last.growth} label=" vs bulan lalu" /> : undefined}
         height={300}
         footer={peak ? `HC tertinggi terjadi pada ${peak.month} (${fmtFull(peak.hc)}).` : undefined}
@@ -193,7 +199,7 @@ export default function DashboardCharts({
       <ChartCard
         icon={BarChart3}
         title="Top 10 Cluster by HC"
-        subtitle="Cluster dengan HC terbesar bulan Juni"
+        subtitle={`Cluster dengan HC terbesar bulan ${curLabel}`}
         height={340}
         footer={topHc[0] ? `${topHc[0].cluster} memimpin dengan ${fmtFull(topHc[0].juni)} HC.` : undefined}
       >
@@ -232,7 +238,7 @@ export default function DashboardCharts({
       {/* HC GROWTH */}
       <ChartCard
         icon={TrendingUp}
-        title="HC Growth (Delta Mei–Juni)"
+        title={`HC Growth (Delta ${prevLabel}–${curLabel})`}
         subtitle="Perubahan HC terbesar antar dua bulan terakhir"
         height={340}
         footer={`${posCount} dari ${growth.length} cluster mencatat pertumbuhan positif.`}
@@ -318,57 +324,17 @@ export default function DashboardCharts({
 
       {/* PROVINCE */}
       <ChartCard
-        icon={PieIcon}
+        icon={MapPin}
         title="Distribusi HC per Provinsi"
         subtitle="Kontribusi HC tiap provinsi"
-        height={330}
+        height={300}
         className="lg:col-span-2"
-        footer={
-          topProv
-            ? `${topProv.name} menyumbang ${fmtPct((topProv.value / provTotal) * 100)} dari total HC.`
-            : undefined
-        }
+        footer={provAnalysis}
       >
-        <div className="grid h-full grid-cols-1 items-center gap-4 md:grid-cols-[minmax(0,1fr)_260px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={provDist}
-                dataKey="value"
-                nameKey="name"
-                innerRadius={68}
-                outerRadius={104}
-                paddingAngle={2}
-                stroke="none"
-                isAnimationActive={false}
-                onClick={handlePie("province")}
-                {...cursor}
-              >
-                {provDist.map((_, i) => (
-                  <Cell key={i} fill={CATEGORICAL[i % CATEGORICAL.length]} />
-                ))}
-              </Pie>
-              <Tooltip content={ProvTip} />
-            </PieChart>
-          </ResponsiveContainer>
-          <ul className="max-h-[260px] space-y-1.5 overflow-y-auto pr-1">
-            {provDist.map((p, i) => (
-              <li key={p.name} className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 text-xs">
-                <span
-                  className="h-2.5 w-2.5 shrink-0 rounded-[3px]"
-                  style={{ background: CATEGORICAL[i % CATEGORICAL.length] }}
-                />
-                <span className="truncate text-muted-foreground">{p.name}</span>
-                <span className="shrink-0 font-semibold tabular-nums">
-                  {fmtFull(p.value)}{" "}
-                  <span className="font-normal text-muted-foreground">
-                    ({((p.value / provTotal) * 100).toFixed(0)}%)
-                  </span>
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <ArcDistribution
+          items={provItems}
+          onSelect={onSelect ? (it) => handlePie("province")({ name: it.name, value: it.value }) : undefined}
+        />
       </ChartCard>
     </div>
   );

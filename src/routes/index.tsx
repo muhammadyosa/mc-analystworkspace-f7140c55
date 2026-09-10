@@ -43,8 +43,12 @@ export const Route = createFileRoute("/")({
   component: Dashboard,
 });
 
-const MONTHS = ["januari", "februari", "maret", "april", "mei", "juni"] as const;
-const MONTH_LABEL = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun"];
+const MONTHS = [
+  "januari", "februari", "maret", "april", "mei", "juni",
+  "juli", "agustus", "september", "oktober", "november", "desember",
+] as const;
+const MONTH_LABEL = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+const MONTH_FULL = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
 
 const KpiCard = memo(function KpiCard({
   label,
@@ -108,40 +112,71 @@ function Dashboard() {
   const clusters = useDataStore((s) => s.clusters);
   const actions = useDataStore((s) => s.actions);
 
+  /** Bulan yang benar-benar terisi pada data upload — dashboard mengikuti bulan terakhir, bukan Juni statis. */
+  const period = useMemo(() => {
+    const filled = MONTHS.map((m, i) => ({
+      key: m,
+      idx: i,
+      total: clusters.reduce((a, c) => a + (Number(c[m]) || 0), 0),
+    })).filter((m) => m.total > 0);
+    const cur = filled[filled.length - 1];
+    const prev = filled[filled.length - 2];
+    return {
+      filled,
+      curKey: cur?.key ?? "juni",
+      prevKey: prev?.key ?? "mei",
+      curLabel: cur ? MONTH_FULL[cur.idx] : "Juni",
+      prevLabel: prev ? MONTH_FULL[prev.idx] : "Mei",
+    };
+  }, [clusters]);
+
+  /** Normalisasi: juni = bulan terakhir, mei = bulan sebelumnya (agar semua chart & kartu akurat). */
+  const rows = useMemo(
+    () =>
+      clusters.map((c) => {
+        const cur = Number(c[period.curKey as keyof typeof c]) || 0;
+        const prev = Number(c[period.prevKey as keyof typeof c]) || 0;
+        return { ...c, juni: cur, mei: prev, deltaMeiJuni: cur - prev };
+      }),
+    [clusters, period],
+  );
+
   const stats = useMemo(() => {
-    if (!clusters.length) return null;
-    const totalCluster = clusters.length;
-    const totalKab = new Set(clusters.map((c) => c.kabupaten).filter(Boolean)).size;
-    const totalProv = new Set(clusters.map((c) => c.provinsi).filter(Boolean)).size;
-    const sumJun = clusters.reduce((a, c) => a + c.juni, 0);
-    const sumMei = clusters.reduce((a, c) => a + c.mei, 0);
+    if (!rows.length) return null;
+    const totalCluster = rows.length;
+    const totalKab = new Set(rows.map((c) => c.kabupaten).filter(Boolean)).size;
+    const totalProv = new Set(rows.map((c) => c.provinsi).filter(Boolean)).size;
+    const sumJun = rows.reduce((a, c) => a + c.juni, 0);
+    const sumMei = rows.reduce((a, c) => a + c.mei, 0);
     const hcGrowth = sumMei > 0 ? ((sumJun - sumMei) / sumMei) * 100 : 0;
-    const totalTicket = clusters.reduce((a, c) => a + c.ticket, 0);
-    const prevTicket = totalTicket * 0.9;
-    const ticketGrowth = ((totalTicket - prevTicket) / prevTicket) * 100;
-    const maxTicket = Math.max(...clusters.map((c) => c.ticket), 1);
-    const priorities = clusters.map((c) => ({ ...c, ...computePriority(c, maxTicket) }));
+    const totalTicket = rows.reduce((a, c) => a + c.ticket, 0);
+    const ticketCur = rows.reduce((a, c) => a + (Number(c.ticketByMonth?.[period.curKey]) || 0), 0);
+    const ticketPrev = rows.reduce((a, c) => a + (Number(c.ticketByMonth?.[period.prevKey]) || 0), 0);
+    const ticketGrowth = ticketPrev > 0 ? ((ticketCur - ticketPrev) / ticketPrev) * 100 : 0;
+    const maxTicket = Math.max(...rows.map((c) => c.ticket), 1);
+    const priorities = rows.map((c) => ({ ...c, ...computePriority(c, maxTicket) }));
     const highRisk = priorities.filter((p) => p.level === "Tinggi").length;
     const highPriority = priorities.filter((p) => p.level === "Tinggi").length;
 
-    const trend = MONTHS.map((m, i) => ({
-      month: MONTH_LABEL[i],
-      hc: clusters.reduce((a, c) => a + (c[m] as number), 0),
+    const trend = period.filled.map((m) => ({
+      month: MONTH_LABEL[m.idx],
+      hc: m.total,
     }));
 
-    const topHc = [...clusters].sort((a, b) => b.juni - a.juni).slice(0, 10);
-    const growth = [...clusters]
+
+    const topHc = [...rows].sort((a, b) => b.juni - a.juni).slice(0, 10);
+    const growth = [...rows]
       .filter((c) => c.deltaMeiJuni !== 0)
       .sort((a, b) => Math.abs(b.deltaMeiJuni) - Math.abs(a.deltaMeiJuni))
       .slice(0, 12);
-    const topTicket = [...clusters].sort((a, b) => b.ticket - a.ticket).slice(0, 8);
+    const topTicket = [...rows].sort((a, b) => b.ticket - a.ticket).slice(0, 8);
 
     const provMap = new Map<string, number>();
-    clusters.forEach((c) => provMap.set(c.provinsi || "N/A", (provMap.get(c.provinsi || "N/A") ?? 0) + c.juni));
+    rows.forEach((c) => provMap.set(c.provinsi || "N/A", (provMap.get(c.provinsi || "N/A") ?? 0) + c.juni));
     const provDist = [...provMap.entries()].map(([name, value]) => ({ name, value }));
 
     const picMap = new Map<string, { pic: string; hc: number; ticket: number; clusters: number; growth: number }>();
-    clusters.forEach((c) => {
+    rows.forEach((c) => {
       const key = c.pic || "N/A";
       const cur = picMap.get(key) ?? { pic: key, hc: 0, ticket: 0, clusters: 0, growth: 0 };
       cur.hc += c.juni;
@@ -152,8 +187,8 @@ function Dashboard() {
     });
     const pics = [...picMap.values()].sort((a, b) => b.hc - a.hc).slice(0, 8);
 
-    const declines = [...clusters].sort((a, b) => a.deltaMeiJuni - b.deltaMeiJuni).slice(0, 3);
-    const risingTicket = [...clusters].sort((a, b) => b.ticket - a.ticket).slice(0, 3);
+    const declines = [...rows].sort((a, b) => a.deltaMeiJuni - b.deltaMeiJuni).slice(0, 3);
+    const risingTicket = [...rows].sort((a, b) => b.ticket - a.ticket).slice(0, 3);
 
     return {
       totalCluster,
@@ -175,7 +210,7 @@ function Dashboard() {
       declines,
       risingTicket,
     };
-  }, [clusters]);
+  }, [rows, period]);
 
   if (!clusters.length) {
     return (
@@ -262,26 +297,26 @@ function Dashboard() {
 
   const [drill, setDrill] = useState<DrilldownState>(null);
 
-  const maxTicket = Math.max(...clusters.map((c) => c.ticket), 1);
-  const priorities = clusters.map((c) => ({ ...c, ...computePriority(c, maxTicket) }));
+  const maxTicket = Math.max(...rows.map((c) => c.ticket), 1);
+  const priorities = rows.map((c) => ({ ...c, ...computePriority(c, maxTicket) }));
 
   const colClusterBasic = [
     { key: "cluster", label: "Cluster" },
     { key: "kabupaten", label: "Kabupaten" },
     { key: "provinsi", label: "Provinsi" },
     { key: "pic", label: "PIC" },
-    { key: "juni", label: "HC Juni", align: "right" as const, format: (v: unknown) => Number(v).toLocaleString("id-ID") },
+    { key: "juni", label: `HC ${period.curLabel}`, align: "right" as const, format: (v: unknown) => Number(v).toLocaleString("id-ID") },
     { key: "ticket", label: "Ticket", align: "right" as const, format: (v: unknown) => Number(v).toLocaleString("id-ID") },
   ];
 
   const openTop = (title: string, sortKey: "juni" | "mei" | "ticket" | "deltaMeiJuni", desc = true) => {
-    const rows = [...clusters].sort((a, b) => (desc ? Number(b[sortKey]) - Number(a[sortKey]) : Number(a[sortKey]) - Number(b[sortKey]))).slice(0, 50);
-    setDrill({ title, description: "Menampilkan hingga 50 cluster teratas", columns: colClusterBasic, rows: rows as unknown as Record<string, unknown>[] });
+    const list = [...rows].sort((a, b) => (desc ? Number(b[sortKey]) - Number(a[sortKey]) : Number(a[sortKey]) - Number(b[sortKey]))).slice(0, 50);
+    setDrill({ title, description: "Menampilkan hingga 50 cluster teratas", columns: colClusterBasic, rows: list as unknown as Record<string, unknown>[] });
   };
 
   const openGrouped = (title: string, key: "kabupaten" | "provinsi" | "pic") => {
     const map = new Map<string, { name: string; clusters: number; hc: number; ticket: number }>();
-    clusters.forEach((c) => {
+    rows.forEach((c) => {
       const k = (c[key] as string) || "N/A";
       const cur = map.get(k) ?? { name: k, clusters: 0, hc: 0, ticket: 0 };
       cur.clusters += 1;
@@ -289,7 +324,7 @@ function Dashboard() {
       cur.ticket += c.ticket;
       map.set(k, cur);
     });
-    const rows = [...map.values()].sort((a, b) => b.hc - a.hc);
+    const list = [...map.values()].sort((a, b) => b.hc - a.hc);
     setDrill({
       title,
       columns: [
@@ -298,7 +333,7 @@ function Dashboard() {
         { key: "hc", label: "Total HC", align: "right", format: (v) => Number(v).toLocaleString("id-ID") },
         { key: "ticket", label: "Ticket", align: "right", format: (v) => Number(v).toLocaleString("id-ID") },
       ],
-      rows: rows as unknown as Record<string, unknown>[],
+      rows: list as unknown as Record<string, unknown>[],
     });
   };
 
@@ -337,20 +372,20 @@ function Dashboard() {
 
   return (
     <>
-      <AppHeader title="Dashboard" subtitle="Executive Overview — Cluster Intelligence" />
+      <AppHeader title="Dashboard" subtitle={`Executive Overview — data s/d ${period.curLabel}`} />
       <div className="space-y-6 p-4 sm:p-6">
         {/* KPI Row 1 - Cluster */}
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-4">
           <KpiCard label="Total Cluster" value={s.totalCluster} icon={Target} tint="primary" onClick={() => openTop("Semua Cluster", "juni")} />
           <KpiCard label="Total Kabupaten" value={s.totalKab} icon={MapPin} tint="info" onClick={() => openGrouped("Distribusi per Kabupaten", "kabupaten")} />
           <KpiCard label="Total Provinsi" value={s.totalProv} icon={Building2} tint="info" onClick={() => openGrouped("Distribusi per Provinsi", "provinsi")} />
-          <KpiCard label="Total HC (Juni)" value={s.sumJun.toLocaleString("id-ID")} icon={Users} tint="success" delta={{ value: s.hcGrowth }} onClick={() => openTop("Top HC (Juni)", "juni")} />
+          <KpiCard label={`Total HC (${period.curLabel})`} value={s.sumJun.toLocaleString("id-ID")} icon={Users} tint="success" delta={{ value: s.hcGrowth }} onClick={() => openTop(`Top HC (${period.curLabel})`, "juni")} />
         </div>
 
         {/* KPI Row 2 */}
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          <KpiCard label="HC Bulan Ini" value={s.sumJun.toLocaleString("id-ID")} icon={Activity} tint="success" onClick={() => openTop("HC Bulan Ini (Juni)", "juni")} />
-          <KpiCard label="HC Bulan Lalu" value={s.sumMei.toLocaleString("id-ID")} icon={Activity} tint="info" onClick={() => openTop("HC Bulan Lalu (Mei)", "mei")} />
+          <KpiCard label={`HC ${period.curLabel}`} value={s.sumJun.toLocaleString("id-ID")} icon={Activity} tint="success" onClick={() => openTop(`HC ${period.curLabel}`, "juni")} />
+          <KpiCard label={`HC ${period.prevLabel}`} value={s.sumMei.toLocaleString("id-ID")} icon={Activity} tint="info" onClick={() => openTop(`HC ${period.prevLabel}`, "mei")} />
           <KpiCard label="Total Ticket" value={s.totalTicket.toLocaleString("id-ID")} icon={Ticket} tint="warning" delta={{ value: s.ticketGrowth }} onClick={() => openTop("Top Ticket", "ticket")} />
           <KpiCard label="High Risk Cluster" value={s.highRisk} icon={AlertTriangle} tint="destructive" onClick={openHighRisk} />
         </div>
@@ -428,10 +463,11 @@ function Dashboard() {
             <Suspense fallback={<ChartFallback />}>
               <DashboardCharts
                 stats={s}
+                labels={{ cur: period.curLabel, prev: period.prevLabel }}
                 onSelect={(kind, d) => {
                   if (kind === "cluster") {
                     const name = d.cluster as string;
-                    const row = clusters.find((c) => c.cluster === name);
+                    const row = rows.find((c) => c.cluster === name);
                     if (row) {
                       setDrill({
                         title: `Detail Cluster — ${name}`,
@@ -443,31 +479,29 @@ function Dashboard() {
                           { field: "Kabupaten", val: row.kabupaten },
                           { field: "Provinsi", val: row.provinsi },
                           { field: "PIC", val: row.pic },
-                          { field: "HC Januari", val: row.januari.toLocaleString("id-ID") },
-                          { field: "HC Februari", val: row.februari.toLocaleString("id-ID") },
-                          { field: "HC Maret", val: row.maret.toLocaleString("id-ID") },
-                          { field: "HC April", val: row.april.toLocaleString("id-ID") },
-                          { field: "HC Mei", val: row.mei.toLocaleString("id-ID") },
-                          { field: "HC Juni", val: row.juni.toLocaleString("id-ID") },
-                          { field: "Delta Mei-Juni", val: row.deltaMeiJuni },
+                          ...period.filled.map((m) => ({
+                            field: `HC ${MONTH_FULL[m.idx]}`,
+                            val: (Number(row[m.key as keyof typeof row]) || 0).toLocaleString("id-ID"),
+                          })),
+                          { field: `Delta ${period.prevLabel}–${period.curLabel}`, val: row.deltaMeiJuni },
                           { field: "Ticket", val: row.ticket.toLocaleString("id-ID") },
                         ],
                       });
                     }
                   } else if (kind === "province") {
                     const name = d.name as string;
-                    const rows = clusters.filter((c) => (c.provinsi || "N/A") === name);
+                    const list = rows.filter((c) => (c.provinsi || "N/A") === name);
                     setDrill({
                       title: `Provinsi — ${name}`,
-                      description: `${rows.length} cluster di provinsi ini.`,
+                      description: `${list.length} cluster di provinsi ini.`,
                       columns: colClusterBasic,
-                      rows: rows as unknown as Record<string, unknown>[],
+                      rows: list as unknown as Record<string, unknown>[],
                     });
                   } else if (kind === "month") {
                     setDrill({
                       title: `HC Bulan ${d.month}`,
                       columns: colClusterBasic,
-                      rows: [...clusters].sort((a, b) => b.juni - a.juni).slice(0, 50) as unknown as Record<string, unknown>[],
+                      rows: [...rows].sort((a, b) => b.juni - a.juni).slice(0, 50) as unknown as Record<string, unknown>[],
                     });
                   }
                 }}
