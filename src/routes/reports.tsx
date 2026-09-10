@@ -161,6 +161,20 @@ function ticketByMonthMap(tickets: TicketRow[]): Map<string, number> {
   return m;
 }
 
+/** cluster (uppercase) -> bulan -> jumlah ticket, untuk analisa per range bulan. */
+function ticketByClusterMap(tickets: TicketRow[]): Map<string, Map<string, number>> {
+  const m = new Map<string, Map<string, number>>();
+  for (const t of tickets) {
+    const c = (t.cluster || "").trim().toUpperCase();
+    const k = (t.bulan || "").toLowerCase();
+    if (!c || !k) continue;
+    const inner = m.get(c) ?? new Map<string, number>();
+    inner.set(k, (inner.get(k) ?? 0) + (t.ticket || 0));
+    m.set(c, inner);
+  }
+  return m;
+}
+
 function availableMonths(clusters: ClusterRow[], ticketMap: Map<string, number>): number[] {
   const idx = MONTHS.map((m, i) => {
     const hc = clusters.reduce((a, c) => a + (Number((c as unknown as Record<string, unknown>)[m.key]) || 0), 0);
