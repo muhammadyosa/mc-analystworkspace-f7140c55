@@ -305,7 +305,7 @@ function Dashboard() {
     { key: "kabupaten", label: "Kabupaten" },
     { key: "provinsi", label: "Provinsi" },
     { key: "pic", label: "PIC" },
-    { key: "juni", label: "HC Juni", align: "right" as const, format: (v: unknown) => Number(v).toLocaleString("id-ID") },
+    { key: "juni", label: `HC ${period.curLabel}`, align: "right" as const, format: (v: unknown) => Number(v).toLocaleString("id-ID") },
     { key: "ticket", label: "Ticket", align: "right" as const, format: (v: unknown) => Number(v).toLocaleString("id-ID") },
   ];
 
@@ -372,20 +372,20 @@ function Dashboard() {
 
   return (
     <>
-      <AppHeader title="Dashboard" subtitle="Executive Overview — Cluster Intelligence" />
+      <AppHeader title="Dashboard" subtitle={`Executive Overview — data s/d ${period.curLabel}`} />
       <div className="space-y-6 p-4 sm:p-6">
         {/* KPI Row 1 - Cluster */}
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-4">
           <KpiCard label="Total Cluster" value={s.totalCluster} icon={Target} tint="primary" onClick={() => openTop("Semua Cluster", "juni")} />
           <KpiCard label="Total Kabupaten" value={s.totalKab} icon={MapPin} tint="info" onClick={() => openGrouped("Distribusi per Kabupaten", "kabupaten")} />
           <KpiCard label="Total Provinsi" value={s.totalProv} icon={Building2} tint="info" onClick={() => openGrouped("Distribusi per Provinsi", "provinsi")} />
-          <KpiCard label="Total HC (Juni)" value={s.sumJun.toLocaleString("id-ID")} icon={Users} tint="success" delta={{ value: s.hcGrowth }} onClick={() => openTop("Top HC (Juni)", "juni")} />
+          <KpiCard label={`Total HC (${period.curLabel})`} value={s.sumJun.toLocaleString("id-ID")} icon={Users} tint="success" delta={{ value: s.hcGrowth }} onClick={() => openTop(`Top HC (${period.curLabel})`, "juni")} />
         </div>
 
         {/* KPI Row 2 */}
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          <KpiCard label="HC Bulan Ini" value={s.sumJun.toLocaleString("id-ID")} icon={Activity} tint="success" onClick={() => openTop("HC Bulan Ini (Juni)", "juni")} />
-          <KpiCard label="HC Bulan Lalu" value={s.sumMei.toLocaleString("id-ID")} icon={Activity} tint="info" onClick={() => openTop("HC Bulan Lalu (Mei)", "mei")} />
+          <KpiCard label={`HC ${period.curLabel}`} value={s.sumJun.toLocaleString("id-ID")} icon={Activity} tint="success" onClick={() => openTop(`HC ${period.curLabel}`, "juni")} />
+          <KpiCard label={`HC ${period.prevLabel}`} value={s.sumMei.toLocaleString("id-ID")} icon={Activity} tint="info" onClick={() => openTop(`HC ${period.prevLabel}`, "mei")} />
           <KpiCard label="Total Ticket" value={s.totalTicket.toLocaleString("id-ID")} icon={Ticket} tint="warning" delta={{ value: s.ticketGrowth }} onClick={() => openTop("Top Ticket", "ticket")} />
           <KpiCard label="High Risk Cluster" value={s.highRisk} icon={AlertTriangle} tint="destructive" onClick={openHighRisk} />
         </div>
@@ -463,6 +463,7 @@ function Dashboard() {
             <Suspense fallback={<ChartFallback />}>
               <DashboardCharts
                 stats={s}
+                labels={{ cur: period.curLabel, prev: period.prevLabel }}
                 onSelect={(kind, d) => {
                   if (kind === "cluster") {
                     const name = d.cluster as string;
@@ -482,9 +483,9 @@ function Dashboard() {
                           { field: "HC Februari", val: row.februari.toLocaleString("id-ID") },
                           { field: "HC Maret", val: row.maret.toLocaleString("id-ID") },
                           { field: "HC April", val: row.april.toLocaleString("id-ID") },
-                          { field: "HC Mei", val: row.mei.toLocaleString("id-ID") },
-                          { field: "HC Juni", val: row.juni.toLocaleString("id-ID") },
-                          { field: "Delta Mei-Juni", val: row.deltaMeiJuni },
+                          { field: `HC ${period.prevLabel}`, val: row.mei.toLocaleString("id-ID") },
+                          { field: `HC ${period.curLabel}`, val: row.juni.toLocaleString("id-ID") },
+                          { field: `Delta ${period.prevLabel}–${period.curLabel}`, val: row.deltaMeiJuni },
                           { field: "Ticket", val: row.ticket.toLocaleString("id-ID") },
                         ],
                       });
