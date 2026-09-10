@@ -688,8 +688,6 @@ function ReportsPage() {
   }, [first, lastM, monthRangeKey, prevM, syncKey]);
 
   const [wDFrom, setWDFrom] = useState(""); const [wDTo, setWDTo] = useState("");
-  const [mDFrom, setMDFrom] = useState(""); const [mDTo, setMDTo] = useState("");
-  const [cDFrom, setCDFrom] = useState(""); const [cDTo, setCDTo] = useState("");
   const analyst = useDataStore((s) => s.analyst);
 
   const clusterTicketMap = useMemo(() => ticketByClusterMap(effTickets), [effTickets]);
