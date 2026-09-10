@@ -1422,20 +1422,32 @@ function ReportsPage() {
               </Card>
             ) : (
               <>
-                <div className="rounded-xl border bg-muted/30 p-3">
-                  <div className="grid gap-3 sm:grid-cols-[auto_auto_1fr] sm:items-end">
-                    <ReportDatePicker label="Tanggal mulai" value={cDFromEff} onChange={setCDFrom} max={cDToEff} />
-                    <ReportDatePicker label="Tanggal akhir" value={cDToEff} onChange={setCDTo} min={cDFromEff} />
-                    <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-                      <Badge variant="secondary" className="text-[10px]">
+                <DateRangeFields
+                  title="Filter tanggal competitor intel"
+                  from={cDFromEff}
+                  to={cDToEff}
+                  onFrom={setCDFrom}
+                  onTo={setCDTo}
+                  actions={
+                    (cDFrom || cDTo) ? (
+                      <Button size="sm" variant="ghost" className="h-9 text-xs" onClick={() => { setCDFrom(""); setCDTo(""); }}>Reset tanggal</Button>
+                    ) : null
+                  }
+                  info={
+                    <>
+                      <Badge variant="secondary" className="text-[10px] font-medium">
                         Analisa pasar: {MONTHS[cFrom].label} → {MONTHS[cTo].label} 2026
                       </Badge>
-                      {(cDFrom || cDTo) && (
-                        <Button size="sm" variant="ghost" className="h-8 text-xs" onClick={() => { setCDFrom(""); setCDTo(""); }}>Reset</Button>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                      <Badge variant="outline" className="text-[10px] font-medium">
+                        {compScope.filtered
+                          ? `Kompetitor difilter ke ${compCharts.totalClusters} cluster hasil profiling`
+                          : "Semua cluster kompetitor (belum ada profiling pada rentang ini)"}
+                      </Badge>
+                    </>
+                  }
+                />
+
+
 
 
 
