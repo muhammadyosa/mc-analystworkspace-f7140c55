@@ -513,25 +513,9 @@ function computeStats(
   clusterTicketMap: Map<string, Map<string, number>> = new Map(),
 ) {
   const range = MONTHS.slice(from, to + 1);
-
-  // HC efektif: file cluster kadang hanya sampai bulan tertentu (mis. Juni),
-  // sementara data ticket sudah sampai September. Agar chart/tabel HC tidak
-  // kosong pada bulan tanpa kolom HC, pakai nilai bulan terakhir yang tersedia.
-  const hcEff = (c: ClusterRow, idx: number): number => {
-    for (let i = idx; i >= 0; i--) {
-      const v = hcOf(c, MONTHS[i].key);
-      if (v > 0) return v;
-    }
-    for (let i = idx + 1; i < MONTHS.length; i++) {
-      const v = hcOf(c, MONTHS[i].key);
-      if (v > 0) return v;
-    }
-    return 0;
-  };
-
-  const hcTrend = range.map((m, i) => ({
+  const hcTrend = range.map((m) => ({
     bulan: m.label,
-    hc: clusters.reduce((a, c) => a + hcEff(c, from + i), 0),
+    hc: clusters.reduce((a, c) => a + hcOf(c, m.key), 0),
   }));
   const start = hcTrend[0]?.hc ?? 0;
   const end = hcTrend[hcTrend.length - 1]?.hc ?? 0;
@@ -561,8 +545,8 @@ function computeStats(
   };
 
   const perCluster = clusters.map((c) => {
-    const hcStart = hcEff(c, from);
-    const hcEnd = hcEff(c, to);
+    const hcStart = hcOf(c, MONTHS[from].key);
+    const hcEnd = hcOf(c, MONTHS[to].key);
     const rangeTicket = hasRealTicket ? ticketOf(c.cluster) : c.ticket;
     return {
       ...c,
@@ -587,10 +571,10 @@ function computeStats(
     .sort((a, b) => b.ticketPer100HC - a.ticketPer100HC)
     .slice(0, 5);
 
-  const ticketTrend = range.map((m, i) => {
+  const ticketTrend = range.map((m) => {
     if (hasRealTicket) return { bulan: m.label, ticket: ticketMap.get(m.key) ?? 0 };
     // fallback: distribusi total ticket berdasar bobot HC
-    const monthHC = clusters.reduce((a, c) => a + hcEff(c, from + i), 0);
+    const monthHC = clusters.reduce((a, c) => a + hcOf(c, m.key), 0);
     return { bulan: m.label, ticket: totalHCAll > 0 ? Math.round((monthHC / totalHCAll) * fallbackTotalTicket) : 0 };
   });
   const tStart = ticketTrend[0]?.ticket ?? 0;
