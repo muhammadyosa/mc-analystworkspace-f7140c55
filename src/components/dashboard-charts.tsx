@@ -14,8 +14,9 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { Activity, BarChart3, PieChart as PieIcon, Ticket, TrendingUp } from "lucide-react";
+import { Activity, BarChart3, MapPin, Ticket, TrendingUp } from "lucide-react";
 import {
+  ArcDistribution,
   C,
   CATEGORICAL,
   ChartCard,
