@@ -98,13 +98,13 @@ function ReportDatePicker({ label, value, onChange, min, max }: { label: string;
   const minDate = toValidDate(min);
   const maxDate = toValidDate(max, true);
   return (
-    <div className="space-y-1">
-      <span className="text-[10px] font-semibold uppercase text-muted-foreground">{label}</span>
+    <div className="min-w-0 space-y-1.5">
+      <span className="block text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</span>
       <Popover>
         <PopoverTrigger asChild>
-          <Button variant="outline" className={cn("h-9 w-full justify-start text-left font-normal sm:w-[170px]", !value && "text-muted-foreground")}>
-            <CalendarIcon className="h-4 w-4" />
-            {formatDateID(value)}
+          <Button variant="outline" className={cn("h-9 w-full justify-start gap-2 truncate text-left font-normal", !value && "text-muted-foreground")}>
+            <CalendarIcon className="h-4 w-4 shrink-0" />
+            <span className="truncate">{formatDateID(value)}</span>
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="start">
@@ -123,6 +123,66 @@ function ReportDatePicker({ label, value, onChange, min, max }: { label: string;
     </div>
   );
 }
+
+/** Panel rentang tanggal yang rapi: mulai → akhir sejajar, aksi di baris/kolom terpisah. */
+function DateRangeFields({
+  title,
+  from,
+  to,
+  onFrom,
+  onTo,
+  min,
+  max,
+  actions,
+  info,
+}: {
+  title?: string;
+  from: string;
+  to: string;
+  onFrom: (v: string) => void;
+  onTo: (v: string) => void;
+  min?: string;
+  max?: string;
+  actions?: React.ReactNode;
+  info?: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-xl border bg-muted/30 p-3 sm:p-4">
+      {title && <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{title}</p>}
+      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto]">
+        <div className="grid grid-cols-1 items-end gap-2 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
+          <ReportDatePicker label="Tanggal mulai" value={from} onChange={onFrom} min={min} max={to || max} />
+          <span className="hidden pb-2 text-center text-xs text-muted-foreground sm:block">→</span>
+          <ReportDatePicker label="Tanggal akhir" value={to} onChange={onTo} min={from || min} max={max} />
+        </div>
+        {actions && <div className="flex flex-wrap items-center gap-2 lg:justify-end lg:self-end">{actions}</div>}
+      </div>
+      {info && <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-border/50 pt-2.5">{info}</div>}
+    </div>
+  );
+}
+
+/** Ringkas metrik profiling pada rentang tanggal terpilih. */
+function profilingRangeStats(analyst: AnalystRow[], from: string, to: string) {
+  const rows = analyst.filter((r) => {
+    const k = profilingDateKey(r);
+    return Boolean(k) && (!from || k >= from) && (!to || k <= to);
+  });
+  return {
+    rows,
+    count: rows.length,
+    clusters: new Set(rows.map((r) => r.cluster).filter(Boolean)).size,
+    ae: new Set(rows.map((r) => r.aeName).filter(Boolean)).size,
+  };
+}
+
+function daysBetween(from: string, to: string): number {
+  const a = new Date(`${from}T00:00:00`).getTime();
+  const b = new Date(`${to}T00:00:00`).getTime();
+  if (isNaN(a) || isNaN(b)) return 0;
+  return Math.max(1, Math.round((b - a) / 86400000) + 1);
+}
+
 
 function exportProfilingExcel(rows: AnalystRow[], label: string) {
   const data = rows.map((r) => ({
@@ -541,15 +601,20 @@ function WeeklyDailyAnalysis({ analyst, from, to, onFrom, onTo }: { analyst: Ana
               </div>
             </div>
 
-            <div className="rounded-xl border bg-muted/30 p-3">
-              <div className="grid gap-3 sm:grid-cols-[auto_auto_1fr] sm:items-end">
-                <ReportDatePicker label="Tanggal mulai" value={effectiveFrom} onChange={onFrom} min={bounds.min} max={effectiveTo || bounds.max} />
-                <ReportDatePicker label="Tanggal akhir" value={effectiveTo} onChange={onTo} min={effectiveFrom || bounds.min} max={bounds.max} />
-                <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+            <DateRangeFields
+              title="Filter tanggal profiling"
+              from={effectiveFrom}
+              to={effectiveTo}
+              onFrom={onFrom}
+              onTo={onTo}
+              min={bounds.min}
+              max={bounds.max}
+              actions={
+                <>
                   <Button
                     size="sm"
                     variant="outline"
-                    className="h-8 text-xs"
+                    className="h-9 text-xs"
                     disabled={!bounds.max}
                     onClick={() => {
                       const end = new Date(`${bounds.max}T00:00:00`);
@@ -558,11 +623,11 @@ function WeeklyDailyAnalysis({ analyst, from, to, onFrom, onTo }: { analyst: Ana
                       onFrom(startKey < bounds.min ? bounds.min : startKey);
                       onTo(bounds.max);
                     }}
-                  >7 hari terakhir</Button>
+                  >7 hari</Button>
                   <Button
                     size="sm"
                     variant="outline"
-                    className="h-8 text-xs"
+                    className="h-9 text-xs"
                     disabled={!bounds.max}
                     onClick={() => {
                       const end = new Date(`${bounds.max}T00:00:00`);
@@ -571,20 +636,23 @@ function WeeklyDailyAnalysis({ analyst, from, to, onFrom, onTo }: { analyst: Ana
                       onFrom(startKey < bounds.min ? bounds.min : startKey);
                       onTo(bounds.max);
                     }}
-                  >30 hari terakhir</Button>
-                  <Button size="sm" variant="ghost" className="h-8 text-xs" disabled={!from && !to} onClick={() => { onFrom(""); onTo(""); }}>Semua tanggal</Button>
-                </div>
-              </div>
-              <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-border/50 pt-2.5">
-                <Badge variant="secondary" className="text-[10px] font-medium">Rentang dipilih: {rangeLabel}</Badge>
-                <Badge variant="outline" className="text-[10px] font-medium">
-                  Data tersedia: {bounds.min ? `${formatDateID(bounds.min)} – ${formatDateID(bounds.max)}` : "belum ada"}
-                </Badge>
-                {invalidDateCount > 0 && (
-                  <Badge variant="outline" className="text-[10px] font-medium text-warning">{fmtN(invalidDateCount)} baris tanpa tanggal valid</Badge>
-                )}
-              </div>
-            </div>
+                  >30 hari</Button>
+                  <Button size="sm" variant="ghost" className="h-9 text-xs" disabled={!from && !to} onClick={() => { onFrom(""); onTo(""); }}>Semua tanggal</Button>
+                </>
+              }
+              info={
+                <>
+                  <Badge variant="secondary" className="text-[10px] font-medium">Rentang dipilih: {rangeLabel}</Badge>
+                  <Badge variant="outline" className="text-[10px] font-medium">
+                    Data tersedia: {bounds.min ? `${formatDateID(bounds.min)} – ${formatDateID(bounds.max)}` : "belum ada"}
+                  </Badge>
+                  {invalidDateCount > 0 && (
+                    <Badge variant="outline" className="text-[10px] font-medium text-warning">{fmtN(invalidDateCount)} baris tanpa tanggal valid</Badge>
+                  )}
+                </>
+              }
+            />
+
           </div>
         </CardHeader>
       </Card>
@@ -929,6 +997,7 @@ function computeStats(
 
 function ReportsPage() {
   const clusters = useDataStore((s) => s.clusters);
+  const actionPlans = useDataStore((s) => s.actionPlans);
   const actions = useDataStore((s) => s.actions);
   const competitorData = useDataStore((s) => s.competitorData);
   const tickets = useDataStore((s) => s.tickets);
@@ -997,7 +1066,19 @@ function ReportsPage() {
   const compBase = useMemo(() => clusters.length ? computeStats(clusters, cFrom, cTo, ticketMap, clusterTicketMap) : null, [clusters, cFrom, cTo, ticketMap, clusterTicketMap]);
 
 
+  // Data kompetitor tidak punya kolom tanggal, jadi rentang tanggal dipetakan
+  // lewat cluster yang diprofiling pada rentang tersebut.
+  const compScope = useMemo(() => {
+    const inRange = profilingRangeStats(analyst, cDFromEff, cDToEff).rows;
+    const keys = new Set(inRange.map((r) => (r.cluster || "").trim().toUpperCase()).filter(Boolean));
+    if (!keys.size) return { rows: competitorData, filtered: false, clusters: 0 };
+    const rows = competitorData.filter((r) => keys.has((r.cluster || "").trim().toUpperCase()));
+    if (!rows.length) return { rows: competitorData, filtered: false, clusters: keys.size };
+    return { rows, filtered: true, clusters: keys.size };
+  }, [analyst, competitorData, cDFromEff, cDToEff]);
+
   const compCharts = useMemo(() => {
+    const competitorData = compScope.rows;
     if (!competitorData.length) return null;
     const compCount = new Map<string, number>();
     const promoCount = new Map<PromoCategory, number>();
@@ -1036,7 +1117,7 @@ function ReportsPage() {
       avgPriceAll: Math.round(competitorData.filter((r) => r.price > 0).reduce((a, b) => a + b.price, 0) / (competitorData.filter((r) => r.price > 0).length || 1)),
       topCompetitors, promoBreakdown, priceRange, threatBuckets, topThreats, threats,
     };
-  }, [competitorData]);
+  }, [compScope]);
 
   // Cross-analysis: ancaman kompetitor x performa HC & ticket pada range terpilih
   const compRisk = useMemo(() => {
@@ -1092,6 +1173,23 @@ function ReportsPage() {
     const label = kind === "weekly"
       ? `${formatDateID(weekSel.from)} – ${formatDateID(weekSel.to)}`
       : MONTHS[from].label + " → " + MONTHS[to].label + " 2026";
+    // Rentang tanggal aktual dari filter — dipakai agar kartu KPI mengikuti tanggal terpilih.
+    const rFrom = kind === "weekly" ? weekSel.from : monthStartKey(from);
+    const rTo = kind === "weekly" ? weekSel.to : monthEndKey(to);
+    const prof = profilingRangeStats(analyst, rFrom, rTo);
+    const plansInRange = actionPlans.filter((p) => {
+      const st = p.startDate || rFrom;
+      const en = p.endDate || p.startDate || rTo;
+      return st <= rTo && en >= rFrom;
+    });
+    const planDone = plansInRange.filter((p) => p.status === "completed").length;
+    const planRun = plansInRange.filter((p) => p.status === "onprogress").length;
+    const rangeDays = daysBetween(rFrom, rTo);
+    const monthDays = kind === "weekly" ? new Date(2026, wkMonth + 1, 0).getDate() : 0;
+    // Data ticket hanya tersedia per bulan; untuk minggu terpilih diskalakan sesuai jumlah hari.
+    const ticketScaled = kind === "weekly" && monthDays
+      ? Math.round((s.totalTicket * rangeDays) / monthDays)
+      : s.totalTicket;
     const worst = s.worstRatio[0];
     const heavyPic = [...s.picPerf].sort((a, b) => b.ratio - a.ratio)[0];
     const insights = [
@@ -1136,13 +1234,29 @@ function ReportsPage() {
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
           <KpiCard label="Total HC Akhir" value={s.end} hint={label} />
           <KpiCard label="Growth HC" value={`${s.growth >= 0 ? "+" : ""}${s.growth.toFixed(1)}%`} tone={s.growth >= 0 ? "up" : "down"} hint={`${fmtN(s.start)} → ${fmtN(s.end)}`} />
-          <KpiCard label="Total Ticket" value={s.totalTicket} tone="warn" hint={s.hasRealTicket ? `data ticket ${label}` : `estimasi dari ${clusters.length} cluster`} />
+          <KpiCard
+            label="Total Ticket"
+            value={ticketScaled}
+            tone="warn"
+            hint={kind === "weekly" ? `porsi ${rangeDays} hari dari ${MONTHS[wkMonth].label}` : s.hasRealTicket ? `data ticket ${label}` : `estimasi dari ${clusters.length} cluster`}
+          />
           <KpiCard label="Tren Ticket" value={`${s.ticketGrowth >= 0 ? "+" : ""}${s.ticketGrowth.toFixed(1)}%`} tone={s.ticketGrowth <= 0 ? "up" : "down"} hint={`puncak ${s.peakTicket.bulan} (${fmtN(s.peakTicket.ticket)})`} />
           <KpiCard label="Rata-rata Ticket / Bulan" value={s.avgTicketPerMonth} hint={`${s.ticketTrend.length} bulan`} />
           <KpiCard label="Ticket per 100 HC" value={s.ticketPer100HC.toFixed(1)} tone={s.ticketPer100HC > 10 ? "down" : "up"} hint="bulan terakhir" />
-          <KpiCard label="Profiling Cluster" value={s.clustersWithTicket} tone="warn" hint={`dari ${clusters.length} cluster`} />
-          <KpiCard label="Action Plan Selesai" value={`${doneA}/${totalA}`} tone="up" hint={`${runningA} on progress`} />
+          <KpiCard
+            label="Profiling Cluster"
+            value={prof.clusters}
+            tone="warn"
+            hint={prof.count ? `${fmtN(prof.count)} profiling · ${prof.ae} AE` : `tidak ada profiling ${formatDateID(rFrom, true)}–${formatDateID(rTo, true)}`}
+          />
+          <KpiCard
+            label="Action Plan Selesai"
+            value={`${planDone}/${plansInRange.length}`}
+            tone="up"
+            hint={plansInRange.length ? `${planRun} on progress · sesuai tanggal` : "tidak ada plan pada rentang ini"}
+          />
         </div>
+
 
         <div ref={ref} className="grid gap-4 lg:grid-cols-2">
           <Card className="glass-card border-0">
@@ -1308,28 +1422,34 @@ function ReportsPage() {
               </Card>
             ) : (
               <>
-                <div className="rounded-xl border bg-muted/30 p-3">
-                  <div className="grid gap-3 sm:grid-cols-[auto_auto_1fr] sm:items-end">
-                    <ReportDatePicker label="Tanggal mulai" value={cDFromEff} onChange={setCDFrom} max={cDToEff} />
-                    <ReportDatePicker label="Tanggal akhir" value={cDToEff} onChange={setCDTo} min={cDFromEff} />
-                    <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-                      <Badge variant="secondary" className="text-[10px]">
+                <DateRangeFields
+                  title="Filter tanggal competitor intel"
+                  from={cDFromEff}
+                  to={cDToEff}
+                  onFrom={setCDFrom}
+                  onTo={setCDTo}
+                  actions={
+                    (cDFrom || cDTo) ? (
+                      <Button size="sm" variant="ghost" className="h-9 text-xs" onClick={() => { setCDFrom(""); setCDTo(""); }}>Reset tanggal</Button>
+                    ) : null
+                  }
+                  info={
+                    <>
+                      <Badge variant="secondary" className="text-[10px] font-medium">
                         Analisa pasar: {MONTHS[cFrom].label} → {MONTHS[cTo].label} 2026
                       </Badge>
-                      {(cDFrom || cDTo) && (
-                        <Button size="sm" variant="ghost" className="h-8 text-xs" onClick={() => { setCDFrom(""); setCDTo(""); }}>Reset</Button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-
-
-
+                      <Badge variant="outline" className="text-[10px] font-medium">
+                        {compScope.filtered
+                          ? `Kompetitor difilter ke ${compCharts.totalClusters} cluster hasil profiling`
+                          : "Semua cluster kompetitor (belum ada profiling pada rentang ini)"}
+                      </Badge>
+                    </>
+                  }
+                />
 
                 <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-                  <KpiCard label="Cluster Terpantau" value={compCharts.totalClusters} />
-                  <KpiCard label="Kompetitor Unik" value={compCharts.totalCompetitors} />
+                  <KpiCard label="Cluster Terpantau" value={compCharts.totalClusters} hint={`${formatDateID(cDFromEff, true)} – ${formatDateID(cDToEff, true)}`} />
+                  <KpiCard label="Kompetitor Unik" value={compCharts.totalCompetitors} hint={compScope.filtered ? "pada cluster terpilih" : "seluruh data"} />
                   <KpiCard label="Ancaman Tinggi" value={compCharts.highThreat} tone="down" hint="threat ≥ 71" />
                   <KpiCard label="Avg Harga Kompetitor" value={fmtRp(compCharts.avgPriceAll)} tone="warn" />
                   <KpiCard label="Cluster Kritis" value={compRisk?.critical.length ?? 0} tone="down" hint="ancaman tinggi + HC turun" />
