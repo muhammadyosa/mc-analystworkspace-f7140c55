@@ -290,7 +290,7 @@ export async function parseClusterFile(
   return { rows, meta };
 }
 
-const BULAN_KEYS = ["JANUARI", "FEBRUARI", "MARET", "APRIL", "MEI", "JUNI", "JULI", "AGUSTUS", "SEPTEMBER", "OKTOBER", "NOVEMBER", "DESEMBER"];
+
 
 // Aliases per bulan (normalized, tanpa spasi/tanda baca). Header seperti
 // "Ticket Jan", "TICKET AGST", "Juni 2026" tetap terdeteksi.
