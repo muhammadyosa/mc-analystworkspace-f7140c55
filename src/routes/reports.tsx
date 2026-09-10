@@ -316,10 +316,21 @@ function computeStats(
   const fallbackTotalTicket = clusters.reduce((a, c) => a + c.ticket, 0);
   const totalHCAll = clusters.reduce((a, c) => a + c.grandTotal, 0);
 
-  // Ticket per cluster mengikuti range bulan yang dipilih (bila data ticket ada)
+  // Ticket per cluster mengikuti range bulan yang dipilih (bila data ticket ada).
+  // Nama cluster antar file bisa beda tanda baca/spasi, jadi cocokkan juga
+  // versi ternormalisasi (hanya huruf & angka).
+  const normKey = (s: string) => (s || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+  const normTicketMap = new Map<string, Map<string, number>>();
+  clusterTicketMap.forEach((v, k) => {
+    const nk = normKey(k);
+    const cur = normTicketMap.get(nk);
+    if (!cur) normTicketMap.set(nk, new Map(v));
+    else v.forEach((tv, tk) => cur.set(tk, (cur.get(tk) ?? 0) + tv));
+  });
   const ticketOf = (cluster: string) => {
     if (!hasRealTicket) return 0;
-    const inner = clusterTicketMap.get((cluster || "").trim().toUpperCase());
+    const inner =
+      clusterTicketMap.get((cluster || "").trim().toUpperCase()) ?? normTicketMap.get(normKey(cluster));
     if (!inner) return 0;
     return range.reduce((a, m) => a + (inner.get(m.key) ?? 0), 0);
   };
