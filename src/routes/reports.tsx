@@ -1108,6 +1108,24 @@ function ReportsPage() {
               <>
                 <DateRange from={cFrom} to={cTo} onFrom={setCFrom} onTo={setCTo} avail={avail} />
 
+                <div className="flex flex-wrap items-end gap-2 rounded-lg border bg-muted/30 p-2">
+                  <ReportDatePicker label="Tanggal mulai" value={cDFromEff} onChange={setCDFrom} max={cDToEff} />
+                  <ReportDatePicker label="Tanggal akhir" value={cDToEff} onChange={setCDTo} min={cDFromEff} />
+                  {(cDFrom || cDTo) && (
+                    <Button size="sm" variant="ghost" className="h-9" onClick={() => { setCDFrom(""); setCDTo(""); }}>Reset</Button>
+                  )}
+                </div>
+
+                <ProfilingRangeSection
+                  analyst={analyst}
+                  from={cDFromEff}
+                  to={cDToEff}
+                  title="Ringkasan Profiling — Competitor Intel"
+                  periodLabel={`${formatDateID(cDFromEff)} – ${formatDateID(cDToEff)}`}
+                />
+
+
+
                 <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
                   <KpiCard label="Cluster Terpantau" value={compCharts.totalClusters} />
                   <KpiCard label="Kompetitor Unik" value={compCharts.totalCompetitors} />
