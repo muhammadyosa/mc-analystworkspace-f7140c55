@@ -12,6 +12,12 @@ export type ClusterRow = {
   april: number;
   mei: number;
   juni: number;
+  juli: number;
+  agustus: number;
+  september: number;
+  oktober: number;
+  november: number;
+  desember: number;
   grandTotal: number;
   mei1: number;
   juni1: number;
@@ -20,7 +26,19 @@ export type ClusterRow = {
   totalHC2026: number;
   serpoStatus: string;
   ikrStatus: string;
+  // Kolom tambahan dari template cluster terbaru (opsional pada file lama)
+  homepass: number;
+  hcTerpasang: number;
+  hcAktif: number;
+  available: number;
+  turHC: number;
+  turHCAktif: number;
+  churn: number;
+  totalNewHC: number;
+  newHCByMonth: Record<string, number>;
+  ticketByMonth: Record<string, number>;
 };
+
 
 export type TicketRow = {
   cluster: string;
