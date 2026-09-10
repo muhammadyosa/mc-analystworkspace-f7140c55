@@ -221,6 +221,125 @@ function ProfilingSummary({ analyst, dFrom, dTo }: { analyst: AnalystRow[]; dFro
   );
 }
 
+/** Ringkasan + analisa profiling untuk rentang tanggal apa pun (Weekly/Monthly/Competitor). */
+function ProfilingRangeSection({
+  analyst,
+  from,
+  to,
+  title,
+  periodLabel,
+}: {
+  analyst: AnalystRow[];
+  from: string;
+  to: string;
+  title: string;
+  periodLabel: string;
+}) {
+  const dated = useMemo(
+    () => analyst.map((row) => ({ row, date: profilingDateKey(row) })).filter((i) => i.date),
+    [analyst],
+  );
+  const sel = useMemo(
+    () => dated.filter((i) => (!from || i.date >= from) && (!to || i.date <= to)),
+    [dated, from, to],
+  );
+  const rows = sel.map((i) => i.row);
+  const days = new Set(sel.map((i) => i.date)).size;
+  const sf = rows.reduce((s, r) => s + (r.sfToday || 0), 0);
+  const cw = rows.reduce((s, r) => s + (r.closewonToday || 0), 0);
+  const conv = sf > 0 ? (cw / sf) * 100 : 0;
+  const ae = new Set(rows.map((r) => r.aeName).filter(Boolean)).size;
+  const clusterCount = new Set(rows.map((r) => r.cluster).filter(Boolean)).size;
+
+  const byCluster = new Map<string, number>();
+  rows.forEach((r) => { if (r.cluster) byCluster.set(r.cluster, (byCluster.get(r.cluster) ?? 0) + 1); });
+  const topCluster = Array.from(byCluster.entries()).sort((a, b) => b[1] - a[1])[0];
+  const byAE = new Map<string, number>();
+  rows.forEach((r) => { if (r.aeName) byAE.set(r.aeName, (byAE.get(r.aeName) ?? 0) + (r.closewonToday || 0)); });
+  const topAE = Array.from(byAE.entries()).sort((a, b) => b[1] - a[1])[0];
+
+  if (!analyst.length) return null;
+
+  return (
+    <section className="space-y-4">
+      <Card className="glass-card border-0">
+        <CardHeader className="pb-2">
+          <CardTitle className="font-display text-sm">{title}</CardTitle>
+          <p className="text-xs text-muted-foreground">Periode {periodLabel} · {formatDateID(from)} – {formatDateID(to)}</p>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+            <KpiCard label="Total Profiling" value={rows.length} hint={`${days} hari aktif`} />
+            <KpiCard label="AE Aktif" value={ae} hint="AE unik" />
+            <KpiCard label="Cluster Tercakup" value={clusterCount} hint="cluster unik" />
+            <KpiCard label="Total SF" value={sf} tone="warn" />
+            <KpiCard label="Close Won" value={cw} tone="up" />
+            <KpiCard label="Konversi" value={`${conv.toFixed(1)}%`} tone={conv > 0 ? "up" : "warn"} hint="Close Won / SF" />
+          </div>
+        </CardContent>
+      </Card>
+
+      <ProfilingSummary analyst={analyst} dFrom={from} dTo={to} />
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <InsightBox items={[
+          `Periode ${periodLabel}: ${fmtN(rows.length)} profiling dalam ${days} hari aktif oleh ${ae} AE di ${clusterCount} cluster.`,
+          topCluster ? `Cluster paling banyak diprofiling: ${topCluster[0]} (${fmtN(topCluster[1])} record).` : "Belum ada cluster yang terprofil pada periode ini.",
+          topAE ? `AE dengan Close Won tertinggi: ${topAE[0]} (${fmtN(topAE[1])} Close Won).` : "Belum ada Close Won pada periode ini.",
+          `Konversi periode ini ${conv.toFixed(1)}% (${fmtN(cw)} Close Won dari ${fmtN(sf)} SF).`,
+        ]} />
+        <RecommendationBox items={[
+          rows.length === 0
+            ? "Tidak ada profiling pada periode ini — jadwalkan aktivitas AE agar periode berikutnya terisi."
+            : `Pertahankan ritme profiling ${(rows.length / Math.max(days, 1)).toFixed(1)} record/hari dan perluas ke cluster yang belum tersentuh.`,
+          conv < 20
+            ? "Perkuat follow-up SF agar konversi Close Won naik di atas 20%."
+            : "Konversi sehat — replikasi pendekatan AE terbaik ke AE lain.",
+          topCluster ? `Siapkan action plan lanjutan untuk ${topCluster[0]} berdasarkan hasil profiling periode ini.` : "Lengkapi data cluster pada file profiling.",
+        ]} />
+      </div>
+    </section>
+  );
+}
+
+/** Hitung rentang tanggal minggu ke-n pada sebuah bulan (2026). */
+const monthStartKey = (monthIndex: number, year = 2026) => `${year}-${String(monthIndex + 1).padStart(2, "0")}-01`;
+const monthEndKey = (monthIndex: number, year = 2026) =>
+  `${year}-${String(monthIndex + 1).padStart(2, "0")}-${String(new Date(year, monthIndex + 1, 0).getDate()).padStart(2, "0")}`;
+
+function weekRange(monthIndex: number, week: number, year = 2026): { from: string; to: string } {
+  const lastDay = new Date(year, monthIndex + 1, 0).getDate();
+  const start = Math.min((week - 1) * 7 + 1, lastDay);
+  const end = week >= 5 ? lastDay : Math.min(week * 7, lastDay);
+  const k = (d: number) => `${year}-${String(monthIndex + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+  return { from: k(start), to: k(end) };
+}
+
+function WeekPicker({
+  month, week, onMonth, onWeek, avail,
+}: { month: number; week: number; onMonth: (i: number) => void; onWeek: (w: number) => void; avail: number[] }) {
+  const lastDay = new Date(2026, month + 1, 0).getDate();
+  const weeks = [1, 2, 3, 4, ...(lastDay > 28 ? [5] : [])];
+  const r = weekRange(month, week);
+  return (
+    <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-muted/30 p-2">
+      <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+      <span className="text-xs font-medium text-muted-foreground">Minggu:</span>
+      <Select value={String(month)} onValueChange={(v) => onMonth(Number(v))}>
+        <SelectTrigger className="h-8 w-[110px] text-xs"><SelectValue /></SelectTrigger>
+        <SelectContent>{avail.map((i) => <SelectItem key={i} value={String(i)}>{MONTHS[i].label} 2026</SelectItem>)}</SelectContent>
+      </Select>
+      <Select value={String(week)} onValueChange={(v) => onWeek(Number(v))}>
+        <SelectTrigger className="h-8 w-[120px] text-xs"><SelectValue /></SelectTrigger>
+        <SelectContent>{weeks.map((w) => <SelectItem key={w} value={String(w)}>Minggu {w}</SelectItem>)}</SelectContent>
+      </Select>
+      <Badge variant="secondary" className="text-[10px]">{formatDateID(r.from)} – {formatDateID(r.to)}</Badge>
+    </div>
+  );
+}
+
+
+
 function WeeklyDailyAnalysis({ analyst, from, to, onFrom, onTo }: { analyst: AnalystRow[]; from: string; to: string; onFrom: (value: string) => void; onTo: (value: string) => void }) {
   const datedRows = useMemo(() => analyst.map((row) => ({ row, date: profilingDateKey(row) })).filter((item) => item.date), [analyst]);
   const invalidDateCount = analyst.length - datedRows.length;
@@ -687,9 +806,20 @@ function ReportsPage() {
     setWFrom(prevM); setWTo(lastM);
     setMFrom(first); setMTo(lastM);
     setCFrom(first); setCTo(lastM);
+    setWkMonth(lastM); setWkWeek(1);
+
   }, [first, lastM, monthRangeKey, prevM, syncKey]);
 
   const [wDFrom, setWDFrom] = useState(""); const [wDTo, setWDTo] = useState("");
+  // Weekly: pilih bulan + minggu ke-1..5
+  const [wkMonth, setWkMonth] = useState(lastM);
+  const [wkWeek, setWkWeek] = useState(1);
+  const weekSel = weekRange(wkMonth, wkWeek);
+  // Competitor Intel: rentang tanggal profiling
+  const [cDFrom, setCDFrom] = useState(""); const [cDTo, setCDTo] = useState("");
+  const cDFromEff = cDFrom || monthStartKey(cFrom);
+  const cDToEff = cDTo || monthEndKey(cTo);
+
   const analyst = useDataStore((s) => s.analyst);
 
   const clusterTicketMap = useMemo(() => ticketByClusterMap(effTickets), [effTickets]);
@@ -823,9 +953,15 @@ function ReportsPage() {
     return (
       <div className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <DateRange from={from} to={to} onFrom={setFrom} onTo={setTo} avail={avail} />
+          <div className="flex flex-wrap items-center gap-2">
+            <DateRange from={from} to={to} onFrom={setFrom} onTo={setTo} avail={avail} />
+            {kind === "weekly" && (
+              <WeekPicker month={wkMonth} week={wkWeek} onMonth={setWkMonth} onWeek={setWkWeek} avail={avail} />
+            )}
+          </div>
           <Button size="sm" onClick={() => handlePrint(ref)}><Printer className="mr-1 h-4 w-4" /> Export PDF</Button>
         </div>
+
 
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
           <KpiCard label="Total HC Akhir" value={s.end} hint={label} />
@@ -941,6 +1077,15 @@ function ReportsPage() {
           <InsightBox items={insights} />
           <RecommendationBox items={recs} />
         </div>
+
+        <ProfilingRangeSection
+          analyst={analyst}
+          from={kind === "weekly" ? weekSel.from : monthStartKey(from)}
+          to={kind === "weekly" ? weekSel.to : monthEndKey(to)}
+          title={kind === "weekly" ? "Ringkasan Profiling — Minggu Terpilih" : "Ringkasan Profiling — Periode Bulanan"}
+          periodLabel={kind === "weekly" ? `${MONTHS[wkMonth].label} 2026 Minggu ${wkWeek}` : label}
+        />
+
       </div>
     );
   };
@@ -949,17 +1094,13 @@ function ReportsPage() {
     <>
       <AppHeader title="Reports" subtitle="Weekly · Day · Monthly · Competitor Intelligence" />
       <div className="space-y-4 p-4 sm:p-6">
-        <Tabs defaultValue="weekly">
+        <Tabs defaultValue="day">
           <TabsList>
-            <TabsTrigger value="weekly"><CalendarIcon className="mr-1 h-4 w-4" /> Weekly</TabsTrigger>
             <TabsTrigger value="day"><CalendarIcon className="mr-1 h-4 w-4" /> Day</TabsTrigger>
+            <TabsTrigger value="weekly"><CalendarIcon className="mr-1 h-4 w-4" /> Weekly</TabsTrigger>
             <TabsTrigger value="monthly"><FileText className="mr-1 h-4 w-4" /> Monthly</TabsTrigger>
             <TabsTrigger value="intel"><RadarIcon className="mr-1 h-4 w-4" /> Competitor Intel</TabsTrigger>
           </TabsList>
-
-          <TabsContent value="weekly" className="space-y-4">
-            {weekly && renderTab(weekly, "weekly", wFrom, wTo, setWFrom, setWTo, weeklyRef)}
-          </TabsContent>
 
           <TabsContent value="day" className="space-y-4">
             {analyst.length === 0 ? (
@@ -977,6 +1118,11 @@ function ReportsPage() {
             )}
           </TabsContent>
 
+          <TabsContent value="weekly" className="space-y-4">
+            {weekly && renderTab(weekly, "weekly", wFrom, wTo, setWFrom, setWTo, weeklyRef)}
+          </TabsContent>
+
+
           <TabsContent value="monthly" className="space-y-4">
             {monthly && renderTab(monthly, "monthly", mFrom, mTo, setMFrom, setMTo, monthlyRef)}
           </TabsContent>
@@ -992,6 +1138,24 @@ function ReportsPage() {
             ) : (
               <>
                 <DateRange from={cFrom} to={cTo} onFrom={setCFrom} onTo={setCTo} avail={avail} />
+
+                <div className="flex flex-wrap items-end gap-2 rounded-lg border bg-muted/30 p-2">
+                  <ReportDatePicker label="Tanggal mulai" value={cDFromEff} onChange={setCDFrom} max={cDToEff} />
+                  <ReportDatePicker label="Tanggal akhir" value={cDToEff} onChange={setCDTo} min={cDFromEff} />
+                  {(cDFrom || cDTo) && (
+                    <Button size="sm" variant="ghost" className="h-9" onClick={() => { setCDFrom(""); setCDTo(""); }}>Reset</Button>
+                  )}
+                </div>
+
+                <ProfilingRangeSection
+                  analyst={analyst}
+                  from={cDFromEff}
+                  to={cDToEff}
+                  title="Ringkasan Profiling — Competitor Intel"
+                  periodLabel={`${formatDateID(cDFromEff)} – ${formatDateID(cDToEff)}`}
+                />
+
+
 
                 <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
                   <KpiCard label="Cluster Terpantau" value={compCharts.totalClusters} />
