@@ -824,7 +824,7 @@ function ReportsPage() {
           <KpiCard label="Tren Ticket" value={`${s.ticketGrowth >= 0 ? "+" : ""}${s.ticketGrowth.toFixed(1)}%`} tone={s.ticketGrowth <= 0 ? "up" : "down"} hint={`puncak ${s.peakTicket.bulan} (${fmtN(s.peakTicket.ticket)})`} />
           <KpiCard label="Rata-rata Ticket / Bulan" value={s.avgTicketPerMonth} hint={`${s.ticketTrend.length} bulan`} />
           <KpiCard label="Ticket per 100 HC" value={s.ticketPer100HC.toFixed(1)} tone={s.ticketPer100HC > 10 ? "down" : "up"} hint="bulan terakhir" />
-          <KpiCard label="Cluster Bermasalah" value={s.clustersWithTicket} tone="warn" hint={`dari ${clusters.length} cluster`} />
+          <KpiCard label="Profiling Cluster" value={s.clustersWithTicket} tone="warn" hint={`dari ${clusters.length} cluster`} />
           <KpiCard label="Action Plan Selesai" value={`${doneA}/${totalA}`} tone="up" hint={`${runningA} on progress`} />
         </div>
 
