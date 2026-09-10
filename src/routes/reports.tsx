@@ -806,6 +806,8 @@ function ReportsPage() {
     setWFrom(prevM); setWTo(lastM);
     setMFrom(first); setMTo(lastM);
     setCFrom(first); setCTo(lastM);
+    setWkMonth(lastM); setWkWeek(1);
+
   }, [first, lastM, monthRangeKey, prevM, syncKey]);
 
   const [wDFrom, setWDFrom] = useState(""); const [wDTo, setWDTo] = useState("");
