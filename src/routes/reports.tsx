@@ -1117,7 +1117,7 @@ function ReportsPage() {
       avgPriceAll: Math.round(competitorData.filter((r) => r.price > 0).reduce((a, b) => a + b.price, 0) / (competitorData.filter((r) => r.price > 0).length || 1)),
       topCompetitors, promoBreakdown, priceRange, threatBuckets, topThreats, threats,
     };
-  }, [competitorData]);
+  }, [compScope]);
 
   // Cross-analysis: ancaman kompetitor x performa HC & ticket pada range terpilih
   const compRisk = useMemo(() => {
