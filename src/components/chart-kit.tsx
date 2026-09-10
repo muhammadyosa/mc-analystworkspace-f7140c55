@@ -313,7 +313,15 @@ export function ProgressStat({
 export type ArcItem = { name: string; value: number; color: string; icon?: string };
 
 /** Semi-circular concentric arcs with a value legend — compact, readable share view. */
-export function ArcDistribution({ items, className = "" }: { items: ArcItem[]; className?: string }) {
+export function ArcDistribution({
+  items,
+  className = "",
+  onSelect,
+}: {
+  items: ArcItem[];
+  className?: string;
+  onSelect?: (item: ArcItem) => void;
+}) {
   const total = items.reduce((a, b) => a + b.value, 0);
   const W = 260;
   const H = 150;
