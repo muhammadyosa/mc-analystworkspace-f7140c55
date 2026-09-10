@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { ArcDistribution } from "@/components/chart-kit";
 import { useDataStore } from "@/lib/store";
 import type { AnalystRow, ClusterRow, CompetitorRow, PromoCategory, TicketRow } from "@/lib/excel";
 
@@ -337,6 +338,141 @@ function WeekPicker({
     </div>
   );
 }
+
+/** Pembanding antar-minggu (pilih beberapa minggu sekaligus) pada bulan terpilih. */
+function WeekCompare({
+  analyst, month, weeks, onToggle,
+}: { analyst: AnalystRow[]; month: number; weeks: number[]; onToggle: (w: number) => void }) {
+  const lastDay = new Date(2026, month + 1, 0).getDate();
+  const allWeeks = [1, 2, 3, 4, ...(lastDay > 28 ? [5] : [])];
+  const dated = useMemo(() => analyst.map((row) => ({ row, date: profilingDateKey(row) })).filter((d) => d.date), [analyst]);
+
+  const rows = useMemo(() => {
+    return [...weeks].sort((a, b) => a - b).map((w) => {
+      const r = weekRange(month, w);
+      const inWeek = dated.filter((d) => d.date >= r.from && d.date <= r.to).map((d) => d.row);
+      const sf = inWeek.reduce((s, x) => s + (x.sfToday || 0), 0);
+      const closeWon = inWeek.reduce((s, x) => s + (x.closewonToday || 0), 0);
+      return {
+        week: w,
+        name: `Minggu ${w}`,
+        range: `${formatDateID(r.from, true)} – ${formatDateID(r.to, true)}`,
+        profiling: inWeek.length,
+        ae: new Set(inWeek.map((x) => x.aeName).filter(Boolean)).size,
+        cluster: new Set(inWeek.map((x) => x.cluster).filter(Boolean)).size,
+        sf,
+        closeWon,
+        conversion: sf > 0 ? (closeWon / sf) * 100 : 0,
+      };
+    });
+  }, [dated, month, weeks]);
+
+  const best = [...rows].sort((a, b) => b.closeWon - a.closeWon || b.profiling - a.profiling)[0];
+  const worst = [...rows].sort((a, b) => a.closeWon - b.closeWon || a.profiling - b.profiling)[0];
+  const deltaPct = (a: number, b: number) => (b > 0 ? ((a - b) / b) * 100 : a > 0 ? 100 : 0);
+  const first = rows[0];
+  const last = rows[rows.length - 1];
+
+  return (
+    <Card className="glass-card border-0">
+      <CardHeader className="pb-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <CardTitle className="font-display text-base">Pembanding Antar Minggu</CardTitle>
+            <p className="text-xs text-muted-foreground">Pilih minggu yang ingin dibandingkan pada {MONTHS[month].label} 2026.</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-1.5">
+            {allWeeks.map((w) => {
+              const active = weeks.includes(w);
+              return (
+                <Button
+                  key={w}
+                  size="sm"
+                  variant={active ? "default" : "outline"}
+                  className="h-8 text-xs"
+                  onClick={() => onToggle(w)}
+                >
+                  Minggu {w}
+                </Button>
+              );
+            })}
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {rows.length < 2 ? (
+          <p className="py-8 text-center text-sm text-muted-foreground">Pilih minimal 2 minggu untuk membandingkan data.</p>
+        ) : (
+          <>
+            <div className="h-64">
+              <ResponsiveContainer>
+                <BarChart data={rows} margin={{ top: 8, right: 8, left: 0, bottom: 4 }}>
+                  <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.4} vertical={false} />
+                  <XAxis dataKey="name" fontSize={11} tickLine={false} />
+                  <YAxis fontSize={11} tickLine={false} axisLine={false} />
+                  <Tooltip />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                  <Bar dataKey="profiling" name="Profiling" fill="#6366f1" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="sf" name="SF" fill="#f59e0b" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="closeWon" name="Close Won" fill="#22c55e" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[620px] text-xs">
+                <thead className="bg-muted/50">
+                  <tr>
+                    <th className="p-2 text-left">Minggu</th>
+                    <th className="p-2 text-left">Tanggal</th>
+                    <th className="p-2 text-right">Profiling</th>
+                    <th className="p-2 text-right">AE</th>
+                    <th className="p-2 text-right">Cluster</th>
+                    <th className="p-2 text-right">SF</th>
+                    <th className="p-2 text-right">Close Won</th>
+                    <th className="p-2 text-right">Konversi</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((r) => (
+                    <tr key={r.week} className="border-t">
+                      <td className="p-2 font-medium">{r.name}</td>
+                      <td className="p-2 text-muted-foreground">{r.range}</td>
+                      <td className="p-2 text-right tabular-nums">{fmtN(r.profiling)}</td>
+                      <td className="p-2 text-right tabular-nums">{fmtN(r.ae)}</td>
+                      <td className="p-2 text-right tabular-nums">{fmtN(r.cluster)}</td>
+                      <td className="p-2 text-right tabular-nums">{fmtN(r.sf)}</td>
+                      <td className="p-2 text-right tabular-nums">{fmtN(r.closeWon)}</td>
+                      <td className="p-2 text-right tabular-nums">{r.conversion.toFixed(1)}%</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="grid gap-2 sm:grid-cols-2">
+              <div className="rounded-lg border bg-muted/30 p-3 text-xs">
+                <b>Minggu terbaik:</b> {best?.name} — {fmtN(best?.closeWon ?? 0)} close won dari {fmtN(best?.profiling ?? 0)} profiling.
+              </div>
+              <div className="rounded-lg border bg-muted/30 p-3 text-xs">
+                <b>Perlu perhatian:</b> {worst?.name} — {fmtN(worst?.closeWon ?? 0)} close won ({fmtN(worst?.profiling ?? 0)} profiling).
+              </div>
+              <div className="rounded-lg border bg-muted/30 p-3 text-xs sm:col-span-2">
+                <b>Perubahan {first?.name} → {last?.name}:</b> profiling{" "}
+                {deltaPct(last?.profiling ?? 0, first?.profiling ?? 0) >= 0 ? "+" : ""}
+                {deltaPct(last?.profiling ?? 0, first?.profiling ?? 0).toFixed(1)}% · close won{" "}
+                {deltaPct(last?.closeWon ?? 0, first?.closeWon ?? 0) >= 0 ? "+" : ""}
+                {deltaPct(last?.closeWon ?? 0, first?.closeWon ?? 0).toFixed(1)}%.
+              </div>
+            </div>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+
 
 
 
@@ -828,6 +964,9 @@ function ReportsPage() {
   // Weekly: satu kontrol saja — bulan + minggu ke-1..5
   const [wkMonth, setWkMonth] = useState(lastM);
   const [wkWeek, setWkWeek] = useState(1);
+  const [cmpWeeks, setCmpWeeks] = useState<number[]>([1, 2]);
+  const toggleCmpWeek = (w: number) =>
+    setCmpWeeks((prev) => (prev.includes(w) ? prev.filter((x) => x !== w) : [...prev, w].sort((a, b) => a - b)));
   const weekSel = weekRange(wkMonth, wkWeek);
   // Competitor Intel: satu kontrol saja — rentang tanggal
   const [cDFrom, setCDFrom] = useState(""); const [cDTo, setCDTo] = useState("");
@@ -1151,6 +1290,7 @@ function ReportsPage() {
 
           <TabsContent value="weekly" className="space-y-4">
             {weekly && renderTab(weekly, "weekly", wkMonth, wkMonth, setWkMonth, setWkMonth, weeklyRef)}
+            <WeekCompare analyst={analyst} month={wkMonth} weeks={cmpWeeks} onToggle={toggleCmpWeek} />
           </TabsContent>
 
 
@@ -1250,15 +1390,13 @@ function ReportsPage() {
                   <Card className="glass-card border-0">
                     <CardHeader><CardTitle className="font-display text-sm">Threat Level Distribution</CardTitle></CardHeader>
                     <CardContent className="h-72">
-                      <ResponsiveContainer>
-                        <PieChart>
-                          <Pie data={compCharts.threatBuckets} dataKey="value" nameKey="name" outerRadius={90} label={(e: any) => `${e.name}: ${e.value}`} labelLine={false}>
-                            {compCharts.threatBuckets.map((_, i) => <Cell key={i} fill={["#22c55e", "#f59e0b", "#ef4444"][i]} />)}
-                          </Pie>
-                          <Tooltip />
-                          <Legend wrapperStyle={{ fontSize: 11 }} />
-                        </PieChart>
-                      </ResponsiveContainer>
+                      <ArcDistribution
+                        items={[
+                          { name: "Rendah", value: compCharts.threatBuckets[0].value, color: "#22c55e", icon: "✅" },
+                          { name: "Sedang", value: compCharts.threatBuckets[1].value, color: "#f59e0b", icon: "⏳" },
+                          { name: "Tinggi", value: compCharts.threatBuckets[2].value, color: "#ef4444", icon: "🔥" },
+                        ]}
+                      />
                     </CardContent>
                   </Card>
                 </div>
