@@ -1256,8 +1256,12 @@ function ReportsPage() {
             hint={kind === "weekly" ? `porsi ${rangeDays} hari dari ${MONTHS[wkMonth].label}` : s.hasRealTicket ? `data ticket ${label}` : `estimasi dari ${clusters.length} cluster`}
           />
           <KpiCard label="Tren Ticket" value={`${s.ticketGrowth >= 0 ? "+" : ""}${s.ticketGrowth.toFixed(1)}%`} tone={s.ticketGrowth <= 0 ? "up" : "down"} hint={`puncak ${s.peakTicket.bulan} (${fmtN(s.peakTicket.ticket)})`} />
-          <KpiCard label="Rata-rata Ticket / Bulan" value={s.avgTicketPerMonth} hint={`${s.ticketTrend.length} bulan`} />
-          <KpiCard label="Ticket per 100 HC" value={s.ticketPer100HC.toFixed(1)} tone={s.ticketPer100HC > 10 ? "down" : "up"} hint="bulan terakhir" />
+          <KpiCard
+            label={kind === "weekly" ? "Rata-rata Ticket / Hari" : "Rata-rata Ticket / Bulan"}
+            value={kind === "weekly" ? Math.round(ticketScaled / Math.max(1, rangeDays)) : s.avgTicketPerMonth}
+            hint={kind === "weekly" ? `${rangeDays} hari · ${weekLabel}` : `${s.ticketTrend.length} bulan`}
+          />
+          <KpiCard label="Ticket per 100 HC" value={s.ticketPer100HC.toFixed(1)} tone={s.ticketPer100HC > 10 ? "down" : "up"} hint={kind === "weekly" ? weekLabel : "bulan terakhir"} />
           <KpiCard
             label="Profiling Cluster"
             value={prof.clusters}
