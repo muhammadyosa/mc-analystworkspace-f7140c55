@@ -322,18 +322,6 @@ function monthOfHeader(h: string): string | null {
   return null;
 }
 
-// Petakan header kolom -> nama bulan kanonik (abaikan kolom total/grand total)
-function detectMonthColumns(keys: string[]): { key: string; bulan: string }[] {
-  const out: { key: string; bulan: string }[] = [];
-  const used = new Set<string>();
-  for (const key of keys) {
-    const bulan = monthOfHeader(key);
-    if (!bulan || used.has(bulan)) continue;
-    used.add(bulan);
-    out.push({ key, bulan });
-  }
-  return out;
-}
 
 type TicketLayout = {
   headerIdx: number;
