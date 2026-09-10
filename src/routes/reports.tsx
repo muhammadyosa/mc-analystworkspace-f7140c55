@@ -950,18 +950,33 @@ function ReportsPage() {
         <Tabs defaultValue="weekly">
           <TabsList>
             <TabsTrigger value="weekly"><CalendarIcon className="mr-1 h-4 w-4" /> Weekly</TabsTrigger>
+            <TabsTrigger value="day"><CalendarIcon className="mr-1 h-4 w-4" /> Day</TabsTrigger>
             <TabsTrigger value="monthly"><FileText className="mr-1 h-4 w-4" /> Monthly</TabsTrigger>
             <TabsTrigger value="intel"><RadarIcon className="mr-1 h-4 w-4" /> Competitor Intel</TabsTrigger>
           </TabsList>
 
           <TabsContent value="weekly" className="space-y-4">
             {weekly && renderTab(weekly, "weekly", wFrom, wTo, setWFrom, setWTo, weeklyRef)}
-            {analyst.length > 0 && <WeeklyDailyAnalysis analyst={analyst} from={wDFrom} to={wDTo} onFrom={setWDFrom} onTo={setWDTo} />}
+          </TabsContent>
+
+          <TabsContent value="day" className="space-y-4">
+            {analyst.length === 0 ? (
+              <Card className="glass-card border-0">
+                <CardContent className="flex flex-col items-center gap-2 py-16 text-center text-sm text-muted-foreground">
+                  <CalendarIcon className="h-8 w-8 text-primary" />
+                  Belum ada data profiling. Upload ANALYST MARKET.xlsx dari Settings → Data Management.
+                </CardContent>
+              </Card>
+            ) : (
+              <>
+                <WeeklyDailyAnalysis analyst={analyst} from={wDFrom} to={wDTo} onFrom={setWDFrom} onTo={setWDTo} />
+                <ProfilingSummary analyst={analyst} dFrom={wDFrom} dTo={wDTo} />
+              </>
+            )}
           </TabsContent>
 
           <TabsContent value="monthly" className="space-y-4">
             {monthly && renderTab(monthly, "monthly", mFrom, mTo, setMFrom, setMTo, monthlyRef)}
-            {analyst.length > 0 && <ProfilingSummary analyst={analyst} dFrom={mDFrom} dTo={mDTo} onFrom={setMDFrom} onTo={setMDTo} />}
           </TabsContent>
 
           <TabsContent value="intel" className="space-y-4">
@@ -1112,8 +1127,6 @@ function ReportsPage() {
                     "Update pricing playbook bulanan berbasis data harga kompetitor terbaru.",
                   ]} />
                 </div>
-
-                {analyst.length > 0 && <ProfilingSummary analyst={analyst} dFrom={cDFrom} dTo={cDTo} onFrom={setCDFrom} onTo={setCDTo} />}
               </>
             )}
           </TabsContent>
