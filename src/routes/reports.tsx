@@ -477,18 +477,32 @@ function ReportsPage() {
     ref: React.RefObject<HTMLDivElement | null>,
   ) => {
     const label = MONTHS[from].label + " → " + MONTHS[to].label + " 2026";
+    const worst = s.worstRatio[0];
+    const heavyPic = [...s.picPerf].sort((a, b) => b.ratio - a.ratio)[0];
     const insights = [
       `HC bergerak ${s.growth >= 0 ? "naik" : "turun"} ${Math.abs(s.growth).toFixed(1)}% pada periode ${label} (${fmtN(s.start)} → ${fmtN(s.end)}).`,
-      `Cluster paling tumbuh: ${s.topGrowth[0]?.cluster ?? "-"} (${s.topGrowth[0]?.delta >= 0 ? "+" : ""}${s.topGrowth[0]?.delta ?? 0}). Cluster paling turun: ${s.topDecline[0]?.cluster ?? "-"} (${s.topDecline[0]?.delta ?? 0}).`,
-      `Ticket menumpuk pada ${s.topTicket[0]?.cluster ?? "-"} (${s.topTicket[0]?.ticket ?? 0} tiket) — indikasi kualitas layanan perlu diperbaiki.`,
-      `PIC dengan portofolio HC terbesar: ${s.picPerf[0]?.pic ?? "-"} (${fmtN(s.picPerf[0]?.hc ?? 0)} HC, ${s.picPerf[0]?.ticket ?? 0} ticket).`,
+      `Cluster paling tumbuh: ${s.topGrowth[0]?.cluster ?? "-"} (${(s.topGrowth[0]?.delta ?? 0) >= 0 ? "+" : ""}${s.topGrowth[0]?.delta ?? 0}). Cluster paling turun: ${s.topDecline[0]?.cluster ?? "-"} (${s.topDecline[0]?.delta ?? 0}).`,
+      `Total ${fmtN(s.totalTicket)} ticket pada periode ini (rata-rata ${fmtN(s.avgTicketPerMonth)}/bulan), puncak di ${s.peakTicket.bulan} dengan ${fmtN(s.peakTicket.ticket)} ticket.`,
+      `Tren ticket ${s.ticketGrowth >= 0 ? "naik" : "turun"} ${Math.abs(s.ticketGrowth).toFixed(1)}% dari bulan awal ke bulan akhir — rasio ${s.ticketPer100HC.toFixed(1)} ticket per 100 HC.`,
+      `Ticket menumpuk pada ${s.topTicket[0]?.cluster ?? "-"} (${fmtN(s.topTicket[0]?.ticket ?? 0)} tiket) dari ${fmtN(s.clustersWithTicket)} cluster yang bermasalah.`,
+      worst
+        ? `Rasio gangguan terburuk: ${worst.cluster} — ${worst.ticketPer100HC.toFixed(1)} ticket per 100 HC (HC ${fmtN(worst.hcEnd)}).`
+        : "Rasio ticket per HC masih dalam batas wajar di seluruh cluster.",
+      `PIC dengan portofolio HC terbesar: ${s.picPerf[0]?.pic ?? "-"} (${fmtN(s.picPerf[0]?.hc ?? 0)} HC, ${fmtN(s.picPerf[0]?.ticket ?? 0)} ticket).`,
       `Action plan: ${doneA} selesai · ${runningA} berjalan · ${belumA} belum — rasio delivery ${totalA ? Math.round((doneA / totalA) * 100) : 0}%.`,
     ];
     const recs = [
       s.growth < 0 ? "Aktifkan retention program di top decline cluster minggu ini." : "Jaga momentum dengan replikasi strategi top growth cluster ke cluster tetangga.",
       `Prioritaskan quick-win perbaikan layanan di ${s.topTicket[0]?.cluster ?? "cluster ticket tinggi"} untuk menurunkan ticket.`,
-      "Site visit dan koordinasi teknik untuk cluster dengan delta negatif dan ticket > rata-rata.",
-      `Redistribusi beban PIC: evaluasi ${s.picPerf[0]?.pic ?? "PIC top"} agar rasio HC/ticket sehat.`,
+      worst
+        ? `Audit jaringan di ${worst.cluster} — rasio ticket/HC ${worst.ticketPer100HC.toFixed(1)} per 100 HC jauh di atas normal.`
+        : "Pertahankan preventive maintenance rutin untuk menjaga rasio ticket tetap rendah.",
+      s.ticketGrowth > 10
+        ? `Ticket naik ${s.ticketGrowth.toFixed(1)}% — siapkan penambahan tim SERPO/IKR pada bulan puncak (${s.peakTicket.bulan}).`
+        : "Tren ticket terkendali — fokuskan sumber daya ke akuisisi HC baru.",
+      heavyPic
+        ? `Redistribusi beban PIC: ${heavyPic.pic} menangani ${heavyPic.ratio.toFixed(1)} ticket per 100 HC, tertinggi di antara PIC.`
+        : `Redistribusi beban PIC: evaluasi ${s.picPerf[0]?.pic ?? "PIC top"} agar rasio HC/ticket sehat.`,
       "Deploy program loyalty & bundling di cluster potensial (HC belum mencapai target 2026).",
     ];
 
