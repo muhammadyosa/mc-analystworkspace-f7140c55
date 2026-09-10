@@ -98,6 +98,17 @@ export default function DashboardCharts({
   const provTotal = s.provDist.reduce((a, b) => a + b.value, 0) || 1;
   const provDist = useMemo(() => [...s.provDist].sort((a, b) => b.value - a.value), [s.provDist]);
   const topProv = provDist[0];
+  const provItems = useMemo(
+    () => provDist.map((p, i) => ({ name: p.name, value: p.value, color: CATEGORICAL[i % CATEGORICAL.length] })),
+    [provDist],
+  );
+  const provAnalysis = useMemo(() => {
+    if (!provDist.length) return undefined;
+    const top2 = provDist.slice(0, 2).reduce((a, b) => a + b.value, 0);
+    const smallest = provDist[provDist.length - 1];
+    const conc = (top2 / provTotal) * 100;
+    return `${provDist.length} provinsi aktif. ${topProv.name} dominan ${fmtPct((topProv.value / provTotal) * 100)} dari ${fmtFull(provTotal)} HC; 2 provinsi teratas menguasai ${fmtPct(conc)} (${conc >= 70 ? "konsentrasi tinggi — perlu diversifikasi pasar" : "distribusi relatif merata"}). Kontribusi terkecil: ${smallest.name} ${fmtPct((smallest.value / provTotal) * 100)} — peluang ekspansi.`;
+  }, [provDist, provTotal, topProv]);
 
   /* ---- tooltips ---- */
   const TrendTip = makeTooltip<(typeof trend)[number]>((d) => ({
