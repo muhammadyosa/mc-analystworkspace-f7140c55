@@ -515,8 +515,12 @@ function ReportsPage() {
 
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
           <KpiCard label="Total HC Akhir" value={s.end} hint={label} />
-          <KpiCard label="Growth" value={`${s.growth >= 0 ? "+" : ""}${s.growth.toFixed(1)}%`} tone={s.growth >= 0 ? "up" : "down"} hint={`${fmtN(s.start)} → ${fmtN(s.end)}`} />
-          <KpiCard label="Total Ticket" value={s.totalTicket} tone="warn" hint={`${clusters.length} cluster`} />
+          <KpiCard label="Growth HC" value={`${s.growth >= 0 ? "+" : ""}${s.growth.toFixed(1)}%`} tone={s.growth >= 0 ? "up" : "down"} hint={`${fmtN(s.start)} → ${fmtN(s.end)}`} />
+          <KpiCard label="Total Ticket" value={s.totalTicket} tone="warn" hint={s.hasRealTicket ? `data ticket ${label}` : `estimasi dari ${clusters.length} cluster`} />
+          <KpiCard label="Tren Ticket" value={`${s.ticketGrowth >= 0 ? "+" : ""}${s.ticketGrowth.toFixed(1)}%`} tone={s.ticketGrowth <= 0 ? "up" : "down"} hint={`puncak ${s.peakTicket.bulan} (${fmtN(s.peakTicket.ticket)})`} />
+          <KpiCard label="Rata-rata Ticket / Bulan" value={s.avgTicketPerMonth} hint={`${s.ticketTrend.length} bulan`} />
+          <KpiCard label="Ticket per 100 HC" value={s.ticketPer100HC.toFixed(1)} tone={s.ticketPer100HC > 10 ? "down" : "up"} hint="bulan terakhir" />
+          <KpiCard label="Cluster Bermasalah" value={s.clustersWithTicket} tone="warn" hint={`dari ${clusters.length} cluster`} />
           <KpiCard label="Action Plan Selesai" value={`${doneA}/${totalA}`} tone="up" hint={`${runningA} on progress`} />
         </div>
 
