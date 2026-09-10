@@ -125,7 +125,7 @@ function ReportDatePicker({ label, value, onChange, min, max }: { label: string;
 
 function exportProfilingExcel(rows: AnalystRow[], label: string) {
   const data = rows.map((r) => ({
-    AE: r.aeName, Cluster: r.cluster, Tanggal: r.profilingDate || r.timestamp,
+    AE: r.aeName, Cluster: r.cluster, Tanggal: formatDateID(profilingDateKey(r)),
     Kompetitor: r.competitor, "Harga Kompetitor": r.competitorPrice, Promo: r.competitorPromo,
     Segmen: r.customerSegment, "Daya Beli": r.purchasingPower, Potensi: r.potential,
     "SF/MI": r.sfToday, "Close Won": r.closewonToday, Insight: r.aeInsight,
