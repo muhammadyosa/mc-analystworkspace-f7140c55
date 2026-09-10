@@ -449,6 +449,30 @@ function ReportsPage() {
     };
   }, [competitorData]);
 
+  // Cross-analysis: ancaman kompetitor x performa HC & ticket pada range terpilih
+  const compRisk = useMemo(() => {
+    if (!compCharts || !compBase) return null;
+    const byCluster = new Map(compBase.perCluster.map((c) => [c.cluster.trim().toUpperCase(), c]));
+    const rows = compCharts.threats.map((t) => {
+      const c = byCluster.get(t.cluster.trim().toUpperCase());
+      const delta = c?.delta ?? 0;
+      const ticket = c?.ticket ?? 0;
+      const hc = c?.hcEnd ?? 0;
+      const risk = Math.round(
+        t.score * 0.5 + (delta < 0 ? 30 : 0) + Math.min(20, (hc > 0 ? (ticket / hc) * 100 : 0) * 2),
+      );
+      return { ...t, delta, ticket, hc, risk };
+    });
+    const critical = rows.filter((r) => r.score >= 71 && r.delta < 0);
+    const ticketHeavy = [...rows].sort((a, b) => b.ticket - a.ticket)[0];
+    return {
+      rows: [...rows].sort((a, b) => b.risk - a.risk),
+      critical,
+      ticketHeavy,
+      lostHC: critical.reduce((a, r) => a + Math.abs(Math.min(0, r.delta)), 0),
+    };
+  }, [compCharts, compBase]);
+
   const handlePrint = (ref: React.RefObject<HTMLDivElement | null>) => {
     if (!ref.current) return;
     const w = window.open("", "", "width=900,height=1200");
