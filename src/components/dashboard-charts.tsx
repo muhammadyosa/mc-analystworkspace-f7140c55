@@ -7,8 +7,6 @@ import {
   ComposedChart,
   LabelList,
   Line,
-  Pie,
-  PieChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -154,14 +152,6 @@ export default function DashboardCharts({
       { label: "HC", value: fmtFull(d.juni) },
       { label: "Ticket / HC", value: d.perHc.toFixed(2) },
       { label: "PIC", value: d.pic || "-" },
-    ],
-  }));
-
-  const ProvTip = makeTooltip<{ name: string; value: number }>((d) => ({
-    title: d.name,
-    rows: [
-      { label: "Total HC", value: fmtFull(d.value), color: C.primary, strong: true },
-      { label: "Porsi", value: fmtPct((d.value / provTotal) * 100) },
     ],
   }));
 
