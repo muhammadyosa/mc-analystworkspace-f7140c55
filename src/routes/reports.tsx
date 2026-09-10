@@ -805,6 +805,15 @@ function ReportsPage() {
   }, [first, lastM, monthRangeKey, prevM, syncKey]);
 
   const [wDFrom, setWDFrom] = useState(""); const [wDTo, setWDTo] = useState("");
+  // Weekly: pilih bulan + minggu ke-1..5
+  const [wkMonth, setWkMonth] = useState(lastM);
+  const [wkWeek, setWkWeek] = useState(1);
+  const weekSel = weekRange(wkMonth, wkWeek);
+  // Competitor Intel: rentang tanggal profiling
+  const [cDFrom, setCDFrom] = useState(""); const [cDTo, setCDTo] = useState("");
+  const cDFromEff = cDFrom || monthStartKey(cFrom);
+  const cDToEff = cDTo || monthEndKey(cTo);
+
   const analyst = useDataStore((s) => s.analyst);
 
   const clusterTicketMap = useMemo(() => ticketByClusterMap(effTickets), [effTickets]);
