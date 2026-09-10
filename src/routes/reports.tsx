@@ -437,7 +437,7 @@ function ReportsPage() {
     return (
       <div className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <DateRange from={from} to={to} onFrom={setFrom} onTo={setTo} />
+          <DateRange from={from} to={to} onFrom={setFrom} onTo={setTo} avail={avail} />
           <Button size="sm" onClick={() => handlePrint(ref)}><Printer className="mr-1 h-4 w-4" /> Export PDF</Button>
         </div>
 
@@ -586,7 +586,7 @@ function ReportsPage() {
               </Card>
             ) : (
               <>
-                <DateRange from={cFrom} to={cTo} onFrom={setCFrom} onTo={setCTo} />
+                <DateRange from={cFrom} to={cTo} onFrom={setCFrom} onTo={setCTo} avail={avail} />
 
                 <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
                   <KpiCard label="Cluster Terpantau" value={compCharts.totalClusters} />
