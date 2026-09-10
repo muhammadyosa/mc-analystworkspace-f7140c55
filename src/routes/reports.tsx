@@ -211,6 +211,7 @@ function ProfilingSummary({ analyst, dFrom, dTo, onFrom, onTo }: { analyst: Anal
 
 function WeeklyDailyAnalysis({ analyst, from, to, onFrom, onTo }: { analyst: AnalystRow[]; from: string; to: string; onFrom: (value: string) => void; onTo: (value: string) => void }) {
   const datedRows = useMemo(() => analyst.map((row) => ({ row, date: profilingDateKey(row) })).filter((item) => item.date), [analyst]);
+  const invalidDateCount = analyst.length - datedRows.length;
   const bounds = useMemo(() => {
     const dates = datedRows.map((item) => item.date).sort();
     return { min: dates[0] ?? "", max: dates[dates.length - 1] ?? "" };
