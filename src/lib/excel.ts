@@ -292,6 +292,45 @@ export async function parseClusterFile(
 
 const BULAN_KEYS = ["JANUARI", "FEBRUARI", "MARET", "APRIL", "MEI", "JUNI", "JULI", "AGUSTUS", "SEPTEMBER", "OKTOBER", "NOVEMBER", "DESEMBER"];
 
+// Aliases per bulan (normalized, tanpa spasi/tanda baca). Header seperti
+// "Ticket Jan", "TICKET AGST", "Juni 2026" tetap terdeteksi.
+const BULAN_ALIASES: Record<string, string[]> = {
+  JANUARI: ["januari", "januar", "jan"],
+  FEBRUARI: ["februari", "pebruari", "feb"],
+  MARET: ["maret", "march", "mar"],
+  APRIL: ["april", "apr"],
+  MEI: ["mei", "may"],
+  JUNI: ["juni", "june", "jun"],
+  JULI: ["juli", "july", "jul"],
+  AGUSTUS: ["agustus", "august", "agst", "agus", "agu", "ags", "agt", "aug"],
+  SEPTEMBER: ["september", "sept", "sep"],
+  OKTOBER: ["oktober", "october", "okt", "oct"],
+  NOVEMBER: ["november", "nop", "nov"],
+  DESEMBER: ["desember", "december", "des", "dec"],
+};
+
+// Petakan header kolom -> nama bulan kanonik (abaikan kolom total/grand total)
+function detectMonthColumns(keys: string[]): { key: string; bulan: string }[] {
+  const out: { key: string; bulan: string }[] = [];
+  const used = new Set<string>();
+  for (const key of keys) {
+    const n = norm(key);
+    if (!n) continue;
+    if (n.includes("total") || n.includes("grand") || n.includes("cluster")) continue;
+    const stripped = n.replace(/ticket|tiket|jumlah|20\d\d/g, "");
+    if (!stripped) continue;
+    for (const [bulan, aliases] of Object.entries(BULAN_ALIASES)) {
+      if (used.has(bulan)) continue;
+      if (aliases.some((a) => stripped === a || stripped.startsWith(a) || stripped.endsWith(a))) {
+        out.push({ key, bulan });
+        used.add(bulan);
+        break;
+      }
+    }
+  }
+  return out;
+}
+
 export async function parseTicketFile(
   file: File,
 ): Promise<{ rows: TicketRow[]; meta: UploadMeta }> {
@@ -301,47 +340,37 @@ export async function parseTicketFile(
   const { name: sheetName, ws } = pickSheet(wb, ["TICKET", "DATA", "PIVOT"]);
   const raw = sheetToCleanJson(ws);
 
+  const monthCols = raw.length ? detectMonthColumns(Object.keys(raw[0])) : [];
+
   const rows: TicketRow[] = [];
   for (const r of raw) {
     const cluster = toStr(
-      pick(r, ["cluster", "wilayah", "kabupaten", "area", "PROV/KAB/CLUSTER"]),
+      pick(r, ["cluster", "olt", "wilayah", "kabupaten", "area", "PROV/KAB/CLUSTER"]),
     );
     if (!cluster) continue;
-    // Pivot flatten: one row per bulan column with a numeric value
+    if (/^(grand\s*)?total$/i.test(cluster)) continue;
+    const kategori = toStr(pick(r, ["kategori", "category"]));
+    const penyebab = toStr(pick(r, ["penyebab", "cause", "root cause"]));
+    const status = toStr(pick(r, ["status"]));
+
+    // Pivot flatten: satu baris per kolom bulan
     let flattened = false;
-    for (const b of BULAN_KEYS) {
-      const v = pick(r, [b]);
-      if (v !== undefined && v !== "" && v !== null) {
-        const n = toNum(v);
-        if (n > 0 || typeof v === "number") {
-          rows.push({
-            cluster,
-            bulan: b,
-            ticket: n,
-            kategori: toStr(pick(r, ["kategori", "category"])),
-            penyebab: toStr(pick(r, ["penyebab", "cause", "root cause"])),
-            status: toStr(pick(r, ["status"])),
-          });
-          flattened = true;
-        }
-      }
+    for (const { key, bulan } of monthCols) {
+      const v = r[key];
+      if (v === undefined || v === null || v === "") continue;
+      rows.push({ cluster, bulan, ticket: toNum(v), kategori, penyebab, status });
+      flattened = true;
     }
     if (!flattened) {
       // normal (non-pivot) table
       const ticket = toNum(pick(r, ["ticket", "jumlah", "count", "total"]));
       const bulan = toStr(pick(r, ["bulan", "month"]));
       if (ticket > 0 || bulan) {
-        rows.push({
-          cluster,
-          bulan,
-          ticket,
-          kategori: toStr(pick(r, ["kategori"])),
-          penyebab: toStr(pick(r, ["penyebab"])),
-          status: toStr(pick(r, ["status"])),
-        });
+        rows.push({ cluster, bulan, ticket, kategori, penyebab, status });
       }
     }
   }
+
 
   const clusters = new Set(rows.map((r) => r.cluster));
   const meta: UploadMeta = {
