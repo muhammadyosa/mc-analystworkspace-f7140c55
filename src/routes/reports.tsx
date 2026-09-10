@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useRef, useState } from "react";
+import { format } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
 import * as XLSX from "xlsx";
-import { Printer, FileText, Calendar, Radar as RadarIcon, Lightbulb, Sparkles } from "lucide-react";
+import { Printer, FileText, Calendar as CalendarIcon, Radar as RadarIcon, Lightbulb, Sparkles } from "lucide-react";
 import {
   Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Line, LineChart,
   Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend,
@@ -15,6 +17,9 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 import { useDataStore } from "@/lib/store";
 import type { AnalystRow, ClusterRow, CompetitorRow, PromoCategory, TicketRow } from "@/lib/excel";
 
@@ -34,6 +39,52 @@ function parseProfilingDate(s: string): Date | null {
   }
   const d2 = new Date(t);
   return isNaN(d2.getTime()) ? null : d2;
+}
+
+function dateToKey(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+function profilingDateKey(row: AnalystRow): string {
+  const date = parseProfilingDate(row.profilingDate) || parseProfilingDate(row.timestamp);
+  return date ? dateToKey(date) : "";
+}
+
+function formatDateID(key: string, compact = false): string {
+  if (!key) return "Pilih tanggal";
+  const date = new Date(`${key}T00:00:00`);
+  return format(date, compact ? "dd MMM" : "dd MMM yyyy", { locale: idLocale });
+}
+
+function ReportDatePicker({ label, value, onChange, min, max }: { label: string; value: string; onChange: (value: string) => void; min?: string; max?: string }) {
+  const selected = value ? new Date(`${value}T00:00:00`) : undefined;
+  const minDate = min ? new Date(`${min}T00:00:00`) : undefined;
+  const maxDate = max ? new Date(`${max}T23:59:59`) : undefined;
+  return (
+    <div className="space-y-1">
+      <span className="text-[10px] font-semibold uppercase text-muted-foreground">{label}</span>
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="outline" className={cn("h-9 w-full justify-start text-left font-normal sm:w-[170px]", !value && "text-muted-foreground")}>
+            <CalendarIcon className="h-4 w-4" />
+            {formatDateID(value)}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="start">
+          <Calendar
+            mode="single"
+            selected={selected}
+            onSelect={(date) => date && onChange(dateToKey(date))}
+            disabled={(date) => Boolean((minDate && date < minDate) || (maxDate && date > maxDate))}
+            defaultMonth={selected ?? maxDate}
+            locale={idLocale}
+            initialFocus
+            className="pointer-events-auto p-3"
+          />
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
 }
 
 function exportProfilingExcel(rows: AnalystRow[], label: string) {
@@ -124,6 +175,149 @@ function ProfilingSummary({ analyst, dFrom, dTo, onFrom, onTo }: { analyst: Anal
   );
 }
 
+function WeeklyDailyAnalysis({ analyst, from, to, onFrom, onTo }: { analyst: AnalystRow[]; from: string; to: string; onFrom: (value: string) => void; onTo: (value: string) => void }) {
+  const datedRows = useMemo(() => analyst.map((row) => ({ row, date: profilingDateKey(row) })).filter((item) => item.date), [analyst]);
+  const bounds = useMemo(() => {
+    const dates = datedRows.map((item) => item.date).sort();
+    return { min: dates[0] ?? "", max: dates[dates.length - 1] ?? "" };
+  }, [datedRows]);
+  const effectiveFrom = from || bounds.min;
+  const effectiveTo = to || bounds.max;
+  const selectedRows = useMemo(
+    () => datedRows.filter((item) => (!effectiveFrom || item.date >= effectiveFrom) && (!effectiveTo || item.date <= effectiveTo)),
+    [datedRows, effectiveFrom, effectiveTo],
+  );
+  const daily = useMemo(() => {
+    const grouped = new Map<string, AnalystRow[]>();
+    selectedRows.forEach(({ row, date }) => grouped.set(date, [...(grouped.get(date) ?? []), row]));
+    return Array.from(grouped.entries()).sort(([a], [b]) => a.localeCompare(b)).map(([date, rows]) => {
+      const sf = rows.reduce((sum, row) => sum + (row.sfToday || 0), 0);
+      const closeWon = rows.reduce((sum, row) => sum + (row.closewonToday || 0), 0);
+      return {
+        date,
+        tanggal: formatDateID(date, true),
+        profiling: rows.length,
+        ae: new Set(rows.map((row) => row.aeName).filter(Boolean)).size,
+        cluster: new Set(rows.map((row) => row.cluster).filter(Boolean)).size,
+        sf,
+        closeWon,
+        conversion: sf > 0 ? (closeWon / sf) * 100 : 0,
+      };
+    });
+  }, [selectedRows]);
+  const totals = useMemo(() => {
+    const rows = selectedRows.map((item) => item.row);
+    const sf = rows.reduce((sum, row) => sum + (row.sfToday || 0), 0);
+    const closeWon = rows.reduce((sum, row) => sum + (row.closewonToday || 0), 0);
+    return {
+      profiling: rows.length,
+      ae: new Set(rows.map((row) => row.aeName).filter(Boolean)).size,
+      cluster: new Set(rows.map((row) => row.cluster).filter(Boolean)).size,
+      sf,
+      closeWon,
+      conversion: sf > 0 ? (closeWon / sf) * 100 : 0,
+    };
+  }, [selectedRows]);
+  const best = [...daily].sort((a, b) => b.closeWon - a.closeWon || b.profiling - a.profiling)[0];
+  const low = [...daily].sort((a, b) => a.closeWon - b.closeWon || a.profiling - b.profiling)[0];
+  const rangeLabel = effectiveFrom || effectiveTo ? `${formatDateID(effectiveFrom)} – ${formatDateID(effectiveTo)}` : "Semua tanggal";
+  const exportRows = selectedRows.map((item) => item.row);
+
+  return (
+    <section className="space-y-4" aria-labelledby="weekly-daily-title">
+      <Card className="glass-card border-0">
+        <CardHeader className="pb-3">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <CardTitle id="weekly-daily-title" className="font-display text-base">Analisis Profiling Harian</CardTitle>
+              <p className="mt-1 text-xs text-muted-foreground">Analisis Weekly mengikuti tanggal aktual pada file profiling.</p>
+            </div>
+            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
+              <ReportDatePicker label="Tanggal mulai" value={effectiveFrom} onChange={onFrom} min={bounds.min} max={effectiveTo || bounds.max} />
+              <ReportDatePicker label="Tanggal akhir" value={effectiveTo} onChange={onTo} min={effectiveFrom || bounds.min} max={bounds.max} />
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" className="h-9" disabled={!exportRows.length} onClick={() => exportProfilingExcel(exportRows, `${effectiveFrom}-${effectiveTo}`)}><FileText /> Excel</Button>
+                <Button size="sm" variant="outline" className="h-9" disabled={!exportRows.length} onClick={() => exportProfilingPDF(exportRows, rangeLabel)}><Printer /> PDF</Button>
+              </div>
+            </div>
+          </div>
+        </CardHeader>
+      </Card>
+
+      {daily.length === 0 ? (
+        <Card className="glass-card border-0"><CardContent className="py-12 text-center text-sm text-muted-foreground">Tidak ada data profiling pada rentang tanggal ini.</CardContent></Card>
+      ) : (
+        <>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+            <KpiCard label="Total Profiling" value={totals.profiling} hint={`${daily.length} hari aktif`} />
+            <KpiCard label="AE Aktif" value={totals.ae} hint={rangeLabel} />
+            <KpiCard label="Cluster Tercakup" value={totals.cluster} hint="cluster unik" />
+            <KpiCard label="Total SF" value={totals.sf} tone="warn" hint="sesuai tanggal" />
+            <KpiCard label="Close Won" value={totals.closeWon} tone="up" hint="hasil profiling" />
+            <KpiCard label="Konversi" value={`${totals.conversion.toFixed(1)}%`} tone={totals.conversion > 0 ? "up" : "warn"} hint="Close Won / SF" />
+          </div>
+
+          <div className="grid gap-4 lg:grid-cols-2">
+            <Card className="glass-card border-0">
+              <CardHeader><CardTitle className="font-display text-sm">Tren SF & Close Won per Tanggal</CardTitle></CardHeader>
+              <CardContent className="h-72">
+                <ResponsiveContainer>
+                  <LineChart data={daily} margin={{ left: 0, right: 12 }}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis dataKey="tanggal" fontSize={10} minTickGap={18} />
+                    <YAxis fontSize={10} allowDecimals={false} />
+                    <Tooltip labelFormatter={(_, payload) => payload[0]?.payload?.date ? formatDateID(payload[0].payload.date) : ""} formatter={(value: number, name: string) => [fmtN(value), name === "sf" ? "SF" : "Close Won"]} />
+                    <Legend formatter={(value) => value === "sf" ? "SF" : "Close Won"} />
+                    <Line type="monotone" dataKey="sf" stroke="var(--chart-3)" strokeWidth={2.5} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+                    <Line type="monotone" dataKey="closeWon" stroke="var(--chart-2)" strokeWidth={2.5} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+            <Card className="glass-card border-0">
+              <CardHeader><CardTitle className="font-display text-sm">Aktivitas Profiling per Tanggal</CardTitle></CardHeader>
+              <CardContent className="h-72">
+                <ResponsiveContainer>
+                  <BarChart data={daily} margin={{ left: 0, right: 12 }}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis dataKey="tanggal" fontSize={10} minTickGap={18} />
+                    <YAxis fontSize={10} allowDecimals={false} />
+                    <Tooltip labelFormatter={(_, payload) => payload[0]?.payload?.date ? formatDateID(payload[0].payload.date) : ""} formatter={(value: number, name: string) => [fmtN(value), name === "profiling" ? "Profiling" : "Cluster"]} />
+                    <Legend formatter={(value) => value === "profiling" ? "Profiling" : "Cluster"} />
+                    <Bar dataKey="profiling" fill="var(--chart-1)" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="cluster" fill="var(--chart-4)" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card className="glass-card border-0">
+            <CardHeader><CardTitle className="font-display text-sm">Ringkasan Analisis per Tanggal</CardTitle></CardHeader>
+            <CardContent><div className="scroll-x max-h-80 overflow-y-auto"><table className="w-full min-w-[760px] text-sm">
+              <thead className="sticky top-0 bg-muted text-xs uppercase text-muted-foreground"><tr><th className="p-2 text-left">Tanggal</th><th className="p-2 text-right">Profiling</th><th className="p-2 text-right">AE</th><th className="p-2 text-right">Cluster</th><th className="p-2 text-right">SF</th><th className="p-2 text-right">Close Won</th><th className="p-2 text-right">Konversi</th></tr></thead>
+              <tbody>{daily.map((day) => <tr key={day.date} className="border-t"><td className="p-2 font-medium">{formatDateID(day.date)}</td><td className="p-2 text-right">{fmtN(day.profiling)}</td><td className="p-2 text-right">{day.ae}</td><td className="p-2 text-right">{day.cluster}</td><td className="p-2 text-right">{fmtN(day.sf)}</td><td className="p-2 text-right font-semibold text-success">{fmtN(day.closeWon)}</td><td className="p-2 text-right">{day.conversion.toFixed(1)}%</td></tr>)}</tbody>
+            </table></div></CardContent>
+          </Card>
+
+          <div className="grid gap-4 lg:grid-cols-2">
+            <InsightBox items={[
+              `${fmtN(totals.profiling)} profiling dilakukan dalam ${daily.length} hari aktif oleh ${totals.ae} AE di ${totals.cluster} cluster.`,
+              best ? `${formatDateID(best.date)} menjadi hari terbaik dengan ${fmtN(best.closeWon)} Close Won dari ${fmtN(best.sf)} SF.` : "Belum ada hari terbaik yang dapat dihitung.",
+              `Konversi keseluruhan mencapai ${totals.conversion.toFixed(1)}% (${fmtN(totals.closeWon)} Close Won dari ${fmtN(totals.sf)} SF).`,
+            ]} />
+            <RecommendationBox items={[
+              best ? `Pelajari aktivitas AE pada ${formatDateID(best.date)} dan terapkan pola yang sama pada hari berikutnya.` : "Lengkapi data aktivitas harian untuk membentuk rekomendasi.",
+              low && daily.length > 1 ? `Evaluasi cakupan dan follow-up pada ${formatDateID(low.date)} karena menghasilkan Close Won terendah.` : "Pertahankan konsistensi follow-up profiling setiap hari.",
+              totals.conversion < 20 ? "Perkuat follow-up lead dan kualitas profiling untuk meningkatkan konversi." : "Pertahankan kualitas profiling dan prioritaskan cluster dengan konversi terbaik.",
+            ]} />
+          </div>
+        </>
+      )}
+    </section>
+  );
+}
+
 export const Route = createFileRoute("/reports")({
   head: () => ({ meta: [{ title: "Reports — MCA Workspace" }] }),
   component: ReportsPage,
@@ -202,7 +396,7 @@ function DateRange({ from, to, onFrom, onTo, avail }: { from: number; to: number
   const opts = avail.map((i) => ({ i, ...MONTHS[i] }));
   return (
     <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-muted/30 p-2">
-      <Calendar className="h-4 w-4 text-muted-foreground" />
+      <CalendarIcon className="h-4 w-4 text-muted-foreground" />
       <span className="text-xs font-medium text-muted-foreground">Range:</span>
       <Select value={String(from)} onValueChange={(v) => onFrom(Number(v))}>
         <SelectTrigger className="h-8 w-[110px] text-xs"><SelectValue /></SelectTrigger>
@@ -688,14 +882,14 @@ function ReportsPage() {
       <div className="space-y-4 p-4 sm:p-6">
         <Tabs defaultValue="weekly">
           <TabsList>
-            <TabsTrigger value="weekly"><Calendar className="mr-1 h-4 w-4" /> Weekly</TabsTrigger>
+            <TabsTrigger value="weekly"><CalendarIcon className="mr-1 h-4 w-4" /> Weekly</TabsTrigger>
             <TabsTrigger value="monthly"><FileText className="mr-1 h-4 w-4" /> Monthly</TabsTrigger>
             <TabsTrigger value="intel"><RadarIcon className="mr-1 h-4 w-4" /> Competitor Intel</TabsTrigger>
           </TabsList>
 
           <TabsContent value="weekly" className="space-y-4">
             {weekly && renderTab(weekly, "weekly", wFrom, wTo, setWFrom, setWTo, weeklyRef)}
-            {analyst.length > 0 && <ProfilingSummary analyst={analyst} dFrom={wDFrom} dTo={wDTo} onFrom={setWDFrom} onTo={setWDTo} />}
+            {analyst.length > 0 && <WeeklyDailyAnalysis analyst={analyst} from={wDFrom} to={wDTo} onFrom={setWDFrom} onTo={setWDTo} />}
           </TabsContent>
 
           <TabsContent value="monthly" className="space-y-4">
