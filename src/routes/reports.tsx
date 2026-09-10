@@ -1323,6 +1323,14 @@ function ReportsPage() {
                     "Update pricing playbook bulanan berbasis data harga kompetitor terbaru.",
                   ]} />
                 </div>
+
+                <ProfilingRangeSection
+                  analyst={analyst}
+                  from={cDFromEff}
+                  to={cDToEff}
+                  title="Ringkasan Profiling — Competitor Intel"
+                  periodLabel={`${formatDateID(cDFromEff)} – ${formatDateID(cDToEff)}`}
+                />
               </>
             )}
           </TabsContent>
