@@ -351,10 +351,10 @@ function computeStats(
     .sort((a, b) => b.ticketPer100HC - a.ticketPer100HC)
     .slice(0, 5);
 
-  const ticketTrend = range.map((m) => {
+  const ticketTrend = range.map((m, i) => {
     if (hasRealTicket) return { bulan: m.label, ticket: ticketMap.get(m.key) ?? 0 };
     // fallback: distribusi total ticket berdasar bobot HC
-    const monthHC = clusters.reduce((a, c) => a + hcOf(c, m.key), 0);
+    const monthHC = clusters.reduce((a, c) => a + hcEff(c, from + i), 0);
     return { bulan: m.label, ticket: totalHCAll > 0 ? Math.round((monthHC / totalHCAll) * fallbackTotalTicket) : 0 };
   });
   const tStart = ticketTrend[0]?.ticket ?? 0;
