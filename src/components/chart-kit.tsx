@@ -308,3 +308,60 @@ export function ProgressStat({
     </div>
   );
 }
+
+/* ---------------- Concentric arc distribution ---------------- */
+export type ArcItem = { name: string; value: number; color: string; icon?: string };
+
+/** Semi-circular concentric arcs with a value legend — compact, readable share view. */
+export function ArcDistribution({ items, className = "" }: { items: ArcItem[]; className?: string }) {
+  const total = items.reduce((a, b) => a + b.value, 0);
+  const W = 260;
+  const H = 150;
+  const cx = W / 2;
+  const cy = H - 12;
+  const stroke = 13;
+  const gap = 9;
+
+  const arc = (r: number, frac: number) => {
+    const a0 = Math.PI;
+    const a1 = Math.PI + Math.PI * Math.max(0, Math.min(1, frac));
+    const p = (a: number) => `${(cx + r * Math.cos(a)).toFixed(2)} ${(cy + r * Math.sin(a)).toFixed(2)}`;
+    return `M ${p(a0)} A ${r} ${r} 0 0 1 ${p(a1)}`;
+  };
+
+  return (
+    <div className={`grid h-full grid-cols-1 items-center gap-4 sm:grid-cols-[minmax(0,1fr)_auto] ${className}`}>
+      <div className="min-w-0">
+        <svg viewBox={`0 0 ${W} ${H}`} className="h-full max-h-[190px] w-full" role="img" aria-label="Distribusi">
+          {items.map((it, i) => {
+            const r = (W / 2 - stroke) - i * (stroke + gap - 5);
+            const frac = total ? it.value / total : 0;
+            return (
+              <g key={it.name}>
+                <path d={arc(r, 1)} fill="none" stroke="var(--color-muted)" strokeOpacity={0.5} strokeWidth={stroke} strokeLinecap="round" />
+                <path d={arc(r, frac)} fill="none" stroke={it.color} strokeWidth={stroke} strokeLinecap="round" />
+              </g>
+            );
+          })}
+        </svg>
+      </div>
+      <ul className="space-y-2.5">
+        {items.map((it) => (
+          <li key={it.name} className="grid grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-2 text-xs">
+            <span className="w-8 text-right font-display text-sm font-bold tabular-nums" style={{ color: it.color }}>
+              {fmtFull(it.value)}
+            </span>
+            <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: it.color }} />
+            <span className="truncate font-medium" style={{ color: it.color }}>
+              {it.icon ? `${it.icon} ` : ""}
+              {it.name}
+            </span>
+            <span className="shrink-0 text-muted-foreground tabular-nums">
+              ({total ? Math.round((it.value / total) * 100) : 0}%)
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
