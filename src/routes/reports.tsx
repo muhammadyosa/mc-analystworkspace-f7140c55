@@ -184,23 +184,25 @@ function threatScore(rows: CompetitorRow[]): number {
   return Math.round(countScore * 0.4 + priceScore * 0.3 + promoScore * 0.3);
 }
 
-function DateRange({ from, to, onFrom, onTo }: { from: number; to: number; onFrom: (i: number) => void; onTo: (i: number) => void }) {
+function DateRange({ from, to, onFrom, onTo, avail }: { from: number; to: number; onFrom: (i: number) => void; onTo: (i: number) => void; avail: number[] }) {
+  const opts = avail.map((i) => ({ i, ...MONTHS[i] }));
   return (
     <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-muted/30 p-2">
       <Calendar className="h-4 w-4 text-muted-foreground" />
       <span className="text-xs font-medium text-muted-foreground">Range:</span>
       <Select value={String(from)} onValueChange={(v) => onFrom(Number(v))}>
         <SelectTrigger className="h-8 w-[110px] text-xs"><SelectValue /></SelectTrigger>
-        <SelectContent>{MONTHS.map((m, i) => <SelectItem key={m.key} value={String(i)} disabled={i > to}>{m.label} 2026</SelectItem>)}</SelectContent>
+        <SelectContent>{opts.map((m) => <SelectItem key={m.key} value={String(m.i)} disabled={m.i > to}>{m.label} 2026</SelectItem>)}</SelectContent>
       </Select>
       <span className="text-xs text-muted-foreground">→</span>
       <Select value={String(to)} onValueChange={(v) => onTo(Number(v))}>
         <SelectTrigger className="h-8 w-[110px] text-xs"><SelectValue /></SelectTrigger>
-        <SelectContent>{MONTHS.map((m, i) => <SelectItem key={m.key} value={String(i)} disabled={i < from}>{m.label} 2026</SelectItem>)}</SelectContent>
+        <SelectContent>{opts.map((m) => <SelectItem key={m.key} value={String(m.i)} disabled={m.i < from}>{m.label} 2026</SelectItem>)}</SelectContent>
       </Select>
     </div>
   );
 }
+
 
 function KpiCard({ label, value, hint, tone }: { label: string; value: string | number; hint?: string; tone?: "up" | "down" | "warn" }) {
   const toneCls = tone === "up" ? "text-success" : tone === "down" ? "text-destructive" : tone === "warn" ? "text-warning" : "";
