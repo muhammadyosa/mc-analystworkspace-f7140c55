@@ -112,26 +112,57 @@ function Dashboard() {
   const clusters = useDataStore((s) => s.clusters);
   const actions = useDataStore((s) => s.actions);
 
+  /** Bulan yang benar-benar terisi pada data upload — dashboard mengikuti bulan terakhir, bukan Juni statis. */
+  const period = useMemo(() => {
+    const filled = MONTHS.map((m, i) => ({
+      key: m,
+      idx: i,
+      total: clusters.reduce((a, c) => a + (Number(c[m]) || 0), 0),
+    })).filter((m) => m.total > 0);
+    const cur = filled[filled.length - 1];
+    const prev = filled[filled.length - 2];
+    return {
+      filled,
+      curKey: cur?.key ?? "juni",
+      prevKey: prev?.key ?? "mei",
+      curLabel: cur ? MONTH_FULL[cur.idx] : "Juni",
+      prevLabel: prev ? MONTH_FULL[prev.idx] : "Mei",
+    };
+  }, [clusters]);
+
+  /** Normalisasi: juni = bulan terakhir, mei = bulan sebelumnya (agar semua chart & kartu akurat). */
+  const rows = useMemo(
+    () =>
+      clusters.map((c) => {
+        const cur = Number(c[period.curKey as keyof typeof c]) || 0;
+        const prev = Number(c[period.prevKey as keyof typeof c]) || 0;
+        return { ...c, juni: cur, mei: prev, deltaMeiJuni: cur - prev };
+      }),
+    [clusters, period],
+  );
+
   const stats = useMemo(() => {
-    if (!clusters.length) return null;
-    const totalCluster = clusters.length;
-    const totalKab = new Set(clusters.map((c) => c.kabupaten).filter(Boolean)).size;
-    const totalProv = new Set(clusters.map((c) => c.provinsi).filter(Boolean)).size;
-    const sumJun = clusters.reduce((a, c) => a + c.juni, 0);
-    const sumMei = clusters.reduce((a, c) => a + c.mei, 0);
+    if (!rows.length) return null;
+    const totalCluster = rows.length;
+    const totalKab = new Set(rows.map((c) => c.kabupaten).filter(Boolean)).size;
+    const totalProv = new Set(rows.map((c) => c.provinsi).filter(Boolean)).size;
+    const sumJun = rows.reduce((a, c) => a + c.juni, 0);
+    const sumMei = rows.reduce((a, c) => a + c.mei, 0);
     const hcGrowth = sumMei > 0 ? ((sumJun - sumMei) / sumMei) * 100 : 0;
-    const totalTicket = clusters.reduce((a, c) => a + c.ticket, 0);
-    const prevTicket = totalTicket * 0.9;
-    const ticketGrowth = ((totalTicket - prevTicket) / prevTicket) * 100;
-    const maxTicket = Math.max(...clusters.map((c) => c.ticket), 1);
-    const priorities = clusters.map((c) => ({ ...c, ...computePriority(c, maxTicket) }));
+    const totalTicket = rows.reduce((a, c) => a + c.ticket, 0);
+    const ticketCur = rows.reduce((a, c) => a + (Number(c.ticketByMonth?.[period.curKey]) || 0), 0);
+    const ticketPrev = rows.reduce((a, c) => a + (Number(c.ticketByMonth?.[period.prevKey]) || 0), 0);
+    const ticketGrowth = ticketPrev > 0 ? ((ticketCur - ticketPrev) / ticketPrev) * 100 : 0;
+    const maxTicket = Math.max(...rows.map((c) => c.ticket), 1);
+    const priorities = rows.map((c) => ({ ...c, ...computePriority(c, maxTicket) }));
     const highRisk = priorities.filter((p) => p.level === "Tinggi").length;
     const highPriority = priorities.filter((p) => p.level === "Tinggi").length;
 
-    const trend = MONTHS.map((m, i) => ({
-      month: MONTH_LABEL[i],
-      hc: clusters.reduce((a, c) => a + (c[m] as number), 0),
+    const trend = period.filled.map((m) => ({
+      month: MONTH_LABEL[m.idx],
+      hc: m.total,
     }));
+
 
     const topHc = [...clusters].sort((a, b) => b.juni - a.juni).slice(0, 10);
     const growth = [...clusters]
