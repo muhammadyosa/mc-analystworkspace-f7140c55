@@ -69,16 +69,17 @@ export function AppSidebar() {
             onClick={toggleSidebar}
             aria-label={state === "expanded" ? "Tutup menu" : "Buka menu"}
             className={cn(
-              "absolute -right-3 top-1/2 z-50 hidden h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full md:flex",
-              "border border-border/80 bg-card/90 backdrop-blur-md shadow-lg shadow-black/5",
-              "text-sidebar-foreground ring-1 ring-primary/15 transition-all duration-300 ease-out",
-              "hover:scale-110 hover:border-primary/50 hover:bg-primary hover:text-primary-foreground hover:shadow-primary/25 hover:ring-primary/40",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              "absolute -right-3 top-1/2 z-50 hidden h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full md:flex",
+              "border border-[var(--sidebar-toggle-ring)] bg-[var(--sidebar-toggle-bg)]",
+              "text-[var(--sidebar-toggle-ring)] shadow-[0_0_10px_var(--sidebar-toggle-glow)]",
+              "transition-all duration-300 ease-out",
+              "hover:scale-110 hover:shadow-[0_0_18px_var(--sidebar-toggle-glow)] hover:brightness-110",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sidebar-toggle-ring)]",
             )}
           >
             <ChevronLeft
               className={cn(
-                "h-4 w-4 shrink-0 transition-transform duration-300 ease-out",
+                "h-3.5 w-3.5 shrink-0 transition-transform duration-300 ease-out",
                 state === "collapsed" && "rotate-180",
               )}
             />
