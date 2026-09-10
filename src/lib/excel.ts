@@ -309,26 +309,95 @@ const BULAN_ALIASES: Record<string, string[]> = {
   DESEMBER: ["desember", "december", "des", "dec"],
 };
 
+// Petakan satu header kolom -> nama bulan kanonik (abaikan total/grand total/blank)
+function monthOfHeader(h: string): string | null {
+  const n = norm(h);
+  if (!n) return null;
+  if (n.includes("total") || n.includes("grand") || n.includes("blank") || n.includes("cluster")) return null;
+  const stripped = n.replace(/ticket|tiket|jumlah|count|bulan|20\d\d/g, "");
+  if (!stripped) return null;
+  for (const [bulan, aliases] of Object.entries(BULAN_ALIASES)) {
+    if (aliases.some((a) => stripped === a || stripped.startsWith(a) || stripped.endsWith(a))) return bulan;
+  }
+  return null;
+}
+
 // Petakan header kolom -> nama bulan kanonik (abaikan kolom total/grand total)
 function detectMonthColumns(keys: string[]): { key: string; bulan: string }[] {
   const out: { key: string; bulan: string }[] = [];
   const used = new Set<string>();
   for (const key of keys) {
-    const n = norm(key);
-    if (!n) continue;
-    if (n.includes("total") || n.includes("grand") || n.includes("cluster")) continue;
-    const stripped = n.replace(/ticket|tiket|jumlah|20\d\d/g, "");
-    if (!stripped) continue;
-    for (const [bulan, aliases] of Object.entries(BULAN_ALIASES)) {
-      if (used.has(bulan)) continue;
-      if (aliases.some((a) => stripped === a || stripped.startsWith(a) || stripped.endsWith(a))) {
-        out.push({ key, bulan });
-        used.add(bulan);
-        break;
-      }
-    }
+    const bulan = monthOfHeader(key);
+    if (!bulan || used.has(bulan)) continue;
+    used.add(bulan);
+    out.push({ key, bulan });
   }
   return out;
+}
+
+type TicketLayout = {
+  headerIdx: number;
+  labelCol: number;
+  months: { col: number; bulan: string }[];
+  dataRows: number;
+};
+
+/**
+ * Deteksi layout pivot ticket: header bisa berada di baris ke-n (sheet pivot
+ * Excel biasanya diawali baris filter seperti "penyebab | (Multiple Items)").
+ */
+function detectTicketLayout(aoa: unknown[][]): TicketLayout | null {
+  let best: TicketLayout | null = null;
+  const limit = Math.min(aoa.length, 20);
+  for (let i = 0; i < limit; i++) {
+    const row = aoa[i] ?? [];
+    const months: { col: number; bulan: string }[] = [];
+    const used = new Set<string>();
+    row.forEach((c, ci) => {
+      const b = monthOfHeader(toStr(c));
+      if (b && !used.has(b)) {
+        used.add(b);
+        months.push({ col: ci, bulan: b });
+      }
+    });
+    if (months.length < 2) continue;
+    const firstMonthCol = months[0].col;
+    let labelCol = 0;
+    for (let ci = 0; ci < firstMonthCol; ci++) {
+      if (toStr(row[ci]) !== "") { labelCol = ci; break; }
+    }
+    const dataRows = aoa.length - i - 1;
+    if (!best || months.length > best.months.length) {
+      best = { headerIdx: i, labelCol, months, dataRows };
+    }
+  }
+  return best;
+}
+
+const isClusterLabel = (s: string) => /olt|fh\.|ma5|odc|rit[\s.\-]/i.test(s);
+
+/** Pilih sheet ticket terbaik: paling banyak kolom bulan, lalu paling banyak baris. */
+function pickTicketSheet(
+  wb: XLSX.WorkBook,
+): { name: string; aoa: unknown[][]; layout: TicketLayout | null } {
+  let best: { name: string; aoa: unknown[][]; layout: TicketLayout | null; score: number } | null = null;
+  for (const name of wb.SheetNames) {
+    const ws = wb.Sheets[name];
+    if (!ws) continue;
+    const aoa: unknown[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "", blankrows: false });
+    if (!aoa.length) continue;
+    const layout = detectTicketLayout(aoa);
+    if (!layout) continue;
+    const clusterRows = aoa
+      .slice(layout.headerIdx + 1)
+      .filter((r) => isClusterLabel(toStr(r?.[layout.labelCol]))).length;
+    const score = layout.months.length * 100000 + clusterRows;
+    if (!best || score > best.score) best = { name, aoa, layout, score };
+  }
+  if (best) return { name: best.name, aoa: best.aoa, layout: best.layout };
+  const { name, ws } = pickSheet(wb, ["TICKET", "DATA", "PIVOT"]);
+  const aoa: unknown[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "", blankrows: false });
+  return { name, aoa, layout: null };
 }
 
 export async function parseTicketFile(
@@ -336,49 +405,65 @@ export async function parseTicketFile(
 ): Promise<{ rows: TicketRow[]; meta: UploadMeta }> {
   const buf = await file.arrayBuffer();
   const wb = XLSX.read(buf, { type: "array" });
-  // find sheet with most rows
-  const { name: sheetName, ws } = pickSheet(wb, ["TICKET", "DATA", "PIVOT"]);
-  const raw = sheetToCleanJson(ws);
-
-  const monthCols = raw.length ? detectMonthColumns(Object.keys(raw[0])) : [];
+  const { name: sheetName, aoa, layout } = pickTicketSheet(wb);
 
   const rows: TicketRow[] = [];
-  for (const r of raw) {
-    const cluster = toStr(
-      pick(r, ["cluster", "olt", "wilayah", "kabupaten", "area", "PROV/KAB/CLUSTER"]),
-    );
-    if (!cluster) continue;
-    if (/^(grand\s*)?total$/i.test(cluster)) continue;
-    const kategori = toStr(pick(r, ["kategori", "category"]));
-    const penyebab = toStr(pick(r, ["penyebab", "cause", "root cause"]));
-    const status = toStr(pick(r, ["status"]));
 
-    // Pivot flatten: satu baris per kolom bulan
-    let flattened = false;
-    for (const { key, bulan } of monthCols) {
-      const v = r[key];
-      if (v === undefined || v === null || v === "") continue;
-      rows.push({ cluster, bulan, ticket: toNum(v), kategori, penyebab, status });
-      flattened = true;
-    }
-    if (!flattened) {
-      // normal (non-pivot) table
+  if (layout) {
+    const body = aoa.slice(layout.headerIdx + 1);
+    const labels = body.map((r) => toStr(r?.[layout.labelCol]));
+    const hasClusterRows = labels.some((l) => isClusterLabel(l));
+    const seen = new Set<string>();
+    body.forEach((r, i) => {
+      const cluster = labels[i];
+      if (!cluster) return;
+      if (/^\(?(grand\s*)?total\)?$/i.test(cluster)) return;
+      // Sheet pivot memuat baris agregat (provinsi/kabupaten) + baris cluster.
+      // Ambil hanya baris cluster agar tidak dobel hitung.
+      if (hasClusterRows && !isClusterLabel(cluster)) return;
+      const key = cluster.toUpperCase();
+      if (seen.has(key)) return;
+      seen.add(key);
+      for (const { col, bulan } of layout.months) {
+        const v = r?.[col];
+        if (v === undefined || v === null || v === "") continue;
+        rows.push({ cluster, bulan, ticket: toNum(v), kategori: "", penyebab: "", status: "" });
+      }
+    });
+  } else {
+    // Tabel biasa (bukan pivot)
+    const raw = sheetToCleanJson(wb.Sheets[sheetName]);
+    for (const r of raw) {
+      const cluster = toStr(pick(r, ["cluster", "idolt", "olt", "wilayah", "kabupaten", "area", "PROV/KAB/CLUSTER"]));
+      if (!cluster) continue;
+      if (/^(grand\s*)?total$/i.test(cluster)) continue;
       const ticket = toNum(pick(r, ["ticket", "jumlah", "count", "total"]));
       const bulan = toStr(pick(r, ["bulan", "month"]));
-      if (ticket > 0 || bulan) {
-        rows.push({ cluster, bulan, ticket, kategori, penyebab, status });
-      }
+      rows.push({
+        cluster,
+        bulan,
+        ticket: ticket || 1,
+        kategori: toStr(pick(r, ["kategori", "category"])),
+        penyebab: toStr(pick(r, ["penyebab", "cause", "root cause"])),
+        status: toStr(pick(r, ["status"])),
+      });
     }
   }
 
-
   const clusters = new Set(rows.map((r) => r.cluster));
+  const monthsFound = Array.from(new Set(rows.map((r) => r.bulan).filter(Boolean)));
+  const total = rows.reduce((a, r) => a + r.ticket, 0);
   const meta: UploadMeta = {
     fileName: file.name,
     sheetCount: wb.SheetNames.length,
     sheetPicked: sheetName,
     rowCount: rows.length,
-    extra: { Cluster: clusters.size, Records: rows.length },
+    extra: {
+      Cluster: clusters.size,
+      Bulan: monthsFound.length,
+      "Total Ticket": total,
+      Records: rows.length,
+    },
     mappingPct: 100,
     timestamp: Date.now(),
   };
