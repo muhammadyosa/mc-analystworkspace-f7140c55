@@ -161,6 +161,20 @@ function ticketByMonthMap(tickets: TicketRow[]): Map<string, number> {
   return m;
 }
 
+/** cluster (uppercase) -> bulan -> jumlah ticket, untuk analisa per range bulan. */
+function ticketByClusterMap(tickets: TicketRow[]): Map<string, Map<string, number>> {
+  const m = new Map<string, Map<string, number>>();
+  for (const t of tickets) {
+    const c = (t.cluster || "").trim().toUpperCase();
+    const k = (t.bulan || "").toLowerCase();
+    if (!c || !k) continue;
+    const inner = m.get(c) ?? new Map<string, number>();
+    inner.set(k, (inner.get(k) ?? 0) + (t.ticket || 0));
+    m.set(c, inner);
+  }
+  return m;
+}
+
 function availableMonths(clusters: ClusterRow[], ticketMap: Map<string, number>): number[] {
   const idx = MONTHS.map((m, i) => {
     const hc = clusters.reduce((a, c) => a + (Number((c as unknown as Record<string, unknown>)[m.key]) || 0), 0);
@@ -271,6 +285,7 @@ function computeStats(
   from: number,
   to: number,
   ticketMap: Map<string, number> = new Map(),
+  clusterTicketMap: Map<string, Map<string, number>> = new Map(),
 ) {
   const range = MONTHS.slice(from, to + 1);
   const hcTrend = range.map((m) => ({
@@ -280,24 +295,59 @@ function computeStats(
   const start = hcTrend[0]?.hc ?? 0;
   const end = hcTrend[hcTrend.length - 1]?.hc ?? 0;
   const growth = start > 0 ? ((end - start) / start) * 100 : 0;
-  const totalTicket = clusters.reduce((a, c) => a + c.ticket, 0);
+
+  const hasRealTicket = range.some((m) => (ticketMap.get(m.key) ?? 0) > 0);
+  const fallbackTotalTicket = clusters.reduce((a, c) => a + c.ticket, 0);
+  const totalHCAll = clusters.reduce((a, c) => a + c.grandTotal, 0);
+
+  // Ticket per cluster mengikuti range bulan yang dipilih (bila data ticket ada)
+  const ticketOf = (cluster: string) => {
+    if (!hasRealTicket) return 0;
+    const inner = clusterTicketMap.get((cluster || "").trim().toUpperCase());
+    if (!inner) return 0;
+    return range.reduce((a, m) => a + (inner.get(m.key) ?? 0), 0);
+  };
+
   const perCluster = clusters.map((c) => {
     const hcStart = hcOf(c, range[0].key);
     const hcEnd = hcOf(c, range[range.length - 1].key);
-    return { ...c, hcStart, hcEnd, delta: hcEnd - hcStart };
+    const rangeTicket = hasRealTicket ? ticketOf(c.cluster) : c.ticket;
+    return {
+      ...c,
+      ticket: rangeTicket,
+      hcStart,
+      hcEnd,
+      delta: hcEnd - hcStart,
+      ticketPer100HC: hcEnd > 0 ? (rangeTicket / hcEnd) * 100 : 0,
+    };
   });
+
+  const totalTicket = hasRealTicket
+    ? range.reduce((a, m) => a + (ticketMap.get(m.key) ?? 0), 0)
+    : fallbackTotalTicket;
+
   const topGrowth = [...perCluster].sort((a, b) => b.delta - a.delta).slice(0, 5);
   const topDecline = [...perCluster].sort((a, b) => a.delta - b.delta).slice(0, 5);
   const topHC = [...perCluster].sort((a, b) => b.hcEnd - a.hcEnd).slice(0, 8).map((c) => ({ cluster: c.cluster, hc: c.hcEnd }));
-  const topTicket = [...clusters].sort((a, b) => b.ticket - a.ticket).slice(0, 8).map((c) => ({ cluster: c.cluster, ticket: c.ticket }));
-  const hasRealTicket = range.some((m) => (ticketMap.get(m.key) ?? 0) > 0);
+  const topTicket = [...perCluster].sort((a, b) => b.ticket - a.ticket).slice(0, 8).map((c) => ({ cluster: c.cluster, ticket: c.ticket }));
+  const worstRatio = [...perCluster]
+    .filter((c) => c.hcEnd >= 20 && c.ticket > 0)
+    .sort((a, b) => b.ticketPer100HC - a.ticketPer100HC)
+    .slice(0, 5);
+
   const ticketTrend = range.map((m) => {
     if (hasRealTicket) return { bulan: m.label, ticket: ticketMap.get(m.key) ?? 0 };
     // fallback: distribusi total ticket berdasar bobot HC
     const monthHC = clusters.reduce((a, c) => a + hcOf(c, m.key), 0);
-    const totalHC = clusters.reduce((a, c) => a + c.grandTotal, 0);
-    return { bulan: m.label, ticket: totalHC > 0 ? Math.round((monthHC / totalHC) * totalTicket) : 0 };
+    return { bulan: m.label, ticket: totalHCAll > 0 ? Math.round((monthHC / totalHCAll) * fallbackTotalTicket) : 0 };
   });
+  const tStart = ticketTrend[0]?.ticket ?? 0;
+  const tEnd = ticketTrend[ticketTrend.length - 1]?.ticket ?? 0;
+  const ticketGrowth = tStart > 0 ? ((tEnd - tStart) / tStart) * 100 : 0;
+  const peakTicket = [...ticketTrend].sort((a, b) => b.ticket - a.ticket)[0] ?? { bulan: "-", ticket: 0 };
+  const avgTicketPerMonth = ticketTrend.length ? Math.round(totalTicket / ticketTrend.length) : 0;
+  const ticketPer100HC = end > 0 ? (tEnd / end) * 100 : 0;
+  const clustersWithTicket = perCluster.filter((c) => c.ticket > 0).length;
 
   const picMap = new Map<string, { hc: number; ticket: number }>();
   perCluster.forEach((c) => {
@@ -305,9 +355,16 @@ function computeStats(
     const cur = picMap.get(p) ?? { hc: 0, ticket: 0 };
     cur.hc += c.hcEnd; cur.ticket += c.ticket; picMap.set(p, cur);
   });
-  const picPerf = Array.from(picMap.entries()).map(([pic, v]) => ({ pic, ...v }))
-    .sort((a, b) => b.hc - a.hc).slice(0, 8);
-  return { hcTrend, ticketTrend, start, end, growth, totalTicket, topGrowth, topDecline, topHC, topTicket, picPerf, perCluster };
+  const picPerf = Array.from(picMap.entries())
+    .map(([pic, v]) => ({ pic, ...v, ratio: v.hc > 0 ? (v.ticket / v.hc) * 100 : 0 }))
+    .sort((a, b) => b.hc - a.hc)
+    .slice(0, 8);
+
+  return {
+    hcTrend, ticketTrend, start, end, growth, totalTicket, topGrowth, topDecline, topHC, topTicket,
+    picPerf, perCluster, hasRealTicket, ticketGrowth, peakTicket, avgTicketPerMonth,
+    ticketPer100HC, clustersWithTicket, worstRatio,
+  };
 }
 
 function ReportsPage() {
@@ -345,9 +402,10 @@ function ReportsPage() {
   const [cDFrom, setCDFrom] = useState(""); const [cDTo, setCDTo] = useState("");
   const analyst = useDataStore((s) => s.analyst);
 
-  const weekly = useMemo(() => clusters.length ? computeStats(clusters, wFrom, wTo, ticketMap) : null, [clusters, wFrom, wTo, ticketMap]);
-  const monthly = useMemo(() => clusters.length ? computeStats(clusters, mFrom, mTo, ticketMap) : null, [clusters, mFrom, mTo, ticketMap]);
-  const compBase = useMemo(() => clusters.length ? computeStats(clusters, cFrom, cTo, ticketMap) : null, [clusters, cFrom, cTo, ticketMap]);
+  const clusterTicketMap = useMemo(() => ticketByClusterMap(tickets), [tickets]);
+  const weekly = useMemo(() => clusters.length ? computeStats(clusters, wFrom, wTo, ticketMap, clusterTicketMap) : null, [clusters, wFrom, wTo, ticketMap, clusterTicketMap]);
+  const monthly = useMemo(() => clusters.length ? computeStats(clusters, mFrom, mTo, ticketMap, clusterTicketMap) : null, [clusters, mFrom, mTo, ticketMap, clusterTicketMap]);
+  const compBase = useMemo(() => clusters.length ? computeStats(clusters, cFrom, cTo, ticketMap, clusterTicketMap) : null, [clusters, cFrom, cTo, ticketMap, clusterTicketMap]);
 
 
   const compCharts = useMemo(() => {
@@ -391,6 +449,30 @@ function ReportsPage() {
     };
   }, [competitorData]);
 
+  // Cross-analysis: ancaman kompetitor x performa HC & ticket pada range terpilih
+  const compRisk = useMemo(() => {
+    if (!compCharts || !compBase) return null;
+    const byCluster = new Map(compBase.perCluster.map((c) => [c.cluster.trim().toUpperCase(), c]));
+    const rows = compCharts.threats.map((t) => {
+      const c = byCluster.get(t.cluster.trim().toUpperCase());
+      const delta = c?.delta ?? 0;
+      const ticket = c?.ticket ?? 0;
+      const hc = c?.hcEnd ?? 0;
+      const risk = Math.round(
+        t.score * 0.5 + (delta < 0 ? 30 : 0) + Math.min(20, (hc > 0 ? (ticket / hc) * 100 : 0) * 2),
+      );
+      return { ...t, delta, ticket, hc, risk };
+    });
+    const critical = rows.filter((r) => r.score >= 71 && r.delta < 0);
+    const ticketHeavy = [...rows].sort((a, b) => b.ticket - a.ticket)[0];
+    return {
+      rows: [...rows].sort((a, b) => b.risk - a.risk),
+      critical,
+      ticketHeavy,
+      lostHC: critical.reduce((a, r) => a + Math.abs(Math.min(0, r.delta)), 0),
+    };
+  }, [compCharts, compBase]);
+
   const handlePrint = (ref: React.RefObject<HTMLDivElement | null>) => {
     if (!ref.current) return;
     const w = window.open("", "", "width=900,height=1200");
@@ -419,18 +501,32 @@ function ReportsPage() {
     ref: React.RefObject<HTMLDivElement | null>,
   ) => {
     const label = MONTHS[from].label + " → " + MONTHS[to].label + " 2026";
+    const worst = s.worstRatio[0];
+    const heavyPic = [...s.picPerf].sort((a, b) => b.ratio - a.ratio)[0];
     const insights = [
       `HC bergerak ${s.growth >= 0 ? "naik" : "turun"} ${Math.abs(s.growth).toFixed(1)}% pada periode ${label} (${fmtN(s.start)} → ${fmtN(s.end)}).`,
-      `Cluster paling tumbuh: ${s.topGrowth[0]?.cluster ?? "-"} (${s.topGrowth[0]?.delta >= 0 ? "+" : ""}${s.topGrowth[0]?.delta ?? 0}). Cluster paling turun: ${s.topDecline[0]?.cluster ?? "-"} (${s.topDecline[0]?.delta ?? 0}).`,
-      `Ticket menumpuk pada ${s.topTicket[0]?.cluster ?? "-"} (${s.topTicket[0]?.ticket ?? 0} tiket) — indikasi kualitas layanan perlu diperbaiki.`,
-      `PIC dengan portofolio HC terbesar: ${s.picPerf[0]?.pic ?? "-"} (${fmtN(s.picPerf[0]?.hc ?? 0)} HC, ${s.picPerf[0]?.ticket ?? 0} ticket).`,
+      `Cluster paling tumbuh: ${s.topGrowth[0]?.cluster ?? "-"} (${(s.topGrowth[0]?.delta ?? 0) >= 0 ? "+" : ""}${s.topGrowth[0]?.delta ?? 0}). Cluster paling turun: ${s.topDecline[0]?.cluster ?? "-"} (${s.topDecline[0]?.delta ?? 0}).`,
+      `Total ${fmtN(s.totalTicket)} ticket pada periode ini (rata-rata ${fmtN(s.avgTicketPerMonth)}/bulan), puncak di ${s.peakTicket.bulan} dengan ${fmtN(s.peakTicket.ticket)} ticket.`,
+      `Tren ticket ${s.ticketGrowth >= 0 ? "naik" : "turun"} ${Math.abs(s.ticketGrowth).toFixed(1)}% dari bulan awal ke bulan akhir — rasio ${s.ticketPer100HC.toFixed(1)} ticket per 100 HC.`,
+      `Ticket menumpuk pada ${s.topTicket[0]?.cluster ?? "-"} (${fmtN(s.topTicket[0]?.ticket ?? 0)} tiket) dari ${fmtN(s.clustersWithTicket)} cluster yang bermasalah.`,
+      worst
+        ? `Rasio gangguan terburuk: ${worst.cluster} — ${worst.ticketPer100HC.toFixed(1)} ticket per 100 HC (HC ${fmtN(worst.hcEnd)}).`
+        : "Rasio ticket per HC masih dalam batas wajar di seluruh cluster.",
+      `PIC dengan portofolio HC terbesar: ${s.picPerf[0]?.pic ?? "-"} (${fmtN(s.picPerf[0]?.hc ?? 0)} HC, ${fmtN(s.picPerf[0]?.ticket ?? 0)} ticket).`,
       `Action plan: ${doneA} selesai · ${runningA} berjalan · ${belumA} belum — rasio delivery ${totalA ? Math.round((doneA / totalA) * 100) : 0}%.`,
     ];
     const recs = [
       s.growth < 0 ? "Aktifkan retention program di top decline cluster minggu ini." : "Jaga momentum dengan replikasi strategi top growth cluster ke cluster tetangga.",
       `Prioritaskan quick-win perbaikan layanan di ${s.topTicket[0]?.cluster ?? "cluster ticket tinggi"} untuk menurunkan ticket.`,
-      "Site visit dan koordinasi teknik untuk cluster dengan delta negatif dan ticket > rata-rata.",
-      `Redistribusi beban PIC: evaluasi ${s.picPerf[0]?.pic ?? "PIC top"} agar rasio HC/ticket sehat.`,
+      worst
+        ? `Audit jaringan di ${worst.cluster} — rasio ticket/HC ${worst.ticketPer100HC.toFixed(1)} per 100 HC jauh di atas normal.`
+        : "Pertahankan preventive maintenance rutin untuk menjaga rasio ticket tetap rendah.",
+      s.ticketGrowth > 10
+        ? `Ticket naik ${s.ticketGrowth.toFixed(1)}% — siapkan penambahan tim SERPO/IKR pada bulan puncak (${s.peakTicket.bulan}).`
+        : "Tren ticket terkendali — fokuskan sumber daya ke akuisisi HC baru.",
+      heavyPic
+        ? `Redistribusi beban PIC: ${heavyPic.pic} menangani ${heavyPic.ratio.toFixed(1)} ticket per 100 HC, tertinggi di antara PIC.`
+        : `Redistribusi beban PIC: evaluasi ${s.picPerf[0]?.pic ?? "PIC top"} agar rasio HC/ticket sehat.`,
       "Deploy program loyalty & bundling di cluster potensial (HC belum mencapai target 2026).",
     ];
 
@@ -443,8 +539,12 @@ function ReportsPage() {
 
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
           <KpiCard label="Total HC Akhir" value={s.end} hint={label} />
-          <KpiCard label="Growth" value={`${s.growth >= 0 ? "+" : ""}${s.growth.toFixed(1)}%`} tone={s.growth >= 0 ? "up" : "down"} hint={`${fmtN(s.start)} → ${fmtN(s.end)}`} />
-          <KpiCard label="Total Ticket" value={s.totalTicket} tone="warn" hint={`${clusters.length} cluster`} />
+          <KpiCard label="Growth HC" value={`${s.growth >= 0 ? "+" : ""}${s.growth.toFixed(1)}%`} tone={s.growth >= 0 ? "up" : "down"} hint={`${fmtN(s.start)} → ${fmtN(s.end)}`} />
+          <KpiCard label="Total Ticket" value={s.totalTicket} tone="warn" hint={s.hasRealTicket ? `data ticket ${label}` : `estimasi dari ${clusters.length} cluster`} />
+          <KpiCard label="Tren Ticket" value={`${s.ticketGrowth >= 0 ? "+" : ""}${s.ticketGrowth.toFixed(1)}%`} tone={s.ticketGrowth <= 0 ? "up" : "down"} hint={`puncak ${s.peakTicket.bulan} (${fmtN(s.peakTicket.ticket)})`} />
+          <KpiCard label="Rata-rata Ticket / Bulan" value={s.avgTicketPerMonth} hint={`${s.ticketTrend.length} bulan`} />
+          <KpiCard label="Ticket per 100 HC" value={s.ticketPer100HC.toFixed(1)} tone={s.ticketPer100HC > 10 ? "down" : "up"} hint="bulan terakhir" />
+          <KpiCard label="Cluster Bermasalah" value={s.clustersWithTicket} tone="warn" hint={`dari ${clusters.length} cluster`} />
           <KpiCard label="Action Plan Selesai" value={`${doneA}/${totalA}`} tone="up" hint={`${runningA} on progress`} />
         </div>
 
@@ -593,6 +693,10 @@ function ReportsPage() {
                   <KpiCard label="Kompetitor Unik" value={compCharts.totalCompetitors} />
                   <KpiCard label="Ancaman Tinggi" value={compCharts.highThreat} tone="down" hint="threat ≥ 71" />
                   <KpiCard label="Avg Harga Kompetitor" value={fmtRp(compCharts.avgPriceAll)} tone="warn" />
+                  <KpiCard label="Cluster Kritis" value={compRisk?.critical.length ?? 0} tone="down" hint="ancaman tinggi + HC turun" />
+                  <KpiCard label="HC Hilang di Cluster Kritis" value={compRisk?.lostHC ?? 0} tone="down" hint={`${MONTHS[cFrom].label} → ${MONTHS[cTo].label}`} />
+                  <KpiCard label="Ticket di Area Kompetitif" value={compBase.totalTicket} tone="warn" hint={`rata-rata ${fmtN(compBase.avgTicketPerMonth)}/bulan`} />
+                  <KpiCard label="Growth HC Pasar" value={`${compBase.growth >= 0 ? "+" : ""}${compBase.growth.toFixed(1)}%`} tone={compBase.growth >= 0 ? "up" : "down"} hint={`${fmtN(compBase.start)} → ${fmtN(compBase.end)}`} />
                 </div>
 
                 <div className="grid gap-4 lg:grid-cols-2">
@@ -701,11 +805,21 @@ function ReportsPage() {
                     `${compCharts.highThreat} cluster masuk kategori ancaman TINGGI (threat ≥ 71).`,
                     `Harga rata-rata kompetitor Rp${compCharts.avgPriceAll.toLocaleString("id-ID")} — ${compCharts.avgPriceAll < 200000 ? "tekanan harga tinggi" : "masih dalam batas wajar"}.`,
                     `Promo teraktif: ${[...compCharts.promoBreakdown].sort((a, b) => b.value - a.value)[0]?.name ?? "-"}.`,
+                    compRisk?.critical.length
+                      ? `${compRisk.critical.length} cluster kritis (ancaman tinggi + HC turun) kehilangan ${fmtN(compRisk.lostHC)} HC pada ${MONTHS[cFrom].label} → ${MONTHS[cTo].label}.`
+                      : "Belum ada cluster ancaman tinggi yang sekaligus kehilangan HC — posisi pasar masih aman.",
+                    compRisk?.ticketHeavy
+                      ? `Gangguan terbanyak di area kompetitif: ${compRisk.ticketHeavy.cluster} (${fmtN(compRisk.ticketHeavy.ticket)} ticket, threat ${compRisk.ticketHeavy.score}) — risiko churn ke kompetitor.`
+                      : `Total ${fmtN(compBase.totalTicket)} ticket tercatat di periode yang sama.`,
+                    `Risiko tertinggi gabungan: ${compRisk?.rows[0]?.cluster ?? "-"} (skor risiko ${compRisk?.rows[0]?.risk ?? 0}).`,
                   ]} />
                   <RecommendationBox items={[
-                    `Prioritas defense di ${compCharts.topThreats[0]?.cluster ?? "cluster ancaman tinggi"} — deploy retention bundle.`,
+                    `Prioritas defense di ${compRisk?.rows[0]?.cluster ?? compCharts.topThreats[0]?.cluster ?? "cluster ancaman tinggi"} — deploy retention bundle.`,
                     "Counter promo kompetitor dengan penawaran serupa (gratis instalasi / cashback) selama 30 hari.",
                     "Naikkan value proposition (bundling speed & konten) di cluster dengan harga kompetitor < Rp200K.",
+                    compRisk?.ticketHeavy
+                      ? `Perbaiki kualitas jaringan di ${compRisk.ticketHeavy.cluster} sebelum kompetitor memanfaatkan keluhan pelanggan.`
+                      : "Jaga kualitas jaringan agar tidak memberi celah bagi kompetitor.",
                     `Site visit mingguan ke ${compCharts.dominant}-heavy cluster untuk profiling lanjutan.`,
                     "Update pricing playbook bulanan berbasis data harga kompetitor terbaru.",
                   ]} />
