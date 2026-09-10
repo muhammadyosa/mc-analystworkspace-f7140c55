@@ -288,9 +288,25 @@ function computeStats(
   clusterTicketMap: Map<string, Map<string, number>> = new Map(),
 ) {
   const range = MONTHS.slice(from, to + 1);
-  const hcTrend = range.map((m) => ({
+
+  // HC efektif: file cluster kadang hanya sampai bulan tertentu (mis. Juni),
+  // sementara data ticket sudah sampai September. Agar chart/tabel HC tidak
+  // kosong pada bulan tanpa kolom HC, pakai nilai bulan terakhir yang tersedia.
+  const hcEff = (c: ClusterRow, idx: number): number => {
+    for (let i = idx; i >= 0; i--) {
+      const v = hcOf(c, MONTHS[i].key);
+      if (v > 0) return v;
+    }
+    for (let i = idx + 1; i < MONTHS.length; i++) {
+      const v = hcOf(c, MONTHS[i].key);
+      if (v > 0) return v;
+    }
+    return 0;
+  };
+
+  const hcTrend = range.map((m, i) => ({
     bulan: m.label,
-    hc: clusters.reduce((a, c) => a + hcOf(c, m.key), 0),
+    hc: clusters.reduce((a, c) => a + hcEff(c, from + i), 0),
   }));
   const start = hcTrend[0]?.hc ?? 0;
   const end = hcTrend[hcTrend.length - 1]?.hc ?? 0;
@@ -300,17 +316,28 @@ function computeStats(
   const fallbackTotalTicket = clusters.reduce((a, c) => a + c.ticket, 0);
   const totalHCAll = clusters.reduce((a, c) => a + c.grandTotal, 0);
 
-  // Ticket per cluster mengikuti range bulan yang dipilih (bila data ticket ada)
+  // Ticket per cluster mengikuti range bulan yang dipilih (bila data ticket ada).
+  // Nama cluster antar file bisa beda tanda baca/spasi, jadi cocokkan juga
+  // versi ternormalisasi (hanya huruf & angka).
+  const normKey = (s: string) => (s || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+  const normTicketMap = new Map<string, Map<string, number>>();
+  clusterTicketMap.forEach((v, k) => {
+    const nk = normKey(k);
+    const cur = normTicketMap.get(nk);
+    if (!cur) normTicketMap.set(nk, new Map(v));
+    else v.forEach((tv, tk) => cur.set(tk, (cur.get(tk) ?? 0) + tv));
+  });
   const ticketOf = (cluster: string) => {
     if (!hasRealTicket) return 0;
-    const inner = clusterTicketMap.get((cluster || "").trim().toUpperCase());
+    const inner =
+      clusterTicketMap.get((cluster || "").trim().toUpperCase()) ?? normTicketMap.get(normKey(cluster));
     if (!inner) return 0;
     return range.reduce((a, m) => a + (inner.get(m.key) ?? 0), 0);
   };
 
   const perCluster = clusters.map((c) => {
-    const hcStart = hcOf(c, range[0].key);
-    const hcEnd = hcOf(c, range[range.length - 1].key);
+    const hcStart = hcEff(c, from);
+    const hcEnd = hcEff(c, to);
     const rangeTicket = hasRealTicket ? ticketOf(c.cluster) : c.ticket;
     return {
       ...c,
@@ -335,10 +362,10 @@ function computeStats(
     .sort((a, b) => b.ticketPer100HC - a.ticketPer100HC)
     .slice(0, 5);
 
-  const ticketTrend = range.map((m) => {
+  const ticketTrend = range.map((m, i) => {
     if (hasRealTicket) return { bulan: m.label, ticket: ticketMap.get(m.key) ?? 0 };
     // fallback: distribusi total ticket berdasar bobot HC
-    const monthHC = clusters.reduce((a, c) => a + hcOf(c, m.key), 0);
+    const monthHC = clusters.reduce((a, c) => a + hcEff(c, from + i), 0);
     return { bulan: m.label, ticket: totalHCAll > 0 ? Math.round((monthHC / totalHCAll) * fallbackTotalTicket) : 0 };
   });
   const tStart = ticketTrend[0]?.ticket ?? 0;
