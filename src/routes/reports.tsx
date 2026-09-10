@@ -1056,6 +1056,15 @@ function ReportsPage() {
           <InsightBox items={insights} />
           <RecommendationBox items={recs} />
         </div>
+
+        <ProfilingRangeSection
+          analyst={analyst}
+          from={kind === "weekly" ? weekSel.from : monthStartKey(from)}
+          to={kind === "weekly" ? weekSel.to : monthEndKey(to)}
+          title={kind === "weekly" ? "Ringkasan Profiling — Minggu Terpilih" : "Ringkasan Profiling — Periode Bulanan"}
+          periodLabel={kind === "weekly" ? `${MONTHS[wkMonth].label} 2026 Minggu ${wkWeek}` : label}
+        />
+
       </div>
     );
   };
