@@ -53,6 +53,7 @@ function parseProfilingDate(value: unknown): Date | null {
 }
 
 function dateToKey(date: Date): string {
+  if (isNaN(date.getTime())) return "";
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
@@ -64,13 +65,23 @@ function profilingDateKey(row: AnalystRow): string {
 function formatDateID(key: string, compact = false): string {
   if (!key) return "Pilih tanggal";
   const date = new Date(`${key}T00:00:00`);
-  return format(date, compact ? "dd MMM" : "dd MMM yyyy", { locale: idLocale });
+  if (isNaN(date.getTime())) return compact ? "Tanggal tidak valid" : "Tanggal tidak valid";
+  try {
+    return format(date, compact ? "dd MMM" : "dd MMM yyyy", { locale: idLocale });
+  } catch {
+    return compact ? "Tanggal tidak valid" : "Tanggal tidak valid";
+  }
 }
 
 function ReportDatePicker({ label, value, onChange, min, max }: { label: string; value: string; onChange: (value: string) => void; min?: string; max?: string }) {
-  const selected = value ? new Date(`${value}T00:00:00`) : undefined;
-  const minDate = min ? new Date(`${min}T00:00:00`) : undefined;
-  const maxDate = max ? new Date(`${max}T23:59:59`) : undefined;
+  const toValidDate = (key: string | undefined, endOfDay = false): Date | undefined => {
+    if (!key) return undefined;
+    const date = new Date(`${key}T${endOfDay ? "23:59:59" : "00:00:00"}`);
+    return isNaN(date.getTime()) ? undefined : date;
+  };
+  const selected = toValidDate(value);
+  const minDate = toValidDate(min);
+  const maxDate = toValidDate(max, true);
   return (
     <div className="space-y-1">
       <span className="text-[10px] font-semibold uppercase text-muted-foreground">{label}</span>
