@@ -142,30 +142,35 @@ function exportProfilingPDF(rows: AnalystRow[], label: string) {
   setTimeout(() => w.print(), 300);
 }
 
-function ProfilingSummary({ analyst, dFrom, dTo, onFrom, onTo }: { analyst: AnalystRow[]; dFrom: string; dTo: string; onFrom: (v: string) => void; onTo: (v: string) => void }) {
-  const from = dFrom ? new Date(dFrom) : null;
-  const to = dTo ? new Date(dTo + "T23:59:59") : null;
-  const rows = analyst.filter((a) => {
-    const d = parseProfilingDate(a.profilingDate) || parseProfilingDate(a.timestamp);
-    if (!d) return !from && !to;
-    if (from && d < from) return false;
-    if (to && d > to) return false;
-    return true;
-  });
-  const rangeLabel = dFrom || dTo ? `${dFrom || "awal"} s/d ${dTo || "akhir"}` : "semua tanggal";
+function ProfilingSummary({ analyst, dFrom, dTo }: { analyst: AnalystRow[]; dFrom: string; dTo: string }) {
+  // Filter memakai kunci tanggal yang sama dengan analisis harian (YYYY-MM-DD)
+  // supaya kedua bagian selalu konsisten.
+  const dated = useMemo(
+    () => analyst.map((row) => ({ row, date: profilingDateKey(row) })).filter((i) => i.date),
+    [analyst],
+  );
+  const items = useMemo(
+    () => dated
+      .filter((i) => (!dFrom || i.date >= dFrom) && (!dTo || i.date <= dTo))
+      .sort((a, b) => b.date.localeCompare(a.date)),
+    [dated, dFrom, dTo],
+  );
+  const rows = items.map((i) => i.row);
+  const skipped = analyst.length - dated.length;
+  const rangeLabel = dFrom || dTo ? `${formatDateID(dFrom)} – ${formatDateID(dTo)}` : "semua tanggal";
   const totalAE = new Set(rows.map((r) => r.aeName).filter(Boolean)).size;
   const totalCluster = new Set(rows.map((r) => r.cluster).filter(Boolean)).size;
+  const totalSF = rows.reduce((s, r) => s + (r.sfToday || 0), 0);
+  const totalCW = rows.reduce((s, r) => s + (r.closewonToday || 0), 0);
   return (
     <Card className="glass-card border-0">
       <CardHeader className="pb-2">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <CardTitle className="font-display text-sm">Ringkasan Profiling (harian)</CardTitle>
+          <div className="space-y-1">
+            <CardTitle className="font-display text-sm">Ringkasan Profiling (harian)</CardTitle>
+            <p className="text-xs text-muted-foreground">Detail baris profiling untuk rentang {rangeLabel}.</p>
+          </div>
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs text-muted-foreground">Tanggal:</span>
-            <Input type="date" value={dFrom} onChange={(e) => onFrom(e.target.value)} className="h-8 w-[150px]" />
-            <span className="text-xs text-muted-foreground">→</span>
-            <Input type="date" value={dTo} onChange={(e) => onTo(e.target.value)} className="h-8 w-[150px]" />
-            {(dFrom || dTo) && <Button size="sm" variant="ghost" className="h-8" onClick={() => { onFrom(""); onTo(""); }}>Reset</Button>}
             <Button size="sm" variant="outline" className="h-8" disabled={!rows.length} onClick={() => exportProfilingExcel(rows, rangeLabel)}>
               <FileText className="mr-1 h-3.5 w-3.5" /> Excel
             </Button>
@@ -176,32 +181,37 @@ function ProfilingSummary({ analyst, dFrom, dTo, onFrom, onTo }: { analyst: Anal
         </div>
       </CardHeader>
       <CardContent>
-        <div className="mb-2 flex flex-wrap gap-3 text-xs">
-          <Badge variant="secondary">Total: {rows.length}</Badge>
+        <div className="mb-2 flex flex-wrap gap-2 text-xs">
+          <Badge variant="secondary">Total: {fmtN(rows.length)}</Badge>
           <Badge variant="secondary">AE: {totalAE}</Badge>
           <Badge variant="secondary">Cluster: {totalCluster}</Badge>
+          <Badge variant="secondary">SF: {fmtN(totalSF)}</Badge>
+          <Badge variant="secondary">Close Won: {fmtN(totalCW)}</Badge>
+          {skipped > 0 && <Badge variant="outline">{fmtN(skipped)} baris tanpa tanggal valid</Badge>}
         </div>
         {rows.length === 0 ? (
           <div className="py-6 text-center text-xs text-muted-foreground">Tidak ada profiling di rentang tanggal ini.</div>
         ) : (
           <div className="scroll-x max-h-72 overflow-y-auto">
-            <table className="w-full min-w-[560px] text-xs">
+            <table className="w-full min-w-[680px] text-xs">
               <thead className="sticky top-0 bg-muted/40 text-[10px] uppercase text-muted-foreground">
-                <tr><th className="p-2 text-left">AE</th><th className="p-2 text-left">Cluster</th><th className="p-2 text-left">Tanggal</th><th className="p-2 text-left">Kompetitor</th><th className="p-2 text-left">Potensi</th></tr>
+                <tr><th className="p-2 text-left">Tanggal</th><th className="p-2 text-left">AE</th><th className="p-2 text-left">Cluster</th><th className="p-2 text-left">Kompetitor</th><th className="p-2 text-left">Potensi</th><th className="p-2 text-right">SF</th><th className="p-2 text-right">Close Won</th></tr>
               </thead>
               <tbody>
-                {rows.slice(0, 200).map((r) => (
+                {items.slice(0, 200).map(({ row: r, date }) => (
                   <tr key={r.id} className="border-t border-border/40">
-                    <td className="p-2 font-medium">{r.aeName || "—"}</td>
+                    <td className="whitespace-nowrap p-2 font-medium">{formatDateID(date)}</td>
+                    <td className="p-2">{r.aeName || "—"}</td>
                     <td className="p-2">{r.cluster || "—"}</td>
-                    <td className="p-2 text-muted-foreground">{r.profilingDate || r.timestamp || "—"}</td>
                     <td className="p-2 text-muted-foreground">{r.competitor || "—"}</td>
                     <td className="p-2">{r.potential || "—"}</td>
+                    <td className="p-2 text-right tabular-nums">{fmtN(r.sfToday || 0)}</td>
+                    <td className="p-2 text-right font-semibold tabular-nums text-success">{fmtN(r.closewonToday || 0)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            {rows.length > 200 && <div className="mt-2 text-center text-[10px] text-muted-foreground">Menampilkan 200 dari {rows.length}</div>}
+            {rows.length > 200 && <div className="mt-2 text-center text-[10px] text-muted-foreground">Menampilkan 200 dari {fmtN(rows.length)}</div>}
           </div>
         )}
       </CardContent>
@@ -678,8 +688,6 @@ function ReportsPage() {
   }, [first, lastM, monthRangeKey, prevM, syncKey]);
 
   const [wDFrom, setWDFrom] = useState(""); const [wDTo, setWDTo] = useState("");
-  const [mDFrom, setMDFrom] = useState(""); const [mDTo, setMDTo] = useState("");
-  const [cDFrom, setCDFrom] = useState(""); const [cDTo, setCDTo] = useState("");
   const analyst = useDataStore((s) => s.analyst);
 
   const clusterTicketMap = useMemo(() => ticketByClusterMap(effTickets), [effTickets]);
@@ -937,23 +945,38 @@ function ReportsPage() {
 
   return (
     <>
-      <AppHeader title="Reports" subtitle="Weekly · Monthly · Competitor Intelligence" />
+      <AppHeader title="Reports" subtitle="Weekly · Day · Monthly · Competitor Intelligence" />
       <div className="space-y-4 p-4 sm:p-6">
         <Tabs defaultValue="weekly">
           <TabsList>
             <TabsTrigger value="weekly"><CalendarIcon className="mr-1 h-4 w-4" /> Weekly</TabsTrigger>
+            <TabsTrigger value="day"><CalendarIcon className="mr-1 h-4 w-4" /> Day</TabsTrigger>
             <TabsTrigger value="monthly"><FileText className="mr-1 h-4 w-4" /> Monthly</TabsTrigger>
             <TabsTrigger value="intel"><RadarIcon className="mr-1 h-4 w-4" /> Competitor Intel</TabsTrigger>
           </TabsList>
 
           <TabsContent value="weekly" className="space-y-4">
             {weekly && renderTab(weekly, "weekly", wFrom, wTo, setWFrom, setWTo, weeklyRef)}
-            {analyst.length > 0 && <WeeklyDailyAnalysis analyst={analyst} from={wDFrom} to={wDTo} onFrom={setWDFrom} onTo={setWDTo} />}
+          </TabsContent>
+
+          <TabsContent value="day" className="space-y-4">
+            {analyst.length === 0 ? (
+              <Card className="glass-card border-0">
+                <CardContent className="flex flex-col items-center gap-2 py-16 text-center text-sm text-muted-foreground">
+                  <CalendarIcon className="h-8 w-8 text-primary" />
+                  Belum ada data profiling. Upload ANALYST MARKET.xlsx dari Settings → Data Management.
+                </CardContent>
+              </Card>
+            ) : (
+              <>
+                <WeeklyDailyAnalysis analyst={analyst} from={wDFrom} to={wDTo} onFrom={setWDFrom} onTo={setWDTo} />
+                <ProfilingSummary analyst={analyst} dFrom={wDFrom} dTo={wDTo} />
+              </>
+            )}
           </TabsContent>
 
           <TabsContent value="monthly" className="space-y-4">
             {monthly && renderTab(monthly, "monthly", mFrom, mTo, setMFrom, setMTo, monthlyRef)}
-            {analyst.length > 0 && <ProfilingSummary analyst={analyst} dFrom={mDFrom} dTo={mDTo} onFrom={setMDFrom} onTo={setMDTo} />}
           </TabsContent>
 
           <TabsContent value="intel" className="space-y-4">
@@ -1104,8 +1127,6 @@ function ReportsPage() {
                     "Update pricing playbook bulanan berbasis data harga kompetitor terbaru.",
                   ]} />
                 </div>
-
-                {analyst.length > 0 && <ProfilingSummary analyst={analyst} dFrom={cDFrom} dTo={cDTo} onFrom={setCDFrom} onTo={setCDTo} />}
               </>
             )}
           </TabsContent>
