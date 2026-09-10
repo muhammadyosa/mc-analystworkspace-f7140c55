@@ -73,6 +73,18 @@ function formatDateID(key: string, compact = false): string {
   }
 }
 
+/** Tanggal lengkap dengan nama hari, mis. "Senin, 08 September 2026". */
+function formatDateFullID(key: string): string {
+  if (!key) return "Tanggal tidak valid";
+  const date = new Date(`${key}T00:00:00`);
+  if (isNaN(date.getTime())) return "Tanggal tidak valid";
+  try {
+    return format(date, "EEEE, dd MMMM yyyy", { locale: idLocale });
+  } catch {
+    return "Tanggal tidak valid";
+  }
+}
+
 function ReportDatePicker({ label, value, onChange, min, max }: { label: string; value: string; onChange: (value: string) => void; min?: string; max?: string }) {
   const toValidDate = (key: string | undefined, endOfDay = false): Date | undefined => {
     if (!key) return undefined;
@@ -199,6 +211,7 @@ function ProfilingSummary({ analyst, dFrom, dTo, onFrom, onTo }: { analyst: Anal
 
 function WeeklyDailyAnalysis({ analyst, from, to, onFrom, onTo }: { analyst: AnalystRow[]; from: string; to: string; onFrom: (value: string) => void; onTo: (value: string) => void }) {
   const datedRows = useMemo(() => analyst.map((row) => ({ row, date: profilingDateKey(row) })).filter((item) => item.date), [analyst]);
+  const invalidDateCount = analyst.length - datedRows.length;
   const bounds = useMemo(() => {
     const dates = datedRows.map((item) => item.date).sort();
     return { min: dates[0] ?? "", max: dates[dates.length - 1] ?? "" };
@@ -250,14 +263,26 @@ function WeeklyDailyAnalysis({ analyst, from, to, onFrom, onTo }: { analyst: Ana
       <Card className="glass-card border-0">
         <CardHeader className="pb-3">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-            <div>
+            <div className="space-y-2">
               <CardTitle id="weekly-daily-title" className="font-display text-base">Analisis Profiling Harian</CardTitle>
-              <p className="mt-1 text-xs text-muted-foreground">Analisis Weekly mengikuti tanggal aktual pada file profiling.</p>
+              <p className="text-xs text-muted-foreground">Analisis mengikuti tanggal aktual pada file profiling.</p>
+              <div className="flex flex-wrap items-center gap-1.5">
+                <Badge variant="secondary" className="text-[10px] font-medium">
+                  Data valid: {bounds.min ? `${formatDateID(bounds.min)} – ${formatDateID(bounds.max)}` : "belum ada"}
+                </Badge>
+                <Badge variant="secondary" className="text-[10px] font-medium">Rentang dipilih: {rangeLabel}</Badge>
+                {invalidDateCount > 0 && (
+                  <Badge variant="outline" className="text-[10px] font-medium text-warning">{fmtN(invalidDateCount)} baris tanpa tanggal valid (dilewati)</Badge>
+                )}
+              </div>
             </div>
             <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
               <ReportDatePicker label="Tanggal mulai" value={effectiveFrom} onChange={onFrom} min={bounds.min} max={effectiveTo || bounds.max} />
               <ReportDatePicker label="Tanggal akhir" value={effectiveTo} onChange={onTo} min={effectiveFrom || bounds.min} max={bounds.max} />
               <div className="flex gap-2">
+                {(from || to) && (
+                  <Button size="sm" variant="ghost" className="h-9" onClick={() => { onFrom(""); onTo(""); }}>Reset</Button>
+                )}
                 <Button size="sm" variant="outline" className="h-9" disabled={!exportRows.length} onClick={() => exportProfilingExcel(exportRows, `${effectiveFrom}-${effectiveTo}`)}><FileText /> Excel</Button>
                 <Button size="sm" variant="outline" className="h-9" disabled={!exportRows.length} onClick={() => exportProfilingPDF(exportRows, rangeLabel)}><Printer /> PDF</Button>
               </div>
@@ -318,19 +343,20 @@ function WeeklyDailyAnalysis({ analyst, from, to, onFrom, onTo }: { analyst: Ana
             <CardHeader><CardTitle className="font-display text-sm">Ringkasan Analisis per Tanggal</CardTitle></CardHeader>
             <CardContent><div className="scroll-x max-h-80 overflow-y-auto"><table className="w-full min-w-[760px] text-sm">
               <thead className="sticky top-0 bg-muted text-xs uppercase text-muted-foreground"><tr><th className="p-2 text-left">Tanggal</th><th className="p-2 text-right">Profiling</th><th className="p-2 text-right">AE</th><th className="p-2 text-right">Cluster</th><th className="p-2 text-right">SF</th><th className="p-2 text-right">Close Won</th><th className="p-2 text-right">Konversi</th></tr></thead>
-              <tbody>{daily.map((day) => <tr key={day.date} className="border-t"><td className="p-2 font-medium">{formatDateID(day.date)}</td><td className="p-2 text-right">{fmtN(day.profiling)}</td><td className="p-2 text-right">{day.ae}</td><td className="p-2 text-right">{day.cluster}</td><td className="p-2 text-right">{fmtN(day.sf)}</td><td className="p-2 text-right font-semibold text-success">{fmtN(day.closeWon)}</td><td className="p-2 text-right">{day.conversion.toFixed(1)}%</td></tr>)}</tbody>
+              <tbody>{daily.map((day) => <tr key={day.date} className="border-t"><td className="p-2 font-medium"><div>{formatDateID(day.date)}</div><div className="text-[10px] font-normal text-muted-foreground">{formatDateFullID(day.date).split(",")[0]}</div></td><td className="p-2 text-right">{fmtN(day.profiling)}</td><td className="p-2 text-right">{day.ae}</td><td className="p-2 text-right">{day.cluster}</td><td className="p-2 text-right">{fmtN(day.sf)}</td><td className="p-2 text-right font-semibold text-success">{fmtN(day.closeWon)}</td><td className="p-2 text-right">{day.conversion.toFixed(1)}%</td></tr>)}</tbody>
             </table></div></CardContent>
           </Card>
 
           <div className="grid gap-4 lg:grid-cols-2">
             <InsightBox items={[
-              `${fmtN(totals.profiling)} profiling dilakukan dalam ${daily.length} hari aktif oleh ${totals.ae} AE di ${totals.cluster} cluster.`,
-              best ? `${formatDateID(best.date)} menjadi hari terbaik dengan ${fmtN(best.closeWon)} Close Won dari ${fmtN(best.sf)} SF.` : "Belum ada hari terbaik yang dapat dihitung.",
+              `Periode ${formatDateFullID(effectiveFrom)} sampai ${formatDateFullID(effectiveTo)}: ${fmtN(totals.profiling)} profiling dalam ${daily.length} hari aktif oleh ${totals.ae} AE di ${totals.cluster} cluster.`,
+              best ? `Hari terbaik: ${formatDateFullID(best.date)} dengan ${fmtN(best.closeWon)} Close Won dari ${fmtN(best.sf)} SF.` : "Belum ada hari terbaik yang dapat dihitung.",
+              low && daily.length > 1 ? `Hari terendah: ${formatDateFullID(low.date)} dengan ${fmtN(low.closeWon)} Close Won dari ${fmtN(low.profiling)} profiling.` : `Konversi keseluruhan ${totals.conversion.toFixed(1)}%.`,
               `Konversi keseluruhan mencapai ${totals.conversion.toFixed(1)}% (${fmtN(totals.closeWon)} Close Won dari ${fmtN(totals.sf)} SF).`,
             ]} />
             <RecommendationBox items={[
-              best ? `Pelajari aktivitas AE pada ${formatDateID(best.date)} dan terapkan pola yang sama pada hari berikutnya.` : "Lengkapi data aktivitas harian untuk membentuk rekomendasi.",
-              low && daily.length > 1 ? `Evaluasi cakupan dan follow-up pada ${formatDateID(low.date)} karena menghasilkan Close Won terendah.` : "Pertahankan konsistensi follow-up profiling setiap hari.",
+              best ? `Pelajari aktivitas AE pada ${formatDateFullID(best.date)} dan terapkan pola yang sama pada hari berikutnya.` : "Lengkapi data aktivitas harian untuk membentuk rekomendasi.",
+              low && daily.length > 1 ? `Evaluasi cakupan dan follow-up pada ${formatDateFullID(low.date)} karena menghasilkan Close Won terendah.` : "Pertahankan konsistensi follow-up profiling setiap hari.",
               totals.conversion < 20 ? "Perkuat follow-up lead dan kualitas profiling untuk meningkatkan konversi." : "Pertahankan kualitas profiling dan prioritaskan cluster dengan konversi terbaik.",
             ]} />
           </div>
@@ -798,7 +824,7 @@ function ReportsPage() {
           <KpiCard label="Tren Ticket" value={`${s.ticketGrowth >= 0 ? "+" : ""}${s.ticketGrowth.toFixed(1)}%`} tone={s.ticketGrowth <= 0 ? "up" : "down"} hint={`puncak ${s.peakTicket.bulan} (${fmtN(s.peakTicket.ticket)})`} />
           <KpiCard label="Rata-rata Ticket / Bulan" value={s.avgTicketPerMonth} hint={`${s.ticketTrend.length} bulan`} />
           <KpiCard label="Ticket per 100 HC" value={s.ticketPer100HC.toFixed(1)} tone={s.ticketPer100HC > 10 ? "down" : "up"} hint="bulan terakhir" />
-          <KpiCard label="Cluster Bermasalah" value={s.clustersWithTicket} tone="warn" hint={`dari ${clusters.length} cluster`} />
+          <KpiCard label="Profiling Cluster" value={s.clustersWithTicket} tone="warn" hint={`dari ${clusters.length} cluster`} />
           <KpiCard label="Action Plan Selesai" value={`${doneA}/${totalA}`} tone="up" hint={`${runningA} on progress`} />
         </div>
 
