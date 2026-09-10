@@ -324,7 +324,7 @@ function Dashboard() {
       cur.ticket += c.ticket;
       map.set(k, cur);
     });
-    const rows = [...map.values()].sort((a, b) => b.hc - a.hc);
+    const list = [...map.values()].sort((a, b) => b.hc - a.hc);
     setDrill({
       title,
       columns: [
@@ -333,7 +333,7 @@ function Dashboard() {
         { key: "hc", label: "Total HC", align: "right", format: (v) => Number(v).toLocaleString("id-ID") },
         { key: "ticket", label: "Ticket", align: "right", format: (v) => Number(v).toLocaleString("id-ID") },
       ],
-      rows: rows as unknown as Record<string, unknown>[],
+      rows: list as unknown as Record<string, unknown>[],
     });
   };
 
