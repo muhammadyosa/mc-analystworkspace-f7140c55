@@ -96,9 +96,9 @@
   --gradient-success: linear-gradient(135deg, oklch(0.65 0.17 155), oklch(0.7 0.17 195));
   --gradient-warm: linear-gradient(135deg, oklch(0.72 0.17 60), oklch(0.65 0.22 30));
   --shadow-glass: 0 8px 32px -8px oklch(0.3 0.1 265 / 0.15);
-  --sidebar-toggle-bg: oklch(0.18 0.03 260);
-  --sidebar-toggle-ring: oklch(0.75 0.18 230);
-  --sidebar-toggle-glow: oklch(0.75 0.18 230 / 0.45);
+  --sidebar-toggle-bg: oklch(0.99 0 0);
+  --sidebar-toggle-ring: oklch(0.52 0.22 265);
+  --sidebar-toggle-glow: oklch(0.52 0.22 265 / 0.3);
 }
 
 .dark {
@@ -279,6 +279,21 @@
   color: transparent;
 }
 
+/* Melayang lembut saat menu terbuka; menempel diam saat tertutup. */
+@keyframes sidebar-toggle-float {
+  0%,
+  100% {
+    transform: translateY(-50%) translateX(0);
+  }
+  50% {
+    transform: translateY(calc(-50% - 4px)) translateX(0);
+  }
+}
+
+.sidebar-toggle-float {
+  animation: sidebar-toggle-float 2.8s ease-in-out infinite;
+}
+
 @keyframes sidebar-toggle-spin {
   to { transform: rotate(360deg); }
 }
@@ -298,7 +313,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .sidebar-toggle-orbit,
-  .sidebar-toggle-halo {
+  .sidebar-toggle-halo,
+  .sidebar-toggle-float {
     animation: none;
   }
 }
