@@ -310,8 +310,8 @@ function Dashboard() {
   ];
 
   const openTop = (title: string, sortKey: "juni" | "mei" | "ticket" | "deltaMeiJuni", desc = true) => {
-    const rows = [...rows].sort((a, b) => (desc ? Number(b[sortKey]) - Number(a[sortKey]) : Number(a[sortKey]) - Number(b[sortKey]))).slice(0, 50);
-    setDrill({ title, description: "Menampilkan hingga 50 cluster teratas", columns: colClusterBasic, rows: rows as unknown as Record<string, unknown>[] });
+    const list = [...rows].sort((a, b) => (desc ? Number(b[sortKey]) - Number(a[sortKey]) : Number(a[sortKey]) - Number(b[sortKey]))).slice(0, 50);
+    setDrill({ title, description: "Menampilkan hingga 50 cluster teratas", columns: colClusterBasic, rows: list as unknown as Record<string, unknown>[] });
   };
 
   const openGrouped = (title: string, key: "kabupaten" | "provinsi" | "pic") => {
@@ -491,12 +491,12 @@ function Dashboard() {
                     }
                   } else if (kind === "province") {
                     const name = d.name as string;
-                    const rows = rows.filter((c) => (c.provinsi || "N/A") === name);
+                    const list = rows.filter((c) => (c.provinsi || "N/A") === name);
                     setDrill({
                       title: `Provinsi — ${name}`,
-                      description: `${rows.length} cluster di provinsi ini.`,
+                      description: `${list.length} cluster di provinsi ini.`,
                       columns: colClusterBasic,
-                      rows: rows as unknown as Record<string, unknown>[],
+                      rows: list as unknown as Record<string, unknown>[],
                     });
                   } else if (kind === "month") {
                     setDrill({
