@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import * as XLSX from "xlsx";
@@ -24,9 +24,20 @@ import { useDataStore } from "@/lib/store";
 import type { AnalystRow, ClusterRow, CompetitorRow, PromoCategory, TicketRow } from "@/lib/excel";
 
 // Parse various profiling date formats to a Date (or null)
-function parseProfilingDate(s: string): Date | null {
-  if (!s) return null;
-  const t = s.trim();
+function parseProfilingDate(value: unknown): Date | null {
+  if (value === null || value === undefined || value === "") return null;
+  if (value instanceof Date) return isNaN(value.getTime()) ? null : value;
+  if (typeof value === "number") {
+    // Excel serial date (days since 1899-12-30) or Unix timestamp.
+    if (value > 20_000 && value < 100_000) {
+      const excelDate = new Date(Date.UTC(1899, 11, 30) + value * 86_400_000);
+      return isNaN(excelDate.getTime()) ? null : excelDate;
+    }
+    const timestamp = new Date(value);
+    return isNaN(timestamp.getTime()) ? null : timestamp;
+  }
+  const t = String(value).trim();
+  if (!t) return null;
   // ISO first
   const iso = new Date(t);
   if (!isNaN(iso.getTime()) && /^\d{4}-\d{1,2}-\d{1,2}/.test(t)) return iso;
@@ -319,7 +330,16 @@ function WeeklyDailyAnalysis({ analyst, from, to, onFrom, onTo }: { analyst: Ana
 }
 
 export const Route = createFileRoute("/reports")({
-  head: () => ({ meta: [{ title: "Reports — MCA Workspace" }] }),
+  head: () => ({
+    meta: [
+      { title: "Reports — MCA Workspace" },
+      { name: "description", content: "Laporan mingguan, bulanan, profiling, ticket, HC, dan intelligence kompetitor." },
+      { property: "og:title", content: "Reports — MCA Workspace" },
+      { property: "og:description", content: "Laporan mingguan, bulanan, profiling, ticket, HC, dan intelligence kompetitor." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
   component: ReportsPage,
 });
 
@@ -610,13 +630,15 @@ function ReportsPage() {
   const [cTo, setCTo] = useState(lastM);
 
   // Sinkronkan range bila data baru punya bulan terakhir yang berbeda
-  const [syncKey, setSyncKey] = useState(`${first}-${lastM}`);
-  if (syncKey !== `${first}-${lastM}`) {
-    setSyncKey(`${first}-${lastM}`);
+  const monthRangeKey = `${first}-${lastM}`;
+  const [syncKey, setSyncKey] = useState(monthRangeKey);
+  useEffect(() => {
+    if (syncKey === monthRangeKey) return;
+    setSyncKey(monthRangeKey);
     setWFrom(prevM); setWTo(lastM);
     setMFrom(first); setMTo(lastM);
     setCFrom(first); setCTo(lastM);
-  }
+  }, [first, lastM, monthRangeKey, prevM, syncKey]);
 
   const [wDFrom, setWDFrom] = useState(""); const [wDTo, setWDTo] = useState("");
   const [mDFrom, setMDFrom] = useState(""); const [mDTo, setMDTo] = useState("");
