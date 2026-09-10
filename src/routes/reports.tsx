@@ -1221,7 +1221,9 @@ function ReportsPage() {
         ? `Rasio gangguan terburuk: ${worst.cluster} — ${worst.ticketPer100HC.toFixed(1)} ticket per 100 HC (HC ${fmtN(worst.hcEnd)}).`
         : "Rasio ticket per HC masih dalam batas wajar di seluruh cluster.",
       `PIC dengan portofolio HC terbesar: ${s.picPerf[0]?.pic ?? "-"} (${fmtN(s.picPerf[0]?.hc ?? 0)} HC, ${fmtN(s.picPerf[0]?.ticket ?? 0)} ticket).`,
-      `Action plan: ${doneA} selesai · ${runningA} berjalan · ${belumA} belum — rasio delivery ${totalA ? Math.round((doneA / totalA) * 100) : 0}%.`,
+      kind === "weekly"
+        ? `Action plan ${weekLabel}: ${planDone} selesai · ${planRun} berjalan dari ${plansInRange.length} plan aktif pada rentang tanggal ini.`
+        : `Action plan: ${doneA} selesai · ${runningA} berjalan · ${belumA} belum — rasio delivery ${totalA ? Math.round((doneA / totalA) * 100) : 0}%.`,
     ];
     const recs = [
       s.growth < 0 ? "Aktifkan retention program di top decline cluster minggu ini." : "Jaga momentum dengan replikasi strategi top growth cluster ke cluster tetangga.",
