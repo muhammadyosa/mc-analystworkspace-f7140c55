@@ -1066,7 +1066,19 @@ function ReportsPage() {
   const compBase = useMemo(() => clusters.length ? computeStats(clusters, cFrom, cTo, ticketMap, clusterTicketMap) : null, [clusters, cFrom, cTo, ticketMap, clusterTicketMap]);
 
 
+  // Data kompetitor tidak punya kolom tanggal, jadi rentang tanggal dipetakan
+  // lewat cluster yang diprofiling pada rentang tersebut.
+  const compScope = useMemo(() => {
+    const inRange = profilingRangeStats(analyst, cDFromEff, cDToEff).rows;
+    const keys = new Set(inRange.map((r) => (r.cluster || "").trim().toUpperCase()).filter(Boolean));
+    if (!keys.size) return { rows: competitorData, filtered: false, clusters: 0 };
+    const rows = competitorData.filter((r) => keys.has((r.cluster || "").trim().toUpperCase()));
+    if (!rows.length) return { rows: competitorData, filtered: false, clusters: keys.size };
+    return { rows, filtered: true, clusters: keys.size };
+  }, [analyst, competitorData, cDFromEff, cDToEff]);
+
   const compCharts = useMemo(() => {
+    const competitorData = compScope.rows;
     if (!competitorData.length) return null;
     const compCount = new Map<string, number>();
     const promoCount = new Map<PromoCategory, number>();
