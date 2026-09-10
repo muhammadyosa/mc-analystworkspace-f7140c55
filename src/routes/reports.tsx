@@ -325,8 +325,8 @@ function computeStats(
   };
 
   const perCluster = clusters.map((c) => {
-    const hcStart = hcOf(c, range[0].key);
-    const hcEnd = hcOf(c, range[range.length - 1].key);
+    const hcStart = hcEff(c, from);
+    const hcEnd = hcEff(c, to);
     const rangeTicket = hasRealTicket ? ticketOf(c.cluster) : c.ticket;
     return {
       ...c,
