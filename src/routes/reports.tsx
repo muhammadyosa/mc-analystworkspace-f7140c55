@@ -1160,6 +1160,23 @@ function ReportsPage() {
     const label = kind === "weekly"
       ? `${formatDateID(weekSel.from)} – ${formatDateID(weekSel.to)}`
       : MONTHS[from].label + " → " + MONTHS[to].label + " 2026";
+    // Rentang tanggal aktual dari filter — dipakai agar kartu KPI mengikuti tanggal terpilih.
+    const rFrom = kind === "weekly" ? weekSel.from : monthStartKey(from);
+    const rTo = kind === "weekly" ? weekSel.to : monthEndKey(to);
+    const prof = profilingRangeStats(analyst, rFrom, rTo);
+    const plansInRange = actionPlans.filter((p) => {
+      const st = p.startDate || rFrom;
+      const en = p.endDate || p.startDate || rTo;
+      return st <= rTo && en >= rFrom;
+    });
+    const planDone = plansInRange.filter((p) => p.status === "completed").length;
+    const planRun = plansInRange.filter((p) => p.status === "onprogress").length;
+    const rangeDays = daysBetween(rFrom, rTo);
+    const monthDays = kind === "weekly" ? new Date(2026, wkMonth + 1, 0).getDate() : 0;
+    // Data ticket hanya tersedia per bulan; untuk minggu terpilih diskalakan sesuai jumlah hari.
+    const ticketScaled = kind === "weekly" && monthDays
+      ? Math.round((s.totalTicket * rangeDays) / monthDays)
+      : s.totalTicket;
     const worst = s.worstRatio[0];
     const heavyPic = [...s.picPerf].sort((a, b) => b.ratio - a.ratio)[0];
     const insights = [
