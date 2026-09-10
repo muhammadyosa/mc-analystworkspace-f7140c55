@@ -938,9 +938,15 @@ function ReportsPage() {
     return (
       <div className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <DateRange from={from} to={to} onFrom={setFrom} onTo={setTo} avail={avail} />
+          <div className="flex flex-wrap items-center gap-2">
+            <DateRange from={from} to={to} onFrom={setFrom} onTo={setTo} avail={avail} />
+            {kind === "weekly" && (
+              <WeekPicker month={wkMonth} week={wkWeek} onMonth={setWkMonth} onWeek={setWkWeek} avail={avail} />
+            )}
+          </div>
           <Button size="sm" onClick={() => handlePrint(ref)}><Printer className="mr-1 h-4 w-4" /> Export PDF</Button>
         </div>
+
 
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
           <KpiCard label="Total HC Akhir" value={s.end} hint={label} />
