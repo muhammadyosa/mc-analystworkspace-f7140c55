@@ -314,24 +314,41 @@ function ReportsPage() {
   const clusters = useDataStore((s) => s.clusters);
   const actions = useDataStore((s) => s.actions);
   const competitorData = useDataStore((s) => s.competitorData);
+  const tickets = useDataStore((s) => s.tickets);
   const weeklyRef = useRef<HTMLDivElement>(null);
   const monthlyRef = useRef<HTMLDivElement>(null);
 
-  const [wFrom, setWFrom] = useState(4); // Mei
-  const [wTo, setWTo] = useState(5);     // Jun
-  const [mFrom, setMFrom] = useState(0); // Jan
-  const [mTo, setMTo] = useState(5);     // Jun
-  const [cFrom, setCFrom] = useState(0);
-  const [cTo, setCTo] = useState(5);
+  const ticketMap = useMemo(() => ticketByMonthMap(tickets), [tickets]);
+  const avail = useMemo(() => availableMonths(clusters, ticketMap), [clusters, ticketMap]);
+  const first = avail[0];
+  const lastM = avail[avail.length - 1];
+  const prevM = avail.length > 1 ? avail[avail.length - 2] : first;
+
+  const [wFrom, setWFrom] = useState(prevM);
+  const [wTo, setWTo] = useState(lastM);
+  const [mFrom, setMFrom] = useState(first);
+  const [mTo, setMTo] = useState(lastM);
+  const [cFrom, setCFrom] = useState(first);
+  const [cTo, setCTo] = useState(lastM);
+
+  // Sinkronkan range bila data baru punya bulan terakhir yang berbeda
+  const [syncKey, setSyncKey] = useState(`${first}-${lastM}`);
+  if (syncKey !== `${first}-${lastM}`) {
+    setSyncKey(`${first}-${lastM}`);
+    setWFrom(prevM); setWTo(lastM);
+    setMFrom(first); setMTo(lastM);
+    setCFrom(first); setCTo(lastM);
+  }
 
   const [wDFrom, setWDFrom] = useState(""); const [wDTo, setWDTo] = useState("");
   const [mDFrom, setMDFrom] = useState(""); const [mDTo, setMDTo] = useState("");
   const [cDFrom, setCDFrom] = useState(""); const [cDTo, setCDTo] = useState("");
   const analyst = useDataStore((s) => s.analyst);
 
-  const weekly = useMemo(() => clusters.length ? computeStats(clusters, wFrom, wTo) : null, [clusters, wFrom, wTo]);
-  const monthly = useMemo(() => clusters.length ? computeStats(clusters, mFrom, mTo) : null, [clusters, mFrom, mTo]);
-  const compBase = useMemo(() => clusters.length ? computeStats(clusters, cFrom, cTo) : null, [clusters, cFrom, cTo]);
+  const weekly = useMemo(() => clusters.length ? computeStats(clusters, wFrom, wTo, ticketMap) : null, [clusters, wFrom, wTo, ticketMap]);
+  const monthly = useMemo(() => clusters.length ? computeStats(clusters, mFrom, mTo, ticketMap) : null, [clusters, mFrom, mTo, ticketMap]);
+  const compBase = useMemo(() => clusters.length ? computeStats(clusters, cFrom, cTo, ticketMap) : null, [clusters, cFrom, cTo, ticketMap]);
+
 
   const compCharts = useMemo(() => {
     if (!competitorData.length) return null;
