@@ -1222,13 +1222,29 @@ function ReportsPage() {
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
           <KpiCard label="Total HC Akhir" value={s.end} hint={label} />
           <KpiCard label="Growth HC" value={`${s.growth >= 0 ? "+" : ""}${s.growth.toFixed(1)}%`} tone={s.growth >= 0 ? "up" : "down"} hint={`${fmtN(s.start)} → ${fmtN(s.end)}`} />
-          <KpiCard label="Total Ticket" value={s.totalTicket} tone="warn" hint={s.hasRealTicket ? `data ticket ${label}` : `estimasi dari ${clusters.length} cluster`} />
+          <KpiCard
+            label="Total Ticket"
+            value={ticketScaled}
+            tone="warn"
+            hint={kind === "weekly" ? `porsi ${rangeDays} hari dari ${MONTHS[wkMonth].label}` : s.hasRealTicket ? `data ticket ${label}` : `estimasi dari ${clusters.length} cluster`}
+          />
           <KpiCard label="Tren Ticket" value={`${s.ticketGrowth >= 0 ? "+" : ""}${s.ticketGrowth.toFixed(1)}%`} tone={s.ticketGrowth <= 0 ? "up" : "down"} hint={`puncak ${s.peakTicket.bulan} (${fmtN(s.peakTicket.ticket)})`} />
           <KpiCard label="Rata-rata Ticket / Bulan" value={s.avgTicketPerMonth} hint={`${s.ticketTrend.length} bulan`} />
           <KpiCard label="Ticket per 100 HC" value={s.ticketPer100HC.toFixed(1)} tone={s.ticketPer100HC > 10 ? "down" : "up"} hint="bulan terakhir" />
-          <KpiCard label="Profiling Cluster" value={s.clustersWithTicket} tone="warn" hint={`dari ${clusters.length} cluster`} />
-          <KpiCard label="Action Plan Selesai" value={`${doneA}/${totalA}`} tone="up" hint={`${runningA} on progress`} />
+          <KpiCard
+            label="Profiling Cluster"
+            value={prof.clusters}
+            tone="warn"
+            hint={prof.count ? `${fmtN(prof.count)} profiling · ${prof.ae} AE` : `tidak ada profiling ${formatDateID(rFrom, true)}–${formatDateID(rTo, true)}`}
+          />
+          <KpiCard
+            label="Action Plan Selesai"
+            value={`${planDone}/${plansInRange.length}`}
+            tone="up"
+            hint={plansInRange.length ? `${planRun} on progress · sesuai tanggal` : "tidak ada plan pada rentang ini"}
+          />
         </div>
+
 
         <div ref={ref} className="grid gap-4 lg:grid-cols-2">
           <Card className="glass-card border-0">
