@@ -137,8 +137,36 @@ const MONTHS = [
   { key: "april", label: "Apr" },
   { key: "mei", label: "Mei" },
   { key: "juni", label: "Jun" },
+  { key: "juli", label: "Jul" },
+  { key: "agustus", label: "Agt" },
+  { key: "september", label: "Sep" },
+  { key: "oktober", label: "Okt" },
+  { key: "november", label: "Nov" },
+  { key: "desember", label: "Des" },
 ] as const;
 type MonthKey = typeof MONTHS[number]["key"];
+
+// Bulan yang benar-benar punya data (HC cluster atau ticket) — supaya range
+// mengikuti bulan terakhir pada file yang diupload, bukan dipatok sampai Juni.
+function ticketByMonthMap(tickets: TicketRow[]): Map<string, number> {
+  const m = new Map<string, number>();
+  for (const t of tickets) {
+    const k = (t.bulan || "").toLowerCase();
+    if (!k) continue;
+    m.set(k, (m.get(k) ?? 0) + (t.ticket || 0));
+  }
+  return m;
+}
+
+function availableMonths(clusters: ClusterRow[], ticketMap: Map<string, number>): number[] {
+  const idx = MONTHS.map((m, i) => {
+    const hc = clusters.reduce((a, c) => a + (Number((c as unknown as Record<string, unknown>)[m.key]) || 0), 0);
+    const tk = ticketMap.get(m.key) ?? 0;
+    return hc > 0 || tk > 0 ? i : -1;
+  }).filter((i) => i >= 0);
+  return idx.length ? idx : [0, 1, 2, 3, 4, 5];
+}
+
 
 const fmtRp = (n: number) => (!n ? "-" : `Rp${n.toLocaleString("id-ID")}`);
 const fmtN = (n: number) => n.toLocaleString("id-ID");
