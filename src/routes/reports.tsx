@@ -98,13 +98,13 @@ function ReportDatePicker({ label, value, onChange, min, max }: { label: string;
   const minDate = toValidDate(min);
   const maxDate = toValidDate(max, true);
   return (
-    <div className="space-y-1">
-      <span className="text-[10px] font-semibold uppercase text-muted-foreground">{label}</span>
+    <div className="min-w-0 space-y-1.5">
+      <span className="block text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</span>
       <Popover>
         <PopoverTrigger asChild>
-          <Button variant="outline" className={cn("h-9 w-full justify-start text-left font-normal sm:w-[170px]", !value && "text-muted-foreground")}>
-            <CalendarIcon className="h-4 w-4" />
-            {formatDateID(value)}
+          <Button variant="outline" className={cn("h-9 w-full justify-start gap-2 truncate text-left font-normal", !value && "text-muted-foreground")}>
+            <CalendarIcon className="h-4 w-4 shrink-0" />
+            <span className="truncate">{formatDateID(value)}</span>
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="start">
@@ -123,6 +123,66 @@ function ReportDatePicker({ label, value, onChange, min, max }: { label: string;
     </div>
   );
 }
+
+/** Panel rentang tanggal yang rapi: mulai → akhir sejajar, aksi di baris/kolom terpisah. */
+function DateRangeFields({
+  title,
+  from,
+  to,
+  onFrom,
+  onTo,
+  min,
+  max,
+  actions,
+  info,
+}: {
+  title?: string;
+  from: string;
+  to: string;
+  onFrom: (v: string) => void;
+  onTo: (v: string) => void;
+  min?: string;
+  max?: string;
+  actions?: React.ReactNode;
+  info?: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-xl border bg-muted/30 p-3 sm:p-4">
+      {title && <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{title}</p>}
+      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto]">
+        <div className="grid grid-cols-1 items-end gap-2 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
+          <ReportDatePicker label="Tanggal mulai" value={from} onChange={onFrom} min={min} max={to || max} />
+          <span className="hidden pb-2 text-center text-xs text-muted-foreground sm:block">→</span>
+          <ReportDatePicker label="Tanggal akhir" value={to} onChange={onTo} min={from || min} max={max} />
+        </div>
+        {actions && <div className="flex flex-wrap items-center gap-2 lg:justify-end lg:self-end">{actions}</div>}
+      </div>
+      {info && <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-border/50 pt-2.5">{info}</div>}
+    </div>
+  );
+}
+
+/** Ringkas metrik profiling pada rentang tanggal terpilih. */
+function profilingRangeStats(analyst: AnalystRow[], from: string, to: string) {
+  const rows = analyst.filter((r) => {
+    const k = profilingDateKey(r);
+    return Boolean(k) && (!from || k >= from) && (!to || k <= to);
+  });
+  return {
+    rows,
+    count: rows.length,
+    clusters: new Set(rows.map((r) => r.cluster).filter(Boolean)).size,
+    ae: new Set(rows.map((r) => r.aeName).filter(Boolean)).size,
+  };
+}
+
+function daysBetween(from: string, to: string): number {
+  const a = new Date(`${from}T00:00:00`).getTime();
+  const b = new Date(`${to}T00:00:00`).getTime();
+  if (isNaN(a) || isNaN(b)) return 0;
+  return Math.max(1, Math.round((b - a) / 86400000) + 1);
+}
+
 
 function exportProfilingExcel(rows: AnalystRow[], label: string) {
   const data = rows.map((r) => ({
