@@ -859,8 +859,8 @@ export function downloadTemplate(kind: ImportKind) {
       "STATUS KETERSEDIAAN TIM IKR", "Provinsi", "PIC",
     ],
     ticket: [
-      "CLUSTER", "Ticket Jan", "Ticket Feb", "Ticket Maret", "Ticket April",
-      "Ticket Mei", "Ticket Juni", "Ticket Juli", "Ticket Agst", "Total Ticket",
+      "CLUSTER", "Jan", "Feb", "Mar", "Apr", "Mei", "Jun",
+      "Jul", "Agt", "Sep", "Okt", "Nov", "Des", "Grand Total",
     ],
     analyst: [
       "Timestamp", "Nama AE", "TANGGAL CANVASING & PROFILING", "CLUSTER",
