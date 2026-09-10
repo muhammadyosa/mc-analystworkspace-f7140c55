@@ -96,6 +96,9 @@
   --gradient-success: linear-gradient(135deg, oklch(0.65 0.17 155), oklch(0.7 0.17 195));
   --gradient-warm: linear-gradient(135deg, oklch(0.72 0.17 60), oklch(0.65 0.22 30));
   --shadow-glass: 0 8px 32px -8px oklch(0.3 0.1 265 / 0.15);
+  --sidebar-toggle-bg: oklch(0.18 0.03 260);
+  --sidebar-toggle-ring: oklch(0.75 0.18 230);
+  --sidebar-toggle-glow: oklch(0.75 0.18 230 / 0.45);
 }
 
 .dark {
@@ -138,6 +141,9 @@
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.7 0.19 270);
   --shadow-glass: 0 8px 32px -8px oklch(0 0 0 / 0.5);
+  --sidebar-toggle-bg: oklch(0.16 0.02 265);
+  --sidebar-toggle-ring: oklch(0.78 0.2 230);
+  --sidebar-toggle-glow: oklch(0.78 0.2 230 / 0.55);
 }
 
 /* Pilihan aksen warna. Mode terang/gelap tetap memakai tingkat kontras yang sama. */
