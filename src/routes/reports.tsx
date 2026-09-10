@@ -146,6 +146,9 @@ const MONTHS = [
 ] as const;
 type MonthKey = typeof MONTHS[number]["key"];
 
+const hcOf = (c: ClusterRow, key: MonthKey): number =>
+  Number((c as unknown as Record<string, unknown>)[key]) || 0;
+
 // Bulan yang benar-benar punya data (HC cluster atau ticket) — supaya range
 // mengikuti bulan terakhir pada file yang diupload, bukan dipatok sampai Juni.
 function ticketByMonthMap(tickets: TicketRow[]): Map<string, number> {
