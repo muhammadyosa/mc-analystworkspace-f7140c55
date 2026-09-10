@@ -1064,17 +1064,13 @@ function ReportsPage() {
     <>
       <AppHeader title="Reports" subtitle="Weekly · Day · Monthly · Competitor Intelligence" />
       <div className="space-y-4 p-4 sm:p-6">
-        <Tabs defaultValue="weekly">
+        <Tabs defaultValue="day">
           <TabsList>
-            <TabsTrigger value="weekly"><CalendarIcon className="mr-1 h-4 w-4" /> Weekly</TabsTrigger>
             <TabsTrigger value="day"><CalendarIcon className="mr-1 h-4 w-4" /> Day</TabsTrigger>
+            <TabsTrigger value="weekly"><CalendarIcon className="mr-1 h-4 w-4" /> Weekly</TabsTrigger>
             <TabsTrigger value="monthly"><FileText className="mr-1 h-4 w-4" /> Monthly</TabsTrigger>
             <TabsTrigger value="intel"><RadarIcon className="mr-1 h-4 w-4" /> Competitor Intel</TabsTrigger>
           </TabsList>
-
-          <TabsContent value="weekly" className="space-y-4">
-            {weekly && renderTab(weekly, "weekly", wFrom, wTo, setWFrom, setWTo, weeklyRef)}
-          </TabsContent>
 
           <TabsContent value="day" className="space-y-4">
             {analyst.length === 0 ? (
@@ -1091,6 +1087,11 @@ function ReportsPage() {
               </>
             )}
           </TabsContent>
+
+          <TabsContent value="weekly" className="space-y-4">
+            {weekly && renderTab(weekly, "weekly", wFrom, wTo, setWFrom, setWTo, weeklyRef)}
+          </TabsContent>
+
 
           <TabsContent value="monthly" className="space-y-4">
             {monthly && renderTab(monthly, "monthly", mFrom, mTo, setMFrom, setMTo, monthlyRef)}
