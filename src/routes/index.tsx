@@ -379,13 +379,13 @@ function Dashboard() {
           <KpiCard label="Total Cluster" value={s.totalCluster} icon={Target} tint="primary" onClick={() => openTop("Semua Cluster", "juni")} />
           <KpiCard label="Total Kabupaten" value={s.totalKab} icon={MapPin} tint="info" onClick={() => openGrouped("Distribusi per Kabupaten", "kabupaten")} />
           <KpiCard label="Total Provinsi" value={s.totalProv} icon={Building2} tint="info" onClick={() => openGrouped("Distribusi per Provinsi", "provinsi")} />
-          <KpiCard label={`Total HC (${period.curLabel})`} value={s.sumJun.toLocaleString("id-ID")} icon={Users} tint="success" delta={{ value: s.hcGrowth }} onClick={() => openTop(`Top HC (${period.curLabel})`, "juni")} />
+          <KpiCard label={`Total HC Aktif (${period.curLabel})`} value={s.sumJun.toLocaleString("id-ID")} icon={Users} tint="success" delta={{ value: s.hcGrowth }} onClick={() => openTop(`Top HC (${period.curLabel})`, "juni")} />
         </div>
 
         {/* KPI Row 2 */}
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          <KpiCard label={`HC ${period.curLabel}`} value={s.sumJun.toLocaleString("id-ID")} icon={Activity} tint="success" onClick={() => openTop(`HC ${period.curLabel}`, "juni")} />
-          <KpiCard label={`HC ${period.prevLabel}`} value={s.sumMei.toLocaleString("id-ID")} icon={Activity} tint="info" onClick={() => openTop(`HC ${period.prevLabel}`, "mei")} />
+          <KpiCard label={`HC Aktif ${period.curLabel}`} value={s.sumJun.toLocaleString("id-ID")} icon={Activity} tint="success" onClick={() => openTop(`HC Aktif ${period.curLabel}`, "juni")} />
+          <KpiCard label={`HC Aktif ${period.prevLabel}`} value={s.sumMei.toLocaleString("id-ID")} icon={Activity} tint="info" onClick={() => openTop(`HC Aktif ${period.prevLabel}`, "mei")} />
           <KpiCard label="Total Ticket" value={s.totalTicket.toLocaleString("id-ID")} icon={Ticket} tint="warning" delta={{ value: s.ticketGrowth }} onClick={() => openTop("Top Ticket", "ticket")} />
           <KpiCard label="High Risk Cluster" value={s.highRisk} icon={AlertTriangle} tint="destructive" onClick={openHighRisk} />
         </div>

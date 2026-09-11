@@ -38,7 +38,7 @@ function LoyaltyPage() {
         program: "Retention",
         startDate: today,
         endDate: end,
-        description: `Auto-generated dari Customer Loyalty — Δ HC ${c.deltaMeiJuni}, Ticket ${c.ticket}`,
+        description: `Auto-generated dari Customer Loyalty — Δ HC Aktif ${c.deltaMeiJuni}, Ticket ${c.ticket}`,
         result: "",
         status: computeActionStatus(today, end, ""),
         durationDays: 15,
@@ -67,7 +67,7 @@ function LoyaltyPage() {
                 <p className="truncate text-xs text-muted-foreground">{c.kabupaten}</p>
               </Link>
               <div className="text-right text-xs">
-                <div className={c.deltaMeiJuni < 0 ? "text-destructive" : "text-success"}>Δ HC {c.deltaMeiJuni}</div>
+                <div className={c.deltaMeiJuni < 0 ? "text-destructive" : "text-success"}>{c.deltaMeiJuni < 0 ? "Δ HC Aktif Turun " : "Δ HC Aktif "}{c.deltaMeiJuni}</div>
                 <div className="text-muted-foreground">Ticket {c.ticket}</div>
               </div>
               <Button
@@ -104,7 +104,7 @@ function LoyaltyPage() {
           </CardContent>
         </Card>
         <div className="grid gap-4 lg:grid-cols-3">
-          <Row title="HC Turun" items={insights.decline} icon={TrendingDown} tone="bg-destructive" />
+          <Row title="HC Aktif Turun" items={insights.decline} icon={TrendingDown} tone="bg-destructive" />
           <Row title="Cluster Risiko Tinggi" items={insights.highRisk} icon={AlertTriangle} tone="bg-warning" />
           <Row title="Top Ticket" items={insights.topTicket} icon={Ticket} tone="bg-info" />
         </div>
