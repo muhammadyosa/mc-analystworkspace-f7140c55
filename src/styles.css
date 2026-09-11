@@ -482,76 +482,27 @@ body {
   overscroll-behavior-y: none;
 }
 
-/* ===== Scrollbar estetik — tipis, rounded, mengikuti tema ===== */
-:root {
-  --scrollbar-track: transparent;
-  --scrollbar-thumb: color-mix(in oklab, var(--muted-foreground) 38%, transparent);
-  --scrollbar-thumb-hover: color-mix(in oklab, var(--muted-foreground) 62%, transparent);
-  --scrollbar-thumb-active: color-mix(in oklab, var(--primary) 75%, transparent);
-}
-
+/* ===== Scrollbar disembunyikan — scroll tetap berfungsi penuh ===== */
 /* Firefox */
 * {
-  scrollbar-width: thin;
-  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+  scrollbar-width: none;
+  -ms-overflow-style: none; /* IE/Edge lama */
 }
 
 /* Chrome, Edge, Safari */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 0;
+  height: 0;
+  display: none;
 }
 
-::-webkit-scrollbar-track {
-  background: var(--scrollbar-track);
-  border-radius: 999px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--scrollbar-thumb);
-  border-radius: 999px;
-  border: 2px solid transparent;
-  background-clip: padding-box;
-  transition: background-color 0.2s ease;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--scrollbar-thumb-hover);
-  background-clip: padding-box;
-}
-
-::-webkit-scrollbar-thumb:active {
-  background: var(--scrollbar-thumb-active);
-  background-clip: padding-box;
-}
-
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-thumb,
 ::-webkit-scrollbar-corner {
   background: transparent;
 }
 
-/* Sidebar & area padat: scrollbar lebih ramping agar tidak mengganggu */
-[data-slot="sidebar"]::-webkit-scrollbar,
-[data-slot="sidebar"] *::-webkit-scrollbar,
-[data-slot="scroll-area-viewport"]::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-/* Perangkat sentuh & layar kecil: scrollbar sekecil mungkin */
-@media (pointer: coarse), (max-width: 768px) {
-  ::-webkit-scrollbar {
-    width: 5px;
-    height: 5px;
-  }
-}
-
 /* Scroll horizontal tabel/tab terasa halus di sentuh */
-.scroll-x,
-[data-slot="scroll-area-viewport"],
-.overflow-x-auto {
-  scrollbar-width: thin;
-}
-
 .overflow-x-auto {
   -webkit-overflow-scrolling: touch;
 }
