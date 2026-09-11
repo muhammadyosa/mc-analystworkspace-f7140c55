@@ -1389,7 +1389,7 @@ function ReportsPage() {
             <div className="scroll-x">
               <table className="w-full min-w-[720px] text-sm">
                 <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
-                  <tr><th className="p-2 text-left">Cluster</th><th className="p-2 text-left">PIC</th><th className="p-2 text-right">HC Awal</th><th className="p-2 text-right">HC Akhir</th><th className="p-2 text-right">Δ</th><th className="p-2 text-right">Ticket</th><th className="p-2 text-left">Status</th></tr>
+                  <tr><th className="p-2 text-left">Cluster</th><th className="p-2 text-left">PIC</th><th className="p-2 text-right">HC Aktif</th><th className="p-2 text-right">HC Aktif Akhir</th><th className="p-2 text-right">Δ</th><th className="p-2 text-right">Ticket</th><th className="p-2 text-left">Status</th></tr>
                 </thead>
                 <tbody>
                   {[...s.perCluster].sort((a, b) => b.hcEnd - a.hcEnd).slice(0, 12).map((c) => (
