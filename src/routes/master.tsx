@@ -197,11 +197,15 @@ function MasterPage() {
                 <TableHead>Kabupaten</TableHead>
                 <TableHead>Provinsi</TableHead>
                 <TableHead>PIC</TableHead>
+                <TableHead className="text-right">Homepass</TableHead>
+                <TableHead className="text-right">HC Terpasang</TableHead>
                 <TableHead className="text-right">
                   <button className="ml-auto flex items-center gap-1 font-semibold" onClick={() => toggleSort("hc")}>
-                    HC <ArrowUpDown className="h-3 w-3" />
+                    HC Aktif {month === "all" ? "" : monthLabel} <ArrowUpDown className="h-3 w-3" />
                   </button>
                 </TableHead>
+                <TableHead className="text-right">Available</TableHead>
+                <TableHead className="text-right">Churn</TableHead>
                 <TableHead className="text-right">
                   <button className="ml-auto flex items-center gap-1 font-semibold" onClick={() => toggleSort("ticket")}>
                     Ticket <ArrowUpDown className="h-3 w-3" />
@@ -209,7 +213,7 @@ function MasterPage() {
                 </TableHead>
                 <TableHead className="text-right">
                   <button className="ml-auto flex items-center gap-1 font-semibold" onClick={() => toggleSort("growth")}>
-                    Δ HC <ArrowUpDown className="h-3 w-3" />
+                    Δ HC Aktif <ArrowUpDown className="h-3 w-3" />
                   </button>
                 </TableHead>
                 <TableHead>Priority</TableHead>
