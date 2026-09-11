@@ -17,6 +17,7 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { Toaster } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { usePresenceHeartbeat } from "@/hooks/use-presence";
 
 function NotFoundComponent() {
   return (
