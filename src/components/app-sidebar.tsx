@@ -32,6 +32,7 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { type ColorTheme, useTheme } from "@/hooks/use-theme";
+import { useRole } from "@/hooks/use-role";
 import { cn } from "@/lib/utils";
 
 const nav = [
@@ -58,6 +59,8 @@ export function AppSidebar() {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const { theme, colorTheme, toggle, setColorTheme } = useTheme();
   const { state, toggleSidebar } = useSidebar();
+  const { isAdmin } = useRole();
+  const items = nav.filter((item) => item.url !== "/settings" || isAdmin);
   const isActive = (p: string) => (p === "/" ? pathname === "/" : pathname.startsWith(p));
 
   return (
@@ -108,7 +111,7 @@ export function AppSidebar() {
         <SidebarGroup className="py-2">
           <SidebarGroupContent>
             <SidebarMenu className="gap-1">
-              {nav.map((item) => (
+              {items.map((item) => (
                 <SidebarMenuItem key={item.url}>
                   <SidebarMenuButton
                     asChild
