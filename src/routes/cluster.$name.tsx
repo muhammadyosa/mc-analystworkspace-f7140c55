@@ -128,7 +128,7 @@ function DetailPage() {
               </div>
               <div className="space-y-2 text-xs">
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Δ HC (Mei–Jun)</span>
+                  <span className="text-muted-foreground">Δ HC Aktif</span>
                   <span className={hcChangePct >= 0 ? "text-success" : "text-destructive"}>
                     {hcChangePct >= 0 ? "+" : ""}{hcChangePct.toFixed(1)}%
                   </span>

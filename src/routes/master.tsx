@@ -19,21 +19,64 @@ export const Route = createFileRoute("/master")({
 
 type SortKey = "cluster" | "hc" | "ticket" | "growth";
 
+const MONTHS = [
+  { key: "januari", label: "Januari" },
+  { key: "februari", label: "Februari" },
+  { key: "maret", label: "Maret" },
+  { key: "april", label: "April" },
+  { key: "mei", label: "Mei" },
+  { key: "juni", label: "Juni" },
+  { key: "juli", label: "Juli" },
+  { key: "agustus", label: "Agustus" },
+  { key: "september", label: "September" },
+  { key: "oktober", label: "Oktober" },
+  { key: "november", label: "November" },
+  { key: "desember", label: "Desember" },
+] as const;
+type MonthKey = (typeof MONTHS)[number]["key"];
+
+const hcOf = (c: Record<string, unknown>, k: MonthKey) => Number(c[k]) || 0;
+const ticketOf = (c: { ticketByMonth?: Record<string, number>; ticket: number }, k: MonthKey | "all") =>
+  k === "all" ? c.ticket : Number(c.ticketByMonth?.[k] ?? 0);
+
 function MasterPage() {
   const clusters = useDataStore((s) => s.clusters);
   const [q, setQ] = useState("");
   const [prov, setProv] = useState<string>("all");
+  const [month, setMonth] = useState<MonthKey | "all">("all");
   const [sort, setSort] = useState<SortKey>("hc");
   const [dir, setDir] = useState<"asc" | "desc">("desc");
   const [page, setPage] = useState(1);
   const perPage = 15;
 
   const provinces = useMemo(() => [...new Set(clusters.map((c) => c.provinsi).filter(Boolean))].sort(), [clusters]);
-  const maxTicket = useMemo(() => Math.max(...clusters.map((c) => c.ticket), 1), [clusters]);
+
+  const availableMonths = useMemo(
+    () =>
+      MONTHS.filter((m) =>
+        clusters.some((c) => hcOf(c as unknown as Record<string, unknown>, m.key) > 0 || (c.ticketByMonth?.[m.key] ?? 0) > 0),
+      ),
+    [clusters],
+  );
+
+  // Nilai per baris sesuai bulan terpilih ("all" = ringkasan terakhir/total)
+  const rows = useMemo(() => {
+    const idx = month === "all" ? -1 : MONTHS.findIndex((m) => m.key === month);
+    return clusters.map((c) => {
+      if (month === "all") return { ...c, hcView: c.juni, ticketView: c.ticket, deltaView: c.deltaMeiJuni };
+      const rec = c as unknown as Record<string, unknown>;
+      const cur = hcOf(rec, month);
+      const prevKey = idx > 0 ? MONTHS[idx - 1].key : null;
+      const prev = prevKey ? hcOf(rec, prevKey) : 0;
+      return { ...c, hcView: cur, ticketView: ticketOf(c, month), deltaView: prevKey ? cur - prev : 0 };
+    });
+  }, [clusters, month]);
+
+  const maxTicket = useMemo(() => Math.max(...rows.map((c) => c.ticketView), 1), [rows]);
 
   const filtered = useMemo(() => {
     const ql = q.toLowerCase();
-    let arr = clusters.filter((c) => {
+    let arr = rows.filter((c) => {
       const matchQ =
         !ql ||
         c.cluster.toLowerCase().includes(ql) ||
@@ -43,13 +86,13 @@ function MasterPage() {
       return matchQ && matchP;
     });
     arr = arr.sort((a, b) => {
-      const av = sort === "cluster" ? a.cluster : sort === "hc" ? a.juni : sort === "ticket" ? a.ticket : a.deltaMeiJuni;
-      const bv = sort === "cluster" ? b.cluster : sort === "hc" ? b.juni : sort === "ticket" ? b.ticket : b.deltaMeiJuni;
+      const av = sort === "cluster" ? a.cluster : sort === "hc" ? a.hcView : sort === "ticket" ? a.ticketView : a.deltaView;
+      const bv = sort === "cluster" ? b.cluster : sort === "hc" ? b.hcView : sort === "ticket" ? b.ticketView : b.deltaView;
       if (typeof av === "string" && typeof bv === "string") return dir === "asc" ? av.localeCompare(bv) : bv.localeCompare(av);
       return dir === "asc" ? (av as number) - (bv as number) : (bv as number) - (av as number);
     });
     return arr;
-  }, [clusters, q, prov, sort, dir]);
+  }, [rows, q, prov, sort, dir]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
   const paginated = filtered.slice((page - 1) * perPage, page * perPage);
@@ -62,6 +105,8 @@ function MasterPage() {
     }
   };
 
+  const monthLabel = month === "all" ? "Semua Bulan" : (MONTHS.find((m) => m.key === month)?.label ?? "");
+
   const handleExport = () => {
     exportToExcel(
       filtered.map((c) => ({
@@ -69,13 +114,18 @@ function MasterPage() {
         Kabupaten: c.kabupaten,
         Provinsi: c.provinsi,
         PIC: c.pic,
-        HC_Juni: c.juni,
-        Ticket: c.ticket,
-        Delta_HC: c.deltaMeiJuni,
+        Bulan: monthLabel,
+        Homepass: c.homepass,
+        HC_Terpasang: c.hcTerpasang,
+        [`HC_Aktif_${monthLabel}`]: c.hcView,
+        Available: c.available,
+        Churn: c.churn,
+        Ticket: c.ticketView,
+        Delta_HC_Aktif: c.deltaView,
         SERPO: c.serpoStatus,
         IKR: c.ikrStatus,
       })),
-      "master-cluster.xlsx",
+      `master-cluster-${monthLabel.toLowerCase().replace(/\s+/g, "-")}.xlsx`,
     );
   };
 
@@ -89,7 +139,7 @@ function MasterPage() {
 
   return (
     <>
-      <AppHeader title="Master Cluster" subtitle={`${clusters.length} cluster tersedia`} />
+      <AppHeader title="Master Cluster" subtitle={`${clusters.length} cluster · ${monthLabel}`} />
       <div className="space-y-4 p-4 sm:p-6">
         <Card className="glass-card border-0 p-3 sm:p-4">
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
@@ -105,6 +155,17 @@ function MasterPage() {
                 className="pl-9"
               />
             </div>
+            <Select value={month} onValueChange={(v) => { setMonth(v as MonthKey | "all"); setPage(1); }}>
+              <SelectTrigger className="w-full sm:w-[170px]">
+                <SelectValue placeholder="Bulan" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Semua Bulan</SelectItem>
+                {availableMonths.map((m) => (
+                  <SelectItem key={m.key} value={m.key}>{m.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Select value={prov} onValueChange={(v) => { setProv(v); setPage(1); }}>
               <SelectTrigger className="w-full sm:w-[180px]">
                 <SelectValue placeholder="Provinsi" />
@@ -124,7 +185,7 @@ function MasterPage() {
 
         <Card className="glass-card overflow-hidden border-0">
           <div className="scroll-x">
-          <Table className="min-w-[960px]">
+          <Table className="min-w-[1180px]">
 
             <TableHeader>
               <TableRow>
@@ -136,11 +197,15 @@ function MasterPage() {
                 <TableHead>Kabupaten</TableHead>
                 <TableHead>Provinsi</TableHead>
                 <TableHead>PIC</TableHead>
+                <TableHead className="text-right">Homepass</TableHead>
+                <TableHead className="text-right">HC Terpasang</TableHead>
                 <TableHead className="text-right">
                   <button className="ml-auto flex items-center gap-1 font-semibold" onClick={() => toggleSort("hc")}>
-                    HC <ArrowUpDown className="h-3 w-3" />
+                    HC Aktif {month === "all" ? "" : monthLabel} <ArrowUpDown className="h-3 w-3" />
                   </button>
                 </TableHead>
+                <TableHead className="text-right">Available</TableHead>
+                <TableHead className="text-right">Churn</TableHead>
                 <TableHead className="text-right">
                   <button className="ml-auto flex items-center gap-1 font-semibold" onClick={() => toggleSort("ticket")}>
                     Ticket <ArrowUpDown className="h-3 w-3" />
@@ -148,7 +213,7 @@ function MasterPage() {
                 </TableHead>
                 <TableHead className="text-right">
                   <button className="ml-auto flex items-center gap-1 font-semibold" onClick={() => toggleSort("growth")}>
-                    Δ HC <ArrowUpDown className="h-3 w-3" />
+                    Δ HC Aktif <ArrowUpDown className="h-3 w-3" />
                   </button>
                 </TableHead>
                 <TableHead>Priority</TableHead>
@@ -159,18 +224,25 @@ function MasterPage() {
             </TableHeader>
             <TableBody>
               {paginated.map((c) => {
-                const pr = computePriority(c, maxTicket);
+                const pr = computePriority(
+                  { ...c, juni: c.hcView, ticket: c.ticketView, deltaMeiJuni: c.deltaView },
+                  maxTicket,
+                );
                 return (
                   <TableRow key={c.id}>
                     <TableCell className="font-medium">{c.cluster}</TableCell>
                     <TableCell className="text-muted-foreground">{c.kabupaten}</TableCell>
                     <TableCell className="text-muted-foreground">{c.provinsi}</TableCell>
                     <TableCell className="text-muted-foreground">{c.pic || "—"}</TableCell>
-                    <TableCell className="text-right tabular-nums">{c.juni.toLocaleString("id-ID")}</TableCell>
-                    <TableCell className="text-right tabular-nums">{c.ticket}</TableCell>
-                    <TableCell className={`text-right tabular-nums ${c.deltaMeiJuni >= 0 ? "text-success" : "text-destructive"}`}>
-                      {c.deltaMeiJuni >= 0 ? "+" : ""}
-                      {c.deltaMeiJuni}
+                    <TableCell className="text-right tabular-nums">{(c.homepass || 0).toLocaleString("id-ID")}</TableCell>
+                    <TableCell className="text-right tabular-nums">{(c.hcTerpasang || 0).toLocaleString("id-ID")}</TableCell>
+                    <TableCell className="text-right tabular-nums">{c.hcView.toLocaleString("id-ID")}</TableCell>
+                    <TableCell className="text-right tabular-nums">{(c.available || 0).toLocaleString("id-ID")}</TableCell>
+                    <TableCell className="text-right tabular-nums">{(c.churn || 0).toLocaleString("id-ID")}</TableCell>
+                    <TableCell className="text-right tabular-nums">{c.ticketView.toLocaleString("id-ID")}</TableCell>
+                    <TableCell className={`text-right tabular-nums ${c.deltaView >= 0 ? "text-success" : "text-destructive"}`}>
+                      {c.deltaView >= 0 ? "+" : ""}
+                      {c.deltaView}
                     </TableCell>
                     <TableCell>
                       <Badge
