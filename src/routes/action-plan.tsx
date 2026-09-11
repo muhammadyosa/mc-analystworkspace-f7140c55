@@ -768,7 +768,7 @@ function ActionPlanPage() {
       </div>
 
       <DetailDialog
-        row={openRow}
+        row={openRow ? (actionPlans.find((a) => a.id === openRow.id) ?? null) : null}
         onClose={() => setOpenRow(null)}
         onUpdate={updateActionPlan}
         clusterMeta={clusterMeta}
