@@ -28,6 +28,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export const Route = createFileRoute("/settings/users")({
   head: () => ({ meta: [{ title: "User Management — MCA Workspace" }] }),
@@ -42,8 +49,11 @@ type Row = {
   approved: boolean;
   created_at: string;
   last_seen_at: string | null;
-  role: "admin" | "user";
+  role: AppRole;
 };
+
+type AppRole = "admin" | "user" | "viewer";
+
 
 const ONLINE_WINDOW_MS = 5 * 60_000;
 
@@ -102,10 +112,10 @@ function UserManagementPage() {
       setRows([]);
       return;
     }
-    const roleMap = new Map<string, "admin" | "user">();
+    const roleMap = new Map<string, AppRole>();
     (roles ?? []).forEach((r) => {
       const cur = roleMap.get(r.user_id);
-      if (r.role === "admin" || !cur) roleMap.set(r.user_id, r.role as "admin" | "user");
+      if (r.role === "admin" || !cur) roleMap.set(r.user_id, r.role as AppRole);
     });
     setRows(
       (profiles ?? []).map((p) => ({
@@ -139,19 +149,18 @@ function UserManagementPage() {
     load(true);
   }
 
-  async function toggleAdmin(row: Row) {
+  async function changeRole(row: Row, next: "admin" | "viewer") {
+    if (row.role === next) return;
     setBusy(row.id);
-    if (row.role === "admin") {
-      const { error } = await supabase.from("user_roles").delete().eq("user_id", row.id).eq("role", "admin");
+    const del = await supabase.from("user_roles").delete().eq("user_id", row.id);
+    if (del.error) {
       setBusy(null);
-      if (error) return toast.error(error.message);
-      toast.success("Admin dicabut");
-    } else {
-      const { error } = await supabase.from("user_roles").insert({ user_id: row.id, role: "admin" });
-      setBusy(null);
-      if (error) return toast.error(error.message);
-      toast.success("Dijadikan admin");
+      return toast.error(del.error.message);
     }
+    const { error } = await supabase.from("user_roles").insert({ user_id: row.id, role: next });
+    setBusy(null);
+    if (error) return toast.error(error.message);
+    toast.success(next === "admin" ? "Dijadikan Admin" : "Diubah menjadi Viewer");
     load(true);
   }
 
@@ -302,13 +311,19 @@ function UserManagementPage() {
                         )}
                       </TableCell>
                       <TableCell>
-                        <Badge
-                          variant={r.role === "admin" ? "default" : "secondary"}
-                          className="inline-flex items-center gap-1"
+                        <Select
+                          value={r.role === "admin" ? "admin" : "viewer"}
+                          disabled={busy === r.id}
+                          onValueChange={(v) => changeRole(r, v as "admin" | "viewer")}
                         >
-                          {r.role === "admin" && <Shield className="h-3 w-3" />}
-                          {r.role === "admin" ? "Admin" : "User"}
-                        </Badge>
+                          <SelectTrigger className="h-8 w-[118px] text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="admin">Admin</SelectItem>
+                            <SelectItem value="viewer">Viewer</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </TableCell>
                       <TableCell>
                         {online ? (
@@ -343,10 +358,10 @@ function UserManagementPage() {
                           <Button
                             size="icon"
                             variant="ghost"
-                            className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                            className="h-8 w-8"
                             disabled={busy === r.id}
-                            title={r.role === "admin" ? "Cabut Admin" : "Jadikan Admin"}
-                            onClick={() => toggleAdmin(r)}
+                            title={r.role === "admin" ? "Jadikan Viewer" : "Jadikan Admin"}
+                            onClick={() => changeRole(r, r.role === "admin" ? "viewer" : "admin")}
                           >
                             {r.role === "admin" ? <ShieldOff className="h-4 w-4" /> : <Shield className="h-4 w-4" />}
                           </Button>

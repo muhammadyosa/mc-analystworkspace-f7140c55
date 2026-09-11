@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Upload,
   FileSpreadsheet,
@@ -12,6 +12,10 @@ import {
   AlertCircle,
   Database,
   Zap,
+  Cloud,
+  CloudUpload,
+  Eye,
+  RefreshCw,
 } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -40,6 +44,10 @@ import {
   type UploadMeta,
 } from "@/lib/excel";
 import { useDataStore, type UploadHistoryEntry } from "@/lib/store";
+import { TEMPLATE_SPECS } from "@/lib/template-specs";
+import { clearCloudDatasets, fetchDatasetStatus, pushDataset } from "@/lib/cloud-sync";
+import { useRole } from "@/hooks/use-role";
+import { Badge } from "@/components/ui/badge";
 
 export const Route = createFileRoute("/settings/data")({
   head: () => ({ meta: [{ title: "Data Management — MCA Workspace" }] }),
@@ -329,6 +337,116 @@ function SummaryResult({ summary }: { summary: ImportSummary }) {
   );
 }
 
+function CloudStatus({
+  items,
+  isAdmin,
+}: {
+  items: { kind: string; row_count: number; file_name: string | null; updated_at: string }[];
+  isAdmin: boolean;
+}) {
+  const last = items.reduce<string | null>(
+    (acc, i) => (!acc || new Date(i.updated_at) > new Date(acc) ? i.updated_at : acc),
+    null,
+  );
+  return (
+    <div className="rounded-xl border border-primary/25 bg-primary/5 p-4">
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <Cloud className="h-4 w-4 text-primary" />
+        <span className="text-sm font-semibold">Data Cloud (online untuk semua user)</span>
+        <Badge variant="secondary" className="text-[10px]">
+          {isAdmin ? "Admin — bisa unggah" : "Viewer — hanya melihat"}
+        </Badge>
+        <span className="ml-auto text-[11px] text-muted-foreground">
+          {last ? `Diperbarui ${new Date(last).toLocaleString("id-ID")}` : "Belum ada data di cloud"}
+        </span>
+      </div>
+      <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-5">
+        {(Object.keys(KIND_LABEL) as ImportKind[]).map((k) => {
+          const row = items.find((i) => i.kind === k);
+          return (
+            <div key={k} className="rounded-lg bg-background/70 p-2.5">
+              <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                {KIND_LABEL[k]}
+              </div>
+              <div className="font-display text-lg font-bold">
+                {(row?.row_count ?? 0).toLocaleString("id-ID")}
+              </div>
+              <div className="text-[10px] text-muted-foreground">
+                {row ? new Date(row.updated_at).toLocaleDateString("id-ID") : "belum ada"}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function TemplateFormats() {
+  return (
+    <Card className="glass-card border-0">
+      <CardHeader className="flex-row items-center gap-2 space-y-0">
+        <FileSpreadsheet className="h-5 w-5 text-primary" />
+        <CardTitle className="font-display text-base">Format File yang Didukung</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="mb-4 text-xs text-muted-foreground">
+          Pastikan nama kolom pada file Excel sesuai daftar berikut agar data terbaca dan lolos
+          validasi. Kolom bertanda <span className="text-destructive">wajib</span> harus ada.
+        </p>
+        <div className="grid gap-4 lg:grid-cols-2">
+          {TEMPLATE_SPECS.map((spec) => (
+            <div key={spec.kind} className="rounded-xl border border-border/60 bg-muted/15 p-4">
+              <div className="mb-1 flex flex-wrap items-center gap-2">
+                <span aria-hidden="true">{spec.icon}</span>
+                <span className="text-sm font-semibold">{spec.label}</span>
+                <Badge variant="outline" className="text-[10px]">
+                  Sheet: {spec.sheet}
+                </Badge>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="ml-auto h-7 px-2 text-[11px]"
+                  onClick={() => downloadTemplate(spec.kind)}
+                >
+                  <Download className="mr-1 h-3.5 w-3.5" /> Unduh contoh
+                </Button>
+              </div>
+              <p className="mb-3 text-[11px] text-muted-foreground">{spec.description}</p>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[380px] text-[11px]">
+                  <thead className="text-left text-muted-foreground">
+                    <tr>
+                      <th className="py-1 pr-3 font-medium">Kolom</th>
+                      <th className="py-1 pr-3 font-medium">Contoh isi</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {spec.columns.map((c) => (
+                      <tr key={c.name} className="border-t border-border/40 align-top">
+                        <td className="py-1 pr-3">
+                          <span className="font-medium">{c.name}</span>
+                          {c.required && <span className="ml-1 text-destructive">*</span>}
+                          {c.aliases?.length ? (
+                            <div className="text-[10px] text-muted-foreground">
+                              alias: {c.aliases.join(" / ")}
+                            </div>
+                          ) : null}
+                        </td>
+                        <td className="py-1 pr-3 text-muted-foreground">{c.example}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 function UploadPage() {
   const {
     clusters,
@@ -354,6 +472,24 @@ function UploadPage() {
   const [summary, setSummary] = useState<ImportSummary>({});
   const [confirmMode, setConfirmMode] = useState<null | "prompt">(null);
   const [errors, setErrors] = useState<{ name: string; message: string }[]>([]);
+  const { isAdmin } = useRole();
+  const [cloud, setCloud] = useState<
+    { kind: string; row_count: number; file_name: string | null; updated_at: string }[]
+  >([]);
+  const [cloudBusy, setCloudBusy] = useState(false);
+
+  const refreshCloud = useCallback(async () => {
+    try {
+      setCloud(await fetchDatasetStatus());
+    } catch {
+      /* abaikan */
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshCloud();
+  }, [refreshCloud]);
+
 
   const hasData =
     clusters.length > 0 || tickets.length > 0 || analyst.length > 0 || competitorData.length > 0 || actionPlans.length > 0;
@@ -527,11 +663,27 @@ function UploadPage() {
       );
 
       await advance("refresh", 96);
+
+      // Simpan ke cloud agar semua user melihat data terbaru
+      try {
+        const st = useDataStore.getState();
+        const jobs: Promise<void>[] = [];
+        if (buckets.cluster.length) jobs.push(pushDataset("cluster", st.clusters));
+        if (buckets.ticket.length) jobs.push(pushDataset("ticket", st.tickets));
+        if (buckets.analyst.length) jobs.push(pushDataset("analyst", st.analyst));
+        if (buckets.competitor.length) jobs.push(pushDataset("competitor", st.competitorData));
+        if (buckets.actionplan.length) jobs.push(pushDataset("actionplan", st.actionPlans));
+        await Promise.all(jobs);
+        await refreshCloud();
+      } catch (e) {
+        toast.warning(`Data tersimpan lokal, gagal unggah ke cloud: ${(e as Error).message}`);
+      }
+
       setOverall(100);
       setStage(null);
       setSummary(sum);
       setQueue([]);
-      toast.success("Import selesai · Dashboard diperbarui");
+      toast.success("Import selesai · Data tersimpan online untuk semua user");
     } catch (e) {
       toast.error(`Gagal import: ${(e as Error).message}`);
     } finally {
@@ -572,7 +724,20 @@ function UploadPage() {
             </Button>
           </CardHeader>
           <CardContent className="space-y-4">
-            <BulkImportZone onFiles={addFiles} disabled={running} />
+            <CloudStatus items={cloud} isAdmin={isAdmin} />
+
+            {isAdmin ? (
+              <BulkImportZone onFiles={addFiles} disabled={running} />
+            ) : (
+              <div className="rounded-xl border border-border/60 bg-muted/20 p-4 text-sm text-muted-foreground">
+                <div className="mb-1 flex items-center gap-2 font-medium text-foreground">
+                  <Eye className="h-4 w-4 text-primary" /> Mode Viewer
+                </div>
+                Anda dapat melihat seluruh data workspace, namun tidak dapat mengunggah atau
+                mengubah data. Hubungi admin bila perlu memperbarui data.
+              </div>
+            )}
+
 
             {classifying && (
               <div className="rounded-lg bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
@@ -623,21 +788,37 @@ function UploadPage() {
             <SummaryResult summary={summary} />
 
             <div className="flex flex-wrap items-center gap-2 border-t border-border/60 pt-4">
-              <Button size="sm" variant="outline" onClick={() => downloadTemplate("cluster")}>
-                <Download className="mr-1 h-4 w-4" /> Template Cluster
+              <Button size="sm" variant="outline" onClick={() => void refreshCloud()}>
+                <RefreshCw className="mr-1 h-4 w-4" /> Muat Ulang dari Cloud
               </Button>
-              <Button size="sm" variant="outline" onClick={() => downloadTemplate("ticket")}>
-                <Download className="mr-1 h-4 w-4" /> Template Ticket
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => downloadTemplate("analyst")}>
-                <Download className="mr-1 h-4 w-4" /> Template Analyst
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => downloadTemplate("competitor")}>
-                <Download className="mr-1 h-4 w-4" /> Template Competitor
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => downloadTemplate("actionplan")}>
-                <Download className="mr-1 h-4 w-4" /> Template Action Plan
-              </Button>
+              {isAdmin && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={!hasData || cloudBusy}
+                  onClick={async () => {
+                    setCloudBusy(true);
+                    try {
+                      const st = useDataStore.getState();
+                      await Promise.all([
+                        pushDataset("cluster", st.clusters),
+                        pushDataset("ticket", st.tickets),
+                        pushDataset("analyst", st.analyst),
+                        pushDataset("competitor", st.competitorData),
+                        pushDataset("actionplan", st.actionPlans),
+                      ]);
+                      await refreshCloud();
+                      toast.success("Data lokal diunggah ke cloud");
+                    } catch (e) {
+                      toast.error((e as Error).message);
+                    } finally {
+                      setCloudBusy(false);
+                    }
+                  }}
+                >
+                  <CloudUpload className="mr-1 h-4 w-4" /> Unggah ke Cloud
+                </Button>
+              )}
               <div className="ml-auto text-xs text-muted-foreground">
                 {clusters.length.toLocaleString("id-ID")} cluster ·{" "}
                 {tickets.length.toLocaleString("id-ID")} ticket ·{" "}
@@ -645,19 +826,26 @@ function UploadPage() {
                 {competitorData.length.toLocaleString("id-ID")} competitor ·{" "}
                 {actionPlans.length.toLocaleString("id-ID")} action plan
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  if (confirm("Hapus semua data yang tersimpan?")) {
+              {isAdmin && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={async () => {
+                    if (!confirm("Hapus semua data yang tersimpan (lokal & cloud)?")) return;
                     clearAll();
                     setSummary({});
+                    try {
+                      await clearCloudDatasets();
+                      await refreshCloud();
+                    } catch (e) {
+                      toast.error((e as Error).message);
+                    }
                     toast.info("Semua data dihapus");
-                  }
-                }}
-              >
-                <Trash2 className="mr-1 h-4 w-4" /> Reset
-              </Button>
+                  }}
+                >
+                  <Trash2 className="mr-1 h-4 w-4" /> Reset
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -702,6 +890,8 @@ function UploadPage() {
             </CardContent>
           </Card>
         )}
+
+        <TemplateFormats />
       </div>
 
       <Dialog open={confirmMode === "prompt"} onOpenChange={(o) => !o && setConfirmMode(null)}>
