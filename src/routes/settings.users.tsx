@@ -309,13 +309,19 @@ function UserManagementPage() {
                         )}
                       </TableCell>
                       <TableCell>
-                        <Badge
-                          variant={r.role === "admin" ? "default" : "secondary"}
-                          className="inline-flex items-center gap-1"
+                        <Select
+                          value={r.role === "admin" ? "admin" : "viewer"}
+                          disabled={busy === r.id}
+                          onValueChange={(v) => changeRole(r, v as "admin" | "viewer")}
                         >
-                          {r.role === "admin" && <Shield className="h-3 w-3" />}
-                          {r.role === "admin" ? "Admin" : "User"}
-                        </Badge>
+                          <SelectTrigger className="h-8 w-[118px] text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="admin">Admin</SelectItem>
+                            <SelectItem value="viewer">Viewer</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </TableCell>
                       <TableCell>
                         {online ? (
@@ -350,10 +356,10 @@ function UserManagementPage() {
                           <Button
                             size="icon"
                             variant="ghost"
-                            className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                            className="h-8 w-8"
                             disabled={busy === r.id}
-                            title={r.role === "admin" ? "Cabut Admin" : "Jadikan Admin"}
-                            onClick={() => toggleAdmin(r)}
+                            title={r.role === "admin" ? "Jadikan Viewer" : "Jadikan Admin"}
+                            onClick={() => changeRole(r, r.role === "admin" ? "viewer" : "admin")}
                           >
                             {r.role === "admin" ? <ShieldOff className="h-4 w-4" /> : <Shield className="h-4 w-4" />}
                           </Button>
