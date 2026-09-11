@@ -86,13 +86,13 @@ function MasterPage() {
       return matchQ && matchP;
     });
     arr = arr.sort((a, b) => {
-      const av = sort === "cluster" ? a.cluster : sort === "hc" ? a.juni : sort === "ticket" ? a.ticket : a.deltaMeiJuni;
-      const bv = sort === "cluster" ? b.cluster : sort === "hc" ? b.juni : sort === "ticket" ? b.ticket : b.deltaMeiJuni;
+      const av = sort === "cluster" ? a.cluster : sort === "hc" ? a.hcView : sort === "ticket" ? a.ticketView : a.deltaView;
+      const bv = sort === "cluster" ? b.cluster : sort === "hc" ? b.hcView : sort === "ticket" ? b.ticketView : b.deltaView;
       if (typeof av === "string" && typeof bv === "string") return dir === "asc" ? av.localeCompare(bv) : bv.localeCompare(av);
       return dir === "asc" ? (av as number) - (bv as number) : (bv as number) - (av as number);
     });
     return arr;
-  }, [clusters, q, prov, sort, dir]);
+  }, [rows, q, prov, sort, dir]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
   const paginated = filtered.slice((page - 1) * perPage, page * perPage);
