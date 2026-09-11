@@ -117,6 +117,17 @@ export const useDataStore = create<DataState>()(
       competitors: [],
       history: [],
       lastUpdated: null,
+      cloudSyncedAt: null,
+      applyCloud: (d) =>
+        set((s) => ({
+          clusters: d.clusters ?? s.clusters,
+          tickets: d.tickets ?? s.tickets,
+          analyst: d.analyst ?? s.analyst,
+          competitorData: d.competitorData ?? s.competitorData,
+          actionPlans: d.actionPlans ?? s.actionPlans,
+          cloudSyncedAt: Date.now(),
+          lastUpdated: Date.now(),
+        })),
       setClusters: (rows, mode = "replace") =>
         set((s) => ({ clusters: mode === "append" ? [...s.clusters, ...rows] : rows, lastUpdated: Date.now() })),
       setTickets: (rows, mode = "replace") =>
