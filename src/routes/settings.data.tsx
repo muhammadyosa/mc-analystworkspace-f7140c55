@@ -337,6 +337,116 @@ function SummaryResult({ summary }: { summary: ImportSummary }) {
   );
 }
 
+function CloudStatus({
+  items,
+  isAdmin,
+}: {
+  items: { kind: string; row_count: number; file_name: string | null; updated_at: string }[];
+  isAdmin: boolean;
+}) {
+  const last = items.reduce<string | null>(
+    (acc, i) => (!acc || new Date(i.updated_at) > new Date(acc) ? i.updated_at : acc),
+    null,
+  );
+  return (
+    <div className="rounded-xl border border-primary/25 bg-primary/5 p-4">
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <Cloud className="h-4 w-4 text-primary" />
+        <span className="text-sm font-semibold">Data Cloud (online untuk semua user)</span>
+        <Badge variant="secondary" className="text-[10px]">
+          {isAdmin ? "Admin — bisa unggah" : "Viewer — hanya melihat"}
+        </Badge>
+        <span className="ml-auto text-[11px] text-muted-foreground">
+          {last ? `Diperbarui ${new Date(last).toLocaleString("id-ID")}` : "Belum ada data di cloud"}
+        </span>
+      </div>
+      <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-5">
+        {(Object.keys(KIND_LABEL) as ImportKind[]).map((k) => {
+          const row = items.find((i) => i.kind === k);
+          return (
+            <div key={k} className="rounded-lg bg-background/70 p-2.5">
+              <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                {KIND_LABEL[k]}
+              </div>
+              <div className="font-display text-lg font-bold">
+                {(row?.row_count ?? 0).toLocaleString("id-ID")}
+              </div>
+              <div className="text-[10px] text-muted-foreground">
+                {row ? new Date(row.updated_at).toLocaleDateString("id-ID") : "belum ada"}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function TemplateFormats() {
+  return (
+    <Card className="glass-card border-0">
+      <CardHeader className="flex-row items-center gap-2 space-y-0">
+        <FileSpreadsheet className="h-5 w-5 text-primary" />
+        <CardTitle className="font-display text-base">Format File yang Didukung</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="mb-4 text-xs text-muted-foreground">
+          Pastikan nama kolom pada file Excel sesuai daftar berikut agar data terbaca dan lolos
+          validasi. Kolom bertanda <span className="text-destructive">wajib</span> harus ada.
+        </p>
+        <div className="grid gap-4 lg:grid-cols-2">
+          {TEMPLATE_SPECS.map((spec) => (
+            <div key={spec.kind} className="rounded-xl border border-border/60 bg-muted/15 p-4">
+              <div className="mb-1 flex flex-wrap items-center gap-2">
+                <span aria-hidden="true">{spec.icon}</span>
+                <span className="text-sm font-semibold">{spec.label}</span>
+                <Badge variant="outline" className="text-[10px]">
+                  Sheet: {spec.sheet}
+                </Badge>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="ml-auto h-7 px-2 text-[11px]"
+                  onClick={() => downloadTemplate(spec.kind)}
+                >
+                  <Download className="mr-1 h-3.5 w-3.5" /> Unduh contoh
+                </Button>
+              </div>
+              <p className="mb-3 text-[11px] text-muted-foreground">{spec.description}</p>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[380px] text-[11px]">
+                  <thead className="text-left text-muted-foreground">
+                    <tr>
+                      <th className="py-1 pr-3 font-medium">Kolom</th>
+                      <th className="py-1 pr-3 font-medium">Contoh isi</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {spec.columns.map((c) => (
+                      <tr key={c.name} className="border-t border-border/40 align-top">
+                        <td className="py-1 pr-3">
+                          <span className="font-medium">{c.name}</span>
+                          {c.required && <span className="ml-1 text-destructive">*</span>}
+                          {c.aliases?.length ? (
+                            <div className="text-[10px] text-muted-foreground">
+                              alias: {c.aliases.join(" / ")}
+                            </div>
+                          ) : null}
+                        </td>
+                        <td className="py-1 pr-3 text-muted-foreground">{c.example}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 function UploadPage() {
   const {
     clusters,
