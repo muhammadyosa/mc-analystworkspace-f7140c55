@@ -890,6 +890,8 @@ function UploadPage() {
             </CardContent>
           </Card>
         )}
+
+        <TemplateFormats />
       </div>
 
       <Dialog open={confirmMode === "prompt"} onOpenChange={(o) => !o && setConfirmMode(null)}>
