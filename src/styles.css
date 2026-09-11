@@ -479,26 +479,40 @@ html {
 
 body {
   overflow-x: hidden;
-  overscroll-behavior-y: none;
+  overscroll-behavior-y: auto;
 }
 
-/* ===== Scrollbar disembunyikan — scroll tetap berfungsi penuh (wheel/trackpad/touch/keyboard) ===== */
-/* Firefox + Edge lama */
-html {
+/* Area gulir aplikasi: wheel, trackpad, sentuhan, dan keyboard tetap aktif. */
+.app-scroll,
+[data-sidebar="content"],
+.overflow-x-auto,
+.overflow-y-auto,
+.overflow-auto,
+.scroll-x {
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
 
-/* Chrome, Edge, Safari — lebar 0, TANPA display:none agar scroll tidak terputus */
-::-webkit-scrollbar {
-  width: 0 !important;
-  height: 0 !important;
+.app-scroll {
+  display: block;
+  height: 100svh;
+  overscroll-behavior-y: contain;
+  touch-action: pan-x pan-y pinch-zoom;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: auto;
 }
 
-::-webkit-scrollbar-track,
-::-webkit-scrollbar-thumb,
-::-webkit-scrollbar-corner {
-  background: transparent;
+.app-scroll:focus-visible {
+  outline: none;
+}
+
+/* Chrome, Edge, dan Safari: sembunyikan hanya visual scrollbarnya. */
+.app-scroll::-webkit-scrollbar,
+[data-sidebar="content"]::-webkit-scrollbar,
+.overflow-x-auto::-webkit-scrollbar,
+.overflow-y-auto::-webkit-scrollbar,
+.overflow-auto::-webkit-scrollbar,
+.scroll-x::-webkit-scrollbar {
   width: 0 !important;
   height: 0 !important;
 }
