@@ -549,11 +549,27 @@ function UploadPage() {
       );
 
       await advance("refresh", 96);
+
+      // Simpan ke cloud agar semua user melihat data terbaru
+      try {
+        const st = useDataStore.getState();
+        const jobs: Promise<void>[] = [];
+        if (buckets.cluster.length) jobs.push(pushDataset("cluster", st.clusters));
+        if (buckets.ticket.length) jobs.push(pushDataset("ticket", st.tickets));
+        if (buckets.analyst.length) jobs.push(pushDataset("analyst", st.analyst));
+        if (buckets.competitor.length) jobs.push(pushDataset("competitor", st.competitorData));
+        if (buckets.actionplan.length) jobs.push(pushDataset("actionplan", st.actionPlans));
+        await Promise.all(jobs);
+        await refreshCloud();
+      } catch (e) {
+        toast.warning(`Data tersimpan lokal, gagal unggah ke cloud: ${(e as Error).message}`);
+      }
+
       setOverall(100);
       setStage(null);
       setSummary(sum);
       setQueue([]);
-      toast.success("Import selesai · Dashboard diperbarui");
+      toast.success("Import selesai · Data tersimpan online untuk semua user");
     } catch (e) {
       toast.error(`Gagal import: ${(e as Error).message}`);
     } finally {
