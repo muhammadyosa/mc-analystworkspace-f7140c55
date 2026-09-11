@@ -17,6 +17,7 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { Toaster } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { usePresenceHeartbeat } from "@/hooks/use-presence";
 
 function NotFoundComponent() {
   return (
@@ -196,6 +197,11 @@ function AuthGate({ children }: { children: ReactNode }) {
 
   if (status !== "in") return null;
 
+  return <AuthedShell>{children}</AuthedShell>;
+}
+
+function AuthedShell({ children }: { children: ReactNode }) {
+  usePresenceHeartbeat();
   return (
     <SidebarProvider className="h-svh min-h-0 overflow-hidden">
       <AppSidebar />
