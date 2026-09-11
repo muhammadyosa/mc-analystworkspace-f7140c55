@@ -482,36 +482,25 @@ body {
   overscroll-behavior-y: none;
 }
 
-/* ===== Scrollbar tipis, estetik & tidak mengganggu — scroll tetap berfungsi penuh ===== */
-/* Firefox */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: hsl(var(--muted-foreground) / 0.25) transparent;
+/* ===== Scrollbar disembunyikan — scroll tetap berfungsi penuh (wheel/trackpad/touch/keyboard) ===== */
+/* Firefox + Edge lama */
+html {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
-/* Chrome, Edge, Safari */
+/* Chrome, Edge, Safari — lebar 0, TANPA display:none agar scroll tidak terputus */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 0 !important;
+  height: 0 !important;
 }
 
 ::-webkit-scrollbar-track,
+::-webkit-scrollbar-thumb,
 ::-webkit-scrollbar-corner {
   background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted-foreground) / 0.22);
-  border-radius: 999px;
-  border: none;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--muted-foreground) / 0.4);
-}
-
-::-webkit-scrollbar-thumb:active {
-  background: hsl(var(--muted-foreground) / 0.55);
+  width: 0 !important;
+  height: 0 !important;
 }
 
 /* Scroll horizontal tabel/tab terasa halus di sentuh */
