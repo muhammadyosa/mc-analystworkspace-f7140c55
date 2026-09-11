@@ -44,7 +44,7 @@ import {
   type UploadMeta,
 } from "@/lib/excel";
 import { useDataStore, type UploadHistoryEntry } from "@/lib/store";
-import { TEMPLATE_SPECS } from "@/lib/template-specs";
+import { TEMPLATE_SPECS, evaluateTemplateFormat } from "@/lib/template-specs";
 import { clearCloudDatasets, fetchDatasetStatus, pushDataset } from "@/lib/cloud-sync";
 import { useRole } from "@/hooks/use-role";
 import { Badge } from "@/components/ui/badge";
