@@ -204,8 +204,41 @@ function AuthGate({ children }: { children: ReactNode }) {
   );
 }
 
+/**
+ * Saat aplikasi diperbarui (deploy baru), berkas lama tidak lagi tersedia.
+ * Muat ulang sekali secara otomatis agar pengguna selalu memakai versi terbaru.
+ */
+function useAutoUpdate() {
+  useEffect(() => {
+    const KEY = "mca:auto-reloaded-at";
+    const reloadOnce = () => {
+      const last = Number(sessionStorage.getItem(KEY) ?? 0);
+      if (Date.now() - last < 30_000) return;
+      sessionStorage.setItem(KEY, String(Date.now()));
+      window.location.reload();
+    };
+    const onPreloadError = (e: Event) => {
+      e.preventDefault();
+      reloadOnce();
+    };
+    const onError = (e: ErrorEvent) => {
+      const msg = String(e?.message ?? "");
+      if (/dynamically imported module|Importing a module script failed|ChunkLoadError/i.test(msg)) {
+        reloadOnce();
+      }
+    };
+    window.addEventListener("vite:preloadError", onPreloadError);
+    window.addEventListener("error", onError);
+    return () => {
+      window.removeEventListener("vite:preloadError", onPreloadError);
+      window.removeEventListener("error", onError);
+    };
+  }, []);
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  useAutoUpdate();
 
   return (
     <QueryClientProvider client={queryClient}>
