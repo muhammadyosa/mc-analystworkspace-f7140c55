@@ -299,3 +299,54 @@
     animation: none;
   }
 }
+
+/* ===== Kenyamanan & performa lintas perangkat ===== */
+html {
+  scroll-behavior: smooth;
+  text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  overflow-x: hidden;
+  overscroll-behavior-y: none;
+}
+
+/* Scroll horizontal tabel/tab terasa halus di sentuh, tanpa scrollbar tebal */
+.scroll-x,
+[data-slot="scroll-area-viewport"],
+.overflow-x-auto {
+  scrollbar-width: thin;
+}
+
+.overflow-x-auto {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Render hanya bagian yang terlihat -> pindah menu & scroll lebih ringan */
+@utility lazy-block {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 420px;
+}
+
+/* Target sentuh minimum yang nyaman di ponsel */
+@media (pointer: coarse) {
+  button,
+  [role="tab"],
+  [role="menuitem"],
+  a[data-slot="sidebar-menu-button"] {
+    min-height: 40px;
+  }
+}
+
+/* Hemat baterai & CPU untuk pengguna yang membatasi animasi */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

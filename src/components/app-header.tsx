@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/hooks/use-theme";
+import { WhatsNew } from "@/components/whats-new";
 import { useDataStore } from "@/lib/store";
 import { formatDistanceToNow } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -84,11 +85,12 @@ export function AppHeader({ title, subtitle }: { title: string; subtitle?: strin
         {subtitle && <p className="truncate text-xs text-muted-foreground">{subtitle}</p>}
       </div>
       {lastUpdated && (
-        <div className="hidden items-center gap-1.5 rounded-full border border-border/60 bg-muted/40 px-2.5 py-1 text-[10px] text-muted-foreground sm:flex">
+        <div className="hidden items-center gap-1.5 rounded-full border border-border/60 bg-muted/40 px-2.5 py-1 text-[10px] text-muted-foreground lg:flex">
           <RefreshCw className="h-3 w-3" />
           Updated {formatDistanceToNow(lastUpdated, { addSuffix: true })}
         </div>
       )}
+      <WhatsNew />
       {user && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
