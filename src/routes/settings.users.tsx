@@ -110,10 +110,10 @@ function UserManagementPage() {
       setRows([]);
       return;
     }
-    const roleMap = new Map<string, "admin" | "user">();
+    const roleMap = new Map<string, AppRole>();
     (roles ?? []).forEach((r) => {
       const cur = roleMap.get(r.user_id);
-      if (r.role === "admin" || !cur) roleMap.set(r.user_id, r.role as "admin" | "user");
+      if (r.role === "admin" || !cur) roleMap.set(r.user_id, r.role as AppRole);
     });
     setRows(
       (profiles ?? []).map((p) => ({
