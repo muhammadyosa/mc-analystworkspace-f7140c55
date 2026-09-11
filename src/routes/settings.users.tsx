@@ -54,11 +54,6 @@ type Row = {
 
 type AppRole = "admin" | "user" | "viewer";
 
-const ROLE_LABEL: Record<AppRole, string> = {
-  admin: "Admin",
-  user: "Viewer",
-  viewer: "Viewer",
-};
 
 const ONLINE_WINDOW_MS = 5 * 60_000;
 
