@@ -197,9 +197,15 @@ function AuthGate({ children }: { children: ReactNode }) {
   if (status !== "in") return null;
 
   return (
-    <SidebarProvider>
+    <SidebarProvider className="h-svh min-h-0 overflow-hidden">
       <AppSidebar />
-      <SidebarInset className="min-w-0">{children}</SidebarInset>
+      <SidebarInset
+        aria-label="Konten utama"
+        className="app-scroll min-h-0 min-w-0 overflow-x-hidden overflow-y-auto"
+        tabIndex={0}
+      >
+        {children}
+      </SidebarInset>
     </SidebarProvider>
   );
 }
