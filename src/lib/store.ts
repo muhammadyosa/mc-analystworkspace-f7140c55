@@ -80,6 +80,14 @@ type DataState = {
   competitors: Competitor[];
   history: UploadHistoryEntry[];
   lastUpdated: number | null;
+  cloudSyncedAt: number | null;
+  applyCloud: (d: {
+    clusters?: ClusterRow[];
+    tickets?: TicketRow[];
+    analyst?: AnalystRow[];
+    competitorData?: CompetitorRow[];
+    actionPlans?: ActionPlanRow[];
+  }) => void;
   setClusters: (c: ClusterRow[], mode?: "replace" | "append") => void;
   setTickets: (t: TicketRow[], mode?: "replace" | "append") => void;
   setAnalyst: (a: AnalystRow[], mode?: "replace" | "append") => void;
