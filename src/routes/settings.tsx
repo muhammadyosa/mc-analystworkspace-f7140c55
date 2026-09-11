@@ -1,4 +1,5 @@
-import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { Database, Users } from "lucide-react";
 import { AppHeader } from "@/components/app-header";
 import { useRole } from "@/hooks/use-role";
@@ -16,7 +17,20 @@ const tabs = [
 
 function SettingsLayout() {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
-  const { isAdmin } = useRole();
+  const navigate = useNavigate();
+  const { isAdmin, loading } = useRole();
+
+  useEffect(() => {
+    if (!loading && !isAdmin) navigate({ to: "/", replace: true });
+  }, [loading, isAdmin, navigate]);
+
+  if (!isAdmin) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      </div>
+    );
+  }
   const visible = tabs.filter((t) => !t.adminOnly || isAdmin);
   return (
     <>
