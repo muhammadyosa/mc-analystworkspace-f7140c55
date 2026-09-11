@@ -224,7 +224,10 @@ function MasterPage() {
             </TableHeader>
             <TableBody>
               {paginated.map((c) => {
-                const pr = computePriority(c, maxTicket);
+                const pr = computePriority(
+                  { ...c, juni: c.hcView, ticket: c.ticketView, deltaMeiJuni: c.deltaView },
+                  maxTicket,
+                );
                 return (
                   <TableRow key={c.id}>
                     <TableCell className="font-medium">{c.cluster}</TableCell>
