@@ -10,7 +10,6 @@ import {
   Users,
   RefreshCw,
   Pencil,
-  Trash2,
   Activity,
   Wifi,
 } from "lucide-react";
