@@ -12,6 +12,10 @@ import {
   AlertCircle,
   Database,
   Zap,
+  Cloud,
+  CloudUpload,
+  Eye,
+  RefreshCw,
 } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
