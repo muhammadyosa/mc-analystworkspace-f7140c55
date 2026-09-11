@@ -139,7 +139,7 @@ function MasterPage() {
 
   return (
     <>
-      <AppHeader title="Master Cluster" subtitle={`${clusters.length} cluster tersedia`} />
+      <AppHeader title="Master Cluster" subtitle={`${clusters.length} cluster · ${monthLabel}`} />
       <div className="space-y-4 p-4 sm:p-6">
         <Card className="glass-card border-0 p-3 sm:p-4">
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
@@ -185,7 +185,7 @@ function MasterPage() {
 
         <Card className="glass-card overflow-hidden border-0">
           <div className="scroll-x">
-          <Table className="min-w-[960px]">
+          <Table className="min-w-[1180px]">
 
             <TableHeader>
               <TableRow>
