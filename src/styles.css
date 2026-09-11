@@ -376,24 +376,25 @@
 }
 
 @utility theme-swatch-slate {
-  background: linear-gradient(90deg, oklch(0.28 0.04 250) 0 34%, oklch(0.58 0.18 225) 34% 67%, oklch(0.67 0.18 165) 67%);
+  background: linear-gradient(90deg, oklch(0.3 0.03 255) 0 34%, oklch(0.55 0.14 255) 34% 67%, oklch(0.72 0.12 195) 67%);
 }
 
 @utility theme-swatch-cyber {
-  background: linear-gradient(90deg, oklch(0.25 0.06 255) 0 34%, oklch(0.63 0.22 285) 34% 67%, oklch(0.72 0.16 190) 67%);
+  background: linear-gradient(90deg, oklch(0.24 0.04 235) 0 34%, oklch(0.56 0.14 232) 34% 67%, oklch(0.74 0.12 190) 67%);
 }
 
 @utility theme-swatch-emerald {
-  background: linear-gradient(90deg, oklch(0.3 0.1 155) 0 34%, oklch(0.62 0.18 160) 34% 67%, oklch(0.84 0.18 95) 67%);
+  background: linear-gradient(90deg, oklch(0.25 0.05 165) 0 34%, oklch(0.55 0.13 158) 34% 67%, oklch(0.78 0.13 105) 67%);
 }
 
 @utility theme-swatch-amethyst {
-  background: linear-gradient(90deg, oklch(0.34 0.15 310) 0 34%, oklch(0.62 0.23 300) 34% 67%, oklch(0.72 0.16 190) 67%);
+  background: linear-gradient(90deg, oklch(0.26 0.07 300) 0 34%, oklch(0.55 0.16 300) 34% 67%, oklch(0.7 0.13 250) 67%);
 }
 
 @utility theme-swatch-crimson {
-  background: linear-gradient(90deg, oklch(0.25 0.04 255) 0 34%, oklch(0.58 0.23 25) 34% 67%, oklch(0.68 0.19 255) 67%);
+  background: linear-gradient(90deg, oklch(0.24 0.02 30) 0 34%, oklch(0.55 0.17 25) 34% 67%, oklch(0.76 0.13 75) 67%);
 }
+
 
 @layer base {
   * {
