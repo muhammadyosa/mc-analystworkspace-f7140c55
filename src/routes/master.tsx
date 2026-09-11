@@ -19,21 +19,64 @@ export const Route = createFileRoute("/master")({
 
 type SortKey = "cluster" | "hc" | "ticket" | "growth";
 
+const MONTHS = [
+  { key: "januari", label: "Januari" },
+  { key: "februari", label: "Februari" },
+  { key: "maret", label: "Maret" },
+  { key: "april", label: "April" },
+  { key: "mei", label: "Mei" },
+  { key: "juni", label: "Juni" },
+  { key: "juli", label: "Juli" },
+  { key: "agustus", label: "Agustus" },
+  { key: "september", label: "September" },
+  { key: "oktober", label: "Oktober" },
+  { key: "november", label: "November" },
+  { key: "desember", label: "Desember" },
+] as const;
+type MonthKey = (typeof MONTHS)[number]["key"];
+
+const hcOf = (c: Record<string, unknown>, k: MonthKey) => Number(c[k]) || 0;
+const ticketOf = (c: { ticketByMonth?: Record<string, number>; ticket: number }, k: MonthKey | "all") =>
+  k === "all" ? c.ticket : Number(c.ticketByMonth?.[k] ?? 0);
+
 function MasterPage() {
   const clusters = useDataStore((s) => s.clusters);
   const [q, setQ] = useState("");
   const [prov, setProv] = useState<string>("all");
+  const [month, setMonth] = useState<MonthKey | "all">("all");
   const [sort, setSort] = useState<SortKey>("hc");
   const [dir, setDir] = useState<"asc" | "desc">("desc");
   const [page, setPage] = useState(1);
   const perPage = 15;
 
   const provinces = useMemo(() => [...new Set(clusters.map((c) => c.provinsi).filter(Boolean))].sort(), [clusters]);
-  const maxTicket = useMemo(() => Math.max(...clusters.map((c) => c.ticket), 1), [clusters]);
+
+  const availableMonths = useMemo(
+    () =>
+      MONTHS.filter((m) =>
+        clusters.some((c) => hcOf(c as unknown as Record<string, unknown>, m.key) > 0 || (c.ticketByMonth?.[m.key] ?? 0) > 0),
+      ),
+    [clusters],
+  );
+
+  // Nilai per baris sesuai bulan terpilih ("all" = ringkasan terakhir/total)
+  const rows = useMemo(() => {
+    const idx = month === "all" ? -1 : MONTHS.findIndex((m) => m.key === month);
+    return clusters.map((c) => {
+      if (month === "all") return { ...c, hcView: c.juni, ticketView: c.ticket, deltaView: c.deltaMeiJuni };
+      const rec = c as unknown as Record<string, unknown>;
+      const cur = hcOf(rec, month);
+      const prevKey = idx > 0 ? MONTHS[idx - 1].key : null;
+      const prev = prevKey ? hcOf(rec, prevKey) : 0;
+      return { ...c, hcView: cur, ticketView: ticketOf(c, month), deltaView: prevKey ? cur - prev : 0 };
+    });
+  }, [clusters, month]);
+
+  const maxTicket = useMemo(() => Math.max(...rows.map((c) => c.ticketView), 1), [rows]);
 
   const filtered = useMemo(() => {
     const ql = q.toLowerCase();
-    let arr = clusters.filter((c) => {
+    let arr = rows.filter((c) => {
       const matchQ =
         !ql ||
         c.cluster.toLowerCase().includes(ql) ||
