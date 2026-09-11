@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Upload,
   FileSpreadsheet,
@@ -358,6 +358,24 @@ function UploadPage() {
   const [summary, setSummary] = useState<ImportSummary>({});
   const [confirmMode, setConfirmMode] = useState<null | "prompt">(null);
   const [errors, setErrors] = useState<{ name: string; message: string }[]>([]);
+  const { isAdmin } = useRole();
+  const [cloud, setCloud] = useState<
+    { kind: string; row_count: number; file_name: string | null; updated_at: string }[]
+  >([]);
+  const [cloudBusy, setCloudBusy] = useState(false);
+
+  const refreshCloud = useCallback(async () => {
+    try {
+      setCloud(await fetchDatasetStatus());
+    } catch {
+      /* abaikan */
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshCloud();
+  }, [refreshCloud]);
+
 
   const hasData =
     clusters.length > 0 || tickets.length > 0 || analyst.length > 0 || competitorData.length > 0 || actionPlans.length > 0;
