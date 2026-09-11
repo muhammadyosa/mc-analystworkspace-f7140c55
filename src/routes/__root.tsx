@@ -18,6 +18,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { Toaster } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { usePresenceHeartbeat } from "@/hooks/use-presence";
+import { useCloudData } from "@/hooks/use-cloud-data";
 
 function NotFoundComponent() {
   return (
@@ -202,6 +203,7 @@ function AuthGate({ children }: { children: ReactNode }) {
 
 function AuthedShell({ children }: { children: ReactNode }) {
   usePresenceHeartbeat();
+  useCloudData();
   return (
     <SidebarProvider className="h-svh min-h-0 overflow-hidden">
       <AppSidebar />

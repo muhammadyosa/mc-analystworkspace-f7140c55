@@ -1,6 +1,7 @@
 import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { Database, Users } from "lucide-react";
 import { AppHeader } from "@/components/app-header";
+import { useRole } from "@/hooks/use-role";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/settings")({
@@ -9,18 +10,20 @@ export const Route = createFileRoute("/settings")({
 });
 
 const tabs = [
-  { to: "/settings/data", label: "Data Management", icon: Database },
-  { to: "/settings/users", label: "User Management", icon: Users },
+  { to: "/settings/data", label: "Data Management", icon: Database, adminOnly: false },
+  { to: "/settings/users", label: "User Management", icon: Users, adminOnly: true },
 ] as const;
 
 function SettingsLayout() {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
+  const { isAdmin } = useRole();
+  const visible = tabs.filter((t) => !t.adminOnly || isAdmin);
   return (
     <>
       <AppHeader title="Settings" subtitle="Kelola data dan akses pengguna workspace" />
       <div className="space-y-6 p-4 sm:p-6">
         <div className="glass-card inline-flex flex-wrap gap-1 rounded-xl border-0 p-1">
-          {tabs.map((t) => {
+          {visible.map((t) => {
             const active = pathname === t.to || (t.to === "/settings/data" && pathname === "/settings");
             return (
               <Link
