@@ -53,6 +53,33 @@ export type Database = {
         }
         Relationships: []
       }
+      shared_datasets: {
+        Row: {
+          file_name: string | null
+          kind: string
+          payload: Json
+          row_count: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          file_name?: string | null
+          kind: string
+          payload?: Json
+          row_count?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          file_name?: string | null
+          kind?: string
+          payload?: Json
+          row_count?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -88,7 +115,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "user"
+      app_role: "admin" | "user" | "viewer"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -216,7 +243,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "user"],
+      app_role: ["admin", "user", "viewer"],
     },
   },
 } as const
