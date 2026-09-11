@@ -105,6 +105,8 @@ function MasterPage() {
     }
   };
 
+  const monthLabel = month === "all" ? "Semua Bulan" : (MONTHS.find((m) => m.key === month)?.label ?? "");
+
   const handleExport = () => {
     exportToExcel(
       filtered.map((c) => ({
@@ -112,13 +114,18 @@ function MasterPage() {
         Kabupaten: c.kabupaten,
         Provinsi: c.provinsi,
         PIC: c.pic,
-        HC_Juni: c.juni,
-        Ticket: c.ticket,
-        Delta_HC: c.deltaMeiJuni,
+        Bulan: monthLabel,
+        Homepass: c.homepass,
+        HC_Terpasang: c.hcTerpasang,
+        [`HC_Aktif_${monthLabel}`]: c.hcView,
+        Available: c.available,
+        Churn: c.churn,
+        Ticket: c.ticketView,
+        Delta_HC_Aktif: c.deltaView,
         SERPO: c.serpoStatus,
         IKR: c.ikrStatus,
       })),
-      "master-cluster.xlsx",
+      `master-cluster-${monthLabel.toLowerCase().replace(/\s+/g, "-")}.xlsx`,
     );
   };
 
