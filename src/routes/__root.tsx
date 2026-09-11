@@ -197,6 +197,11 @@ function AuthGate({ children }: { children: ReactNode }) {
 
   if (status !== "in") return null;
 
+  return <AuthedShell>{children}</AuthedShell>;
+}
+
+function AuthedShell({ children }: { children: ReactNode }) {
+  usePresenceHeartbeat();
   return (
     <SidebarProvider className="h-svh min-h-0 overflow-hidden">
       <AppSidebar />
