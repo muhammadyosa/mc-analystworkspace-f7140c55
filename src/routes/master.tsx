@@ -234,11 +234,15 @@ function MasterPage() {
                     <TableCell className="text-muted-foreground">{c.kabupaten}</TableCell>
                     <TableCell className="text-muted-foreground">{c.provinsi}</TableCell>
                     <TableCell className="text-muted-foreground">{c.pic || "—"}</TableCell>
-                    <TableCell className="text-right tabular-nums">{c.juni.toLocaleString("id-ID")}</TableCell>
-                    <TableCell className="text-right tabular-nums">{c.ticket}</TableCell>
-                    <TableCell className={`text-right tabular-nums ${c.deltaMeiJuni >= 0 ? "text-success" : "text-destructive"}`}>
-                      {c.deltaMeiJuni >= 0 ? "+" : ""}
-                      {c.deltaMeiJuni}
+                    <TableCell className="text-right tabular-nums">{(c.homepass || 0).toLocaleString("id-ID")}</TableCell>
+                    <TableCell className="text-right tabular-nums">{(c.hcTerpasang || 0).toLocaleString("id-ID")}</TableCell>
+                    <TableCell className="text-right tabular-nums">{c.hcView.toLocaleString("id-ID")}</TableCell>
+                    <TableCell className="text-right tabular-nums">{(c.available || 0).toLocaleString("id-ID")}</TableCell>
+                    <TableCell className="text-right tabular-nums">{(c.churn || 0).toLocaleString("id-ID")}</TableCell>
+                    <TableCell className="text-right tabular-nums">{c.ticketView.toLocaleString("id-ID")}</TableCell>
+                    <TableCell className={`text-right tabular-nums ${c.deltaView >= 0 ? "text-success" : "text-destructive"}`}>
+                      {c.deltaView >= 0 ? "+" : ""}
+                      {c.deltaView}
                     </TableCell>
                     <TableCell>
                       <Badge
