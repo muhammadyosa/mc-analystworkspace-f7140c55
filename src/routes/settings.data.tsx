@@ -383,6 +383,20 @@ function CloudStatus({
 }
 
 function TemplateFormats() {
+  const clusters = useDataStore((s) => s.clusters);
+  const tickets = useDataStore((s) => s.tickets);
+  const analyst = useDataStore((s) => s.analyst);
+  const competitorData = useDataStore((s) => s.competitorData);
+  const actionPlans = useDataStore((s) => s.actionPlans);
+
+  const rowsByKind: Record<ImportKind, unknown[]> = {
+    cluster: clusters,
+    ticket: tickets,
+    analyst,
+    competitor: competitorData,
+    actionplan: actionPlans,
+  };
+
   return (
     <Card className="glass-card border-0">
       <CardHeader className="flex-row items-center gap-2 space-y-0">
@@ -392,55 +406,92 @@ function TemplateFormats() {
       <CardContent>
         <p className="mb-4 text-xs text-muted-foreground">
           Pastikan nama kolom pada file Excel sesuai daftar berikut agar data terbaca dan lolos
-          validasi. Kolom bertanda <span className="text-destructive">wajib</span> harus ada.
+          validasi. Kolom bertanda <span className="text-destructive">wajib</span> harus ada. Setelah
+          file diupload, kolom yang cocok akan diberi tanda centang hijau.
         </p>
         <div className="grid gap-4 lg:grid-cols-2">
-          {TEMPLATE_SPECS.map((spec) => (
-            <div key={spec.kind} className="rounded-xl border border-border/60 bg-muted/15 p-4">
-              <div className="mb-1 flex flex-wrap items-center gap-2">
-                <span aria-hidden="true">{spec.icon}</span>
-                <span className="text-sm font-semibold">{spec.label}</span>
-                <Badge variant="outline" className="text-[10px]">
-                  Sheet: {spec.sheet}
-                </Badge>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="ml-auto h-7 px-2 text-[11px]"
-                  onClick={() => downloadTemplate(spec.kind)}
-                >
-                  <Download className="mr-1 h-3.5 w-3.5" /> Unduh contoh
-                </Button>
-              </div>
-              <p className="mb-3 text-[11px] text-muted-foreground">{spec.description}</p>
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[380px] text-[11px]">
-                  <thead className="text-left text-muted-foreground">
-                    <tr>
-                      <th className="py-1 pr-3 font-medium">Kolom</th>
-                      <th className="py-1 pr-3 font-medium">Contoh isi</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {spec.columns.map((c) => (
-                      <tr key={c.name} className="border-t border-border/40 align-top">
-                        <td className="py-1 pr-3">
-                          <span className="font-medium">{c.name}</span>
-                          {c.required && <span className="ml-1 text-destructive">*</span>}
-                          {c.aliases?.length ? (
-                            <div className="text-[10px] text-muted-foreground">
-                              alias: {c.aliases.join(" / ")}
-                            </div>
-                          ) : null}
-                        </td>
-                        <td className="py-1 pr-3 text-muted-foreground">{c.example}</td>
+          {TEMPLATE_SPECS.map((spec) => {
+            const checks = evaluateTemplateFormat(spec.kind, rowsByKind[spec.kind] ?? []);
+            const okCount = checks?.filter((c) => c.ok).length ?? 0;
+            const missingRequired = checks?.filter((c) => c.required && !c.ok) ?? [];
+            return (
+              <div key={spec.kind} className="rounded-xl border border-border/60 bg-muted/15 p-4">
+                <div className="mb-1 flex flex-wrap items-center gap-2">
+                  <span aria-hidden="true">{spec.icon}</span>
+                  <span className="text-sm font-semibold">{spec.label}</span>
+                  <Badge variant="outline" className="text-[10px]">
+                    Sheet: {spec.sheet}
+                  </Badge>
+                  {checks ? (
+                    missingRequired.length === 0 ? (
+                      <Badge className="gap-1 border-0 bg-success/15 text-[10px] text-success">
+                        <CheckCircle2 className="h-3 w-3" /> Format sesuai ({okCount}/{checks.length})
+                      </Badge>
+                    ) : (
+                      <Badge className="gap-1 border-0 bg-warning/15 text-[10px] text-warning">
+                        <AlertCircle className="h-3 w-3" /> {missingRequired.length} kolom wajib belum terbaca
+                      </Badge>
+                    )
+                  ) : (
+                    <Badge variant="secondary" className="text-[10px]">
+                      Belum ada data
+                    </Badge>
+                  )}
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="ml-auto h-7 px-2 text-[11px]"
+                    onClick={() => downloadTemplate(spec.kind)}
+                  >
+                    <Download className="mr-1 h-3.5 w-3.5" /> Unduh contoh
+                  </Button>
+                </div>
+                <p className="mb-3 text-[11px] text-muted-foreground">{spec.description}</p>
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[380px] text-[11px]">
+                    <thead className="text-left text-muted-foreground">
+                      <tr>
+                        {checks && <th className="w-6 py-1 pr-1 font-medium" aria-label="Status" />}
+                        <th className="py-1 pr-3 font-medium">Kolom</th>
+                        <th className="py-1 pr-3 font-medium">Contoh isi</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {spec.columns.map((c) => {
+                        const check = checks?.find((x) => x.name === c.name);
+                        return (
+                          <tr key={c.name} className="border-t border-border/40 align-top">
+                            {checks && (
+                              <td className="py-1 pr-1">
+                                {check?.ok ? (
+                                  <CheckCircle2 className="h-3.5 w-3.5 text-success" aria-label="Kolom terbaca" />
+                                ) : (
+                                  <X
+                                    className={`h-3.5 w-3.5 ${c.required ? "text-destructive" : "text-muted-foreground/50"}`}
+                                    aria-label={c.required ? "Kolom wajib belum terbaca" : "Kolom opsional belum terbaca"}
+                                  />
+                                )}
+                              </td>
+                            )}
+                            <td className="py-1 pr-3">
+                              <span className="font-medium">{c.name}</span>
+                              {c.required && <span className="ml-1 text-destructive">*</span>}
+                              {c.aliases?.length ? (
+                                <div className="text-[10px] text-muted-foreground">
+                                  alias: {c.aliases.join(" / ")}
+                                </div>
+                              ) : null}
+                            </td>
+                            <td className="py-1 pr-3 text-muted-foreground">{c.example}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </CardContent>
     </Card>
