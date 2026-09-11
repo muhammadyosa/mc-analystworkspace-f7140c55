@@ -788,21 +788,37 @@ function UploadPage() {
             <SummaryResult summary={summary} />
 
             <div className="flex flex-wrap items-center gap-2 border-t border-border/60 pt-4">
-              <Button size="sm" variant="outline" onClick={() => downloadTemplate("cluster")}>
-                <Download className="mr-1 h-4 w-4" /> Template Cluster
+              <Button size="sm" variant="outline" onClick={() => void refreshCloud()}>
+                <RefreshCw className="mr-1 h-4 w-4" /> Muat Ulang dari Cloud
               </Button>
-              <Button size="sm" variant="outline" onClick={() => downloadTemplate("ticket")}>
-                <Download className="mr-1 h-4 w-4" /> Template Ticket
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => downloadTemplate("analyst")}>
-                <Download className="mr-1 h-4 w-4" /> Template Analyst
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => downloadTemplate("competitor")}>
-                <Download className="mr-1 h-4 w-4" /> Template Competitor
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => downloadTemplate("actionplan")}>
-                <Download className="mr-1 h-4 w-4" /> Template Action Plan
-              </Button>
+              {isAdmin && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={!hasData || cloudBusy}
+                  onClick={async () => {
+                    setCloudBusy(true);
+                    try {
+                      const st = useDataStore.getState();
+                      await Promise.all([
+                        pushDataset("cluster", st.clusters),
+                        pushDataset("ticket", st.tickets),
+                        pushDataset("analyst", st.analyst),
+                        pushDataset("competitor", st.competitorData),
+                        pushDataset("actionplan", st.actionPlans),
+                      ]);
+                      await refreshCloud();
+                      toast.success("Data lokal diunggah ke cloud");
+                    } catch (e) {
+                      toast.error((e as Error).message);
+                    } finally {
+                      setCloudBusy(false);
+                    }
+                  }}
+                >
+                  <CloudUpload className="mr-1 h-4 w-4" /> Unggah ke Cloud
+                </Button>
+              )}
               <div className="ml-auto text-xs text-muted-foreground">
                 {clusters.length.toLocaleString("id-ID")} cluster ·{" "}
                 {tickets.length.toLocaleString("id-ID")} ticket ·{" "}
@@ -810,19 +826,26 @@ function UploadPage() {
                 {competitorData.length.toLocaleString("id-ID")} competitor ·{" "}
                 {actionPlans.length.toLocaleString("id-ID")} action plan
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  if (confirm("Hapus semua data yang tersimpan?")) {
+              {isAdmin && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={async () => {
+                    if (!confirm("Hapus semua data yang tersimpan (lokal & cloud)?")) return;
                     clearAll();
                     setSummary({});
+                    try {
+                      await clearCloudDatasets();
+                      await refreshCloud();
+                    } catch (e) {
+                      toast.error((e as Error).message);
+                    }
                     toast.info("Semua data dihapus");
-                  }
-                }}
-              >
-                <Trash2 className="mr-1 h-4 w-4" /> Reset
-              </Button>
+                  }}
+                >
+                  <Trash2 className="mr-1 h-4 w-4" /> Reset
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>
