@@ -155,6 +155,17 @@ function MasterPage() {
                 className="pl-9"
               />
             </div>
+            <Select value={month} onValueChange={(v) => { setMonth(v as MonthKey | "all"); setPage(1); }}>
+              <SelectTrigger className="w-full sm:w-[170px]">
+                <SelectValue placeholder="Bulan" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Semua Bulan</SelectItem>
+                {availableMonths.map((m) => (
+                  <SelectItem key={m.key} value={m.key}>{m.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Select value={prov} onValueChange={(v) => { setProv(v); setPage(1); }}>
               <SelectTrigger className="w-full sm:w-[180px]">
                 <SelectValue placeholder="Provinsi" />
