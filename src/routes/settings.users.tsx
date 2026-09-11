@@ -147,19 +147,18 @@ function UserManagementPage() {
     load(true);
   }
 
-  async function toggleAdmin(row: Row) {
+  async function changeRole(row: Row, next: "admin" | "viewer") {
+    if (row.role === next) return;
     setBusy(row.id);
-    if (row.role === "admin") {
-      const { error } = await supabase.from("user_roles").delete().eq("user_id", row.id).eq("role", "admin");
+    const del = await supabase.from("user_roles").delete().eq("user_id", row.id);
+    if (del.error) {
       setBusy(null);
-      if (error) return toast.error(error.message);
-      toast.success("Admin dicabut");
-    } else {
-      const { error } = await supabase.from("user_roles").insert({ user_id: row.id, role: "admin" });
-      setBusy(null);
-      if (error) return toast.error(error.message);
-      toast.success("Dijadikan admin");
+      return toast.error(del.error.message);
     }
+    const { error } = await supabase.from("user_roles").insert({ user_id: row.id, role: next });
+    setBusy(null);
+    if (error) return toast.error(error.message);
+    toast.success(next === "admin" ? "Dijadikan Admin" : "Diubah menjadi Viewer");
     load(true);
   }
 
