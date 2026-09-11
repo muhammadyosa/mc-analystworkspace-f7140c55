@@ -146,56 +146,225 @@
   --sidebar-toggle-glow: oklch(0.78 0.2 230 / 0.55);
 }
 
-/* Pilihan aksen warna. Mode terang/gelap tetap memakai tingkat kontras yang sama. */
+/* ============================================================
+   Tema warna estetik — setiap tema menyetel palet penuh
+   (latar, kartu, sidebar, chart) dengan kontras yang konsisten.
+   Hanya variabel CSS: tidak menambah beban render.
+   ============================================================ */
+
+/* Slate Professional (default) — netral biru-abu yang tenang */
+[data-color-theme="slate"] {
+  --background: oklch(0.985 0.004 250);
+  --card: oklch(1 0 0);
+  --sidebar: oklch(0.975 0.006 250);
+  --sidebar-accent: oklch(0.94 0.02 255);
+  --primary: oklch(0.52 0.14 255);
+  --ring: oklch(0.52 0.14 255);
+  --accent: oklch(0.95 0.02 255);
+  --accent-foreground: oklch(0.24 0.05 255);
+  --chart-1: oklch(0.55 0.14 255);
+  --chart-2: oklch(0.66 0.13 195);
+  --chart-3: oklch(0.74 0.13 85);
+  --chart-4: oklch(0.62 0.17 25);
+  --chart-5: oklch(0.6 0.13 310);
+  --sidebar-primary: oklch(0.52 0.14 255);
+  --sidebar-ring: oklch(0.52 0.14 255);
+  --gradient-primary: linear-gradient(135deg, oklch(0.52 0.14 255), oklch(0.64 0.12 215));
+  --sidebar-toggle-ring: oklch(0.52 0.14 255);
+  --sidebar-toggle-glow: oklch(0.52 0.14 255 / 0.28);
+}
+
+.dark[data-color-theme="slate"] {
+  --background: oklch(0.16 0.015 255);
+  --card: oklch(0.21 0.018 255);
+  --popover: oklch(0.21 0.018 255);
+  --sidebar: oklch(0.19 0.018 255);
+  --sidebar-accent: oklch(0.27 0.025 255);
+  --primary: oklch(0.7 0.12 250);
+  --ring: oklch(0.7 0.12 250);
+  --accent: oklch(0.28 0.035 255);
+  --chart-1: oklch(0.72 0.12 250);
+  --chart-2: oklch(0.75 0.12 195);
+  --chart-3: oklch(0.8 0.13 90);
+  --chart-4: oklch(0.7 0.16 25);
+  --chart-5: oklch(0.72 0.13 310);
+  --sidebar-primary: oklch(0.7 0.12 250);
+  --sidebar-ring: oklch(0.7 0.12 250);
+}
+
+/* Cyber Ocean — biru laut & teal futuristik */
 [data-color-theme="cyber"] {
-  --primary: oklch(0.62 0.18 235);
-  --ring: oklch(0.62 0.18 235);
-  --accent: oklch(0.94 0.04 225);
-  --accent-foreground: oklch(0.2 0.07 235);
-  --chart-1: oklch(0.62 0.18 235);
-  --chart-2: oklch(0.72 0.16 180);
-  --sidebar-primary: oklch(0.62 0.18 235);
-  --sidebar-ring: oklch(0.62 0.18 235);
+  --background: oklch(0.98 0.008 220);
+  --card: oklch(1 0 0);
+  --sidebar: oklch(0.97 0.012 220);
+  --sidebar-accent: oklch(0.93 0.035 220);
+  --primary: oklch(0.56 0.14 232);
+  --ring: oklch(0.56 0.14 232);
+  --accent: oklch(0.94 0.035 220);
+  --accent-foreground: oklch(0.24 0.06 232);
+  --chart-1: oklch(0.56 0.14 232);
+  --chart-2: oklch(0.68 0.12 195);
+  --chart-3: oklch(0.72 0.11 165);
+  --chart-4: oklch(0.72 0.14 80);
+  --chart-5: oklch(0.6 0.15 285);
+  --sidebar-primary: oklch(0.56 0.14 232);
+  --sidebar-ring: oklch(0.56 0.14 232);
+  --gradient-primary: linear-gradient(135deg, oklch(0.56 0.14 232), oklch(0.7 0.12 190));
+  --sidebar-toggle-ring: oklch(0.56 0.14 232);
+  --sidebar-toggle-glow: oklch(0.56 0.14 232 / 0.28);
 }
 
+.dark[data-color-theme="cyber"] {
+  --background: oklch(0.15 0.02 235);
+  --card: oklch(0.2 0.025 235);
+  --popover: oklch(0.2 0.025 235);
+  --sidebar: oklch(0.18 0.025 235);
+  --sidebar-accent: oklch(0.27 0.04 235);
+  --primary: oklch(0.74 0.12 220);
+  --ring: oklch(0.74 0.12 220);
+  --accent: oklch(0.28 0.05 225);
+  --chart-1: oklch(0.74 0.12 220);
+  --chart-2: oklch(0.78 0.12 190);
+  --chart-3: oklch(0.78 0.12 165);
+  --chart-4: oklch(0.8 0.13 85);
+  --chart-5: oklch(0.72 0.14 290);
+  --sidebar-primary: oklch(0.74 0.12 220);
+  --sidebar-ring: oklch(0.74 0.12 220);
+  --sidebar-toggle-ring: oklch(0.8 0.14 220);
+  --sidebar-toggle-glow: oklch(0.8 0.14 220 / 0.5);
+}
+
+/* Emerald Forest — hijau alami yang lembut */
 [data-color-theme="emerald"] {
-  --primary: oklch(0.58 0.17 155);
-  --ring: oklch(0.58 0.17 155);
-  --accent: oklch(0.94 0.04 145);
-  --accent-foreground: oklch(0.2 0.07 155);
-  --chart-1: oklch(0.58 0.17 155);
-  --chart-2: oklch(0.78 0.17 90);
-  --sidebar-primary: oklch(0.58 0.17 155);
-  --sidebar-ring: oklch(0.58 0.17 155);
+  --background: oklch(0.985 0.008 150);
+  --card: oklch(1 0 0);
+  --sidebar: oklch(0.975 0.012 150);
+  --sidebar-accent: oklch(0.93 0.035 150);
+  --primary: oklch(0.55 0.13 158);
+  --ring: oklch(0.55 0.13 158);
+  --accent: oklch(0.94 0.035 150);
+  --accent-foreground: oklch(0.24 0.06 158);
+  --chart-1: oklch(0.55 0.13 158);
+  --chart-2: oklch(0.68 0.12 185);
+  --chart-3: oklch(0.75 0.13 100);
+  --chart-4: oklch(0.68 0.15 45);
+  --chart-5: oklch(0.58 0.12 255);
+  --sidebar-primary: oklch(0.55 0.13 158);
+  --sidebar-ring: oklch(0.55 0.13 158);
+  --gradient-primary: linear-gradient(135deg, oklch(0.55 0.13 158), oklch(0.7 0.13 120));
+  --sidebar-toggle-ring: oklch(0.55 0.13 158);
+  --sidebar-toggle-glow: oklch(0.55 0.13 158 / 0.28);
 }
 
+.dark[data-color-theme="emerald"] {
+  --background: oklch(0.15 0.018 165);
+  --card: oklch(0.2 0.022 165);
+  --popover: oklch(0.2 0.022 165);
+  --sidebar: oklch(0.18 0.022 165);
+  --sidebar-accent: oklch(0.27 0.035 165);
+  --primary: oklch(0.74 0.13 160);
+  --ring: oklch(0.74 0.13 160);
+  --accent: oklch(0.28 0.045 160);
+  --chart-1: oklch(0.74 0.13 160);
+  --chart-2: oklch(0.77 0.12 190);
+  --chart-3: oklch(0.82 0.13 105);
+  --chart-4: oklch(0.75 0.14 50);
+  --chart-5: oklch(0.7 0.12 255);
+  --sidebar-primary: oklch(0.74 0.13 160);
+  --sidebar-ring: oklch(0.74 0.13 160);
+  --sidebar-toggle-ring: oklch(0.78 0.14 160);
+  --sidebar-toggle-glow: oklch(0.78 0.14 160 / 0.5);
+}
+
+/* Royal Amethyst — ungu elegan */
 [data-color-theme="amethyst"] {
-  --primary: oklch(0.58 0.22 305);
-  --ring: oklch(0.58 0.22 305);
-  --accent: oklch(0.94 0.04 310);
-  --accent-foreground: oklch(0.22 0.07 305);
-  --chart-1: oklch(0.58 0.22 305);
-  --chart-2: oklch(0.72 0.16 195);
-  --sidebar-primary: oklch(0.58 0.22 305);
-  --sidebar-ring: oklch(0.58 0.22 305);
+  --background: oklch(0.985 0.008 300);
+  --card: oklch(1 0 0);
+  --sidebar: oklch(0.975 0.012 300);
+  --sidebar-accent: oklch(0.93 0.035 300);
+  --primary: oklch(0.55 0.16 300);
+  --ring: oklch(0.55 0.16 300);
+  --accent: oklch(0.94 0.035 300);
+  --accent-foreground: oklch(0.24 0.07 300);
+  --chart-1: oklch(0.55 0.16 300);
+  --chart-2: oklch(0.66 0.13 250);
+  --chart-3: oklch(0.7 0.12 190);
+  --chart-4: oklch(0.72 0.14 75);
+  --chart-5: oklch(0.64 0.16 350);
+  --sidebar-primary: oklch(0.55 0.16 300);
+  --sidebar-ring: oklch(0.55 0.16 300);
+  --gradient-primary: linear-gradient(135deg, oklch(0.55 0.16 300), oklch(0.64 0.14 260));
+  --sidebar-toggle-ring: oklch(0.55 0.16 300);
+  --sidebar-toggle-glow: oklch(0.55 0.16 300 / 0.28);
 }
 
+.dark[data-color-theme="amethyst"] {
+  --background: oklch(0.155 0.022 300);
+  --card: oklch(0.205 0.028 300);
+  --popover: oklch(0.205 0.028 300);
+  --sidebar: oklch(0.185 0.028 300);
+  --sidebar-accent: oklch(0.275 0.045 300);
+  --primary: oklch(0.74 0.14 300);
+  --ring: oklch(0.74 0.14 300);
+  --accent: oklch(0.29 0.055 300);
+  --chart-1: oklch(0.74 0.14 300);
+  --chart-2: oklch(0.74 0.12 250);
+  --chart-3: oklch(0.78 0.12 190);
+  --chart-4: oklch(0.8 0.13 80);
+  --chart-5: oklch(0.74 0.15 350);
+  --sidebar-primary: oklch(0.74 0.14 300);
+  --sidebar-ring: oklch(0.74 0.14 300);
+  --sidebar-toggle-ring: oklch(0.78 0.15 300);
+  --sidebar-toggle-glow: oklch(0.78 0.15 300 / 0.5);
+}
+
+/* Charcoal Crimson — merah hangat dengan dasar netral */
 [data-color-theme="crimson"] {
-  --primary: oklch(0.58 0.22 25);
-  --ring: oklch(0.58 0.22 25);
-  --accent: oklch(0.94 0.04 25);
-  --accent-foreground: oklch(0.2 0.07 25);
-  --chart-1: oklch(0.58 0.22 25);
-  --chart-2: oklch(0.66 0.18 250);
-  --sidebar-primary: oklch(0.58 0.22 25);
-  --sidebar-ring: oklch(0.58 0.22 25);
+  --background: oklch(0.985 0.006 30);
+  --card: oklch(1 0 0);
+  --sidebar: oklch(0.975 0.01 30);
+  --sidebar-accent: oklch(0.93 0.03 30);
+  --primary: oklch(0.55 0.17 25);
+  --ring: oklch(0.55 0.17 25);
+  --accent: oklch(0.94 0.03 30);
+  --accent-foreground: oklch(0.24 0.07 25);
+  --chart-1: oklch(0.55 0.17 25);
+  --chart-2: oklch(0.62 0.13 250);
+  --chart-3: oklch(0.74 0.13 75);
+  --chart-4: oklch(0.66 0.12 165);
+  --chart-5: oklch(0.6 0.14 330);
+  --sidebar-primary: oklch(0.55 0.17 25);
+  --sidebar-ring: oklch(0.55 0.17 25);
+  --gradient-primary: linear-gradient(135deg, oklch(0.55 0.17 25), oklch(0.68 0.15 45));
+  --sidebar-toggle-ring: oklch(0.55 0.17 25);
+  --sidebar-toggle-glow: oklch(0.55 0.17 25 / 0.28);
 }
 
-.dark[data-color-theme="cyber"], .dark[data-color-theme="emerald"],
-.dark[data-color-theme="amethyst"], .dark[data-color-theme="crimson"] {
-  --primary-foreground: oklch(0.14 0.02 265);
+.dark[data-color-theme="crimson"] {
+  --background: oklch(0.15 0.014 30);
+  --card: oklch(0.2 0.018 30);
+  --popover: oklch(0.2 0.018 30);
+  --sidebar: oklch(0.18 0.018 30);
+  --sidebar-accent: oklch(0.27 0.03 30);
+  --primary: oklch(0.7 0.16 28);
+  --ring: oklch(0.7 0.16 28);
+  --accent: oklch(0.28 0.04 28);
+  --chart-1: oklch(0.72 0.16 28);
+  --chart-2: oklch(0.72 0.12 250);
+  --chart-3: oklch(0.8 0.13 80);
+  --chart-4: oklch(0.75 0.12 168);
+  --chart-5: oklch(0.72 0.14 330);
+  --sidebar-primary: oklch(0.7 0.16 28);
+  --sidebar-ring: oklch(0.7 0.16 28);
+  --sidebar-toggle-ring: oklch(0.78 0.16 28);
+  --sidebar-toggle-glow: oklch(0.78 0.16 28 / 0.5);
+}
+
+.dark[data-color-theme] {
+  --primary-foreground: oklch(0.16 0.02 265);
   --accent-foreground: oklch(0.97 0.005 260);
 }
+
 
 @utility theme-swatch {
   display: inline-block;
