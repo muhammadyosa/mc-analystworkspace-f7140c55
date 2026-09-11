@@ -610,7 +610,20 @@ function UploadPage() {
             </Button>
           </CardHeader>
           <CardContent className="space-y-4">
-            <BulkImportZone onFiles={addFiles} disabled={running} />
+            <CloudStatus items={cloud} isAdmin={isAdmin} />
+
+            {isAdmin ? (
+              <BulkImportZone onFiles={addFiles} disabled={running} />
+            ) : (
+              <div className="rounded-xl border border-border/60 bg-muted/20 p-4 text-sm text-muted-foreground">
+                <div className="mb-1 flex items-center gap-2 font-medium text-foreground">
+                  <Eye className="h-4 w-4 text-primary" /> Mode Viewer
+                </div>
+                Anda dapat melihat seluruh data workspace, namun tidak dapat mengunggah atau
+                mengubah data. Hubungi admin bila perlu memperbarui data.
+              </div>
+            )}
+
 
             {classifying && (
               <div className="rounded-lg bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
