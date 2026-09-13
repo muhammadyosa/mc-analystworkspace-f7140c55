@@ -213,7 +213,21 @@ function Dashboard() {
     );
   }
 
-  const s = stats!;
+  if (!stats) {
+    return (
+      <>
+        <AppHeader title="Dashboard" subtitle="Executive Overview" />
+        <div className="space-y-4 p-4 sm:p-6">
+          <GlobalFilterBar />
+          <div className="glass-card rounded-2xl p-8 text-center text-sm text-muted-foreground">
+            Tidak ada cluster yang cocok dengan filter saat ini. Ubah atau reset filter di atas.
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  const s = stats;
   const actionActive = actions.filter((a) => a.status === "onprogress").length;
   const actionDone = actions.filter((a) => a.status === "done").length;
 
