@@ -38,7 +38,8 @@ const ticketOf = (c: ClusterRow, m: MonthKey) => c.ticketByMonth?.[m] ?? 0;
 type LoyaltyRow = { cluster: ClusterRow; delta: number; ticket: number; hcStart: number; hcEnd: number };
 
 function LoyaltyPage() {
-  const clusters = useDataStore((s) => s.clusters);
+  const allClusters = useDataStore((s) => s.clusters);
+  const { dimRows: clusters } = useGlobalClusters();
   const addActionPlans = useDataStore((s) => s.addActionPlans);
 
   const availableMonths = useMemo(
