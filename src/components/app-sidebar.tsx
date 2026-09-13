@@ -37,6 +37,7 @@ import { cn } from "@/lib/utils";
 
 const nav = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
+  { title: "Data Health", url: "/data-health", icon: Activity },
   { title: "Master Cluster", url: "/master", icon: Database },
   { title: "Analyst Market", url: "/analyst", icon: UserSearch },
   { title: "Priority Engine", url: "/priority", icon: Target },
