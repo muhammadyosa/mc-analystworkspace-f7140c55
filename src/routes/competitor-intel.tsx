@@ -26,6 +26,9 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { AppHeader } from "@/components/app-header";
 import { useDataStore } from "@/lib/store";
+import { useGlobalClusters } from "@/hooks/use-global-filters";
+import { usePrefsStore } from "@/lib/prefs";
+import { GlobalFilterBar } from "@/components/global-filter";
 import type { CompetitorRow, PromoCategory } from "@/lib/excel";
 import {
   C,
