@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTheme, type ColorTheme, type ThemeMode } from "@/hooks/use-theme";
-import { filterSummary, usePrefsStore } from "@/lib/prefs";
+import { DASHBOARD_WIDGETS, defaultWidgets, filterSummary, usePrefsStore } from "@/lib/prefs";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/settings/preferences")({
