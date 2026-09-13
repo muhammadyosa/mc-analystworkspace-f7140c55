@@ -3,7 +3,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import * as XLSX from "xlsx";
-import { Printer, FileText, Calendar as CalendarIcon, Radar as RadarIcon, Lightbulb, Sparkles } from "lucide-react";
+import { Printer, FileText, Calendar as CalendarIcon, Radar as RadarIcon, Lightbulb, Sparkles, ClipboardPlus } from "lucide-react";
+import { toast } from "sonner";
+import { ReportExportMenu } from "@/components/report-export";
 import {
   Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Line, LineChart,
   Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend,
