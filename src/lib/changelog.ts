@@ -13,6 +13,17 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2.4.0",
+    date: "2026-09-13",
+    title: "Personalisasi Dashboard & Kenyamanan Akses",
+    items: [
+      { kind: "fitur", text: "Pilih sendiri bagian Dashboard yang ingin tampil di Settings → Preferensi (Widget Dashboard)." },
+      { kind: "fitur", text: "Opsi Kurangi animasi untuk tampilan yang lebih tenang dan ringan." },
+      { kind: "fungsi", text: "Tautan Lompat ke konten utama dan penanda konten untuk navigasi keyboard." },
+      { kind: "perbaikan", text: "Badge peran di menu akun kini menampilkan Admin, Manager, Analyst, atau Viewer sesuai izin." },
+    ],
+  },
+  {
     version: "2.3.0",
     date: "2026-09-13",
     title: "Target & KPI Bulanan di Dashboard",
