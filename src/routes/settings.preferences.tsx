@@ -23,7 +23,6 @@ const PAGES = [
   { url: "/loyalty", label: "Customer Loyalty" },
   { url: "/competitor-intel", label: "Competitor Intelligence" },
   { url: "/reports", label: "Reports" },
-  { url: "/data-health", label: "Data Health" },
 ];
 
 const COLORS: { id: ColorTheme; label: string }[] = [
