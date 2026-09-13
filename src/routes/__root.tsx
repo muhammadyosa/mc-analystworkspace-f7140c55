@@ -144,6 +144,14 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+/** Terapkan Saved View default satu kali saat aplikasi dibuka. */
+function useDefaultView() {
+  useEffect(() => {
+    const { defaultViewId, applyView } = usePrefsStore.getState();
+    if (defaultViewId) applyView(defaultViewId);
+  }, []);
+}
+
 function AuthGate({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const navigate = useNavigate();
