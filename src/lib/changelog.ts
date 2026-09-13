@@ -13,6 +13,16 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2.3.0",
+    date: "2026-09-13",
+    title: "Target & KPI Bulanan di Dashboard",
+    items: [
+      { kind: "fitur", text: "Kartu Target & KPI di Dashboard: bandingkan realisasi periode berjalan dengan target (pertumbuhan HC, ticket per 100 HC, cluster risiko tinggi)." },
+      { kind: "fitur", text: "Target bisa diatur sendiri lewat tombol Atur Target dan tersimpan otomatis di perangkat." },
+      { kind: "fungsi", text: "Status Tercapai/Belum dan progres visual diperbarui otomatis mengikuti filter global." },
+    ],
+  },
+  {
     version: "2.2.0",
     date: "2026-09-13",
     title: "Analyst Insight Engine, Ekspor PowerPoint & Riwayat Laporan",

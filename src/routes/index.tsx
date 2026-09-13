@@ -23,6 +23,7 @@ import { KeyInsights, fmtFull, fmtPct, type Insight } from "@/components/chart-k
 import { GlobalFilterBar } from "@/components/global-filter";
 import { useGlobalClusters } from "@/hooks/use-global-filters";
 import { AnalystInsights } from "@/components/analyst-insights";
+import { KpiTargetsCard } from "@/components/kpi-targets";
 
 const DashboardCharts = lazy(() => import("@/components/dashboard-charts"));
 
@@ -187,6 +188,7 @@ function Dashboard() {
       sumMei,
       hcGrowth,
       totalTicket,
+      ticketCur,
       ticketGrowth,
       highRisk,
       highPriority,
@@ -401,6 +403,16 @@ function Dashboard() {
           <KpiCard label="Action Plan Aktif" value={actionActive} icon={Activity} tint="info" onClick={() => openActions("onprogress", "Action Plan — On Progress")} />
           <KpiCard label="Cycle Completed" value={actionDone} icon={TrendingUp} tint="success" onClick={() => openActions("done", "Action Plan — Done")} />
         </div>
+
+        {/* Target & KPI bulanan */}
+        <KpiTargetsCard
+          periodLabel={period.curLabel}
+          actuals={{
+            hcGrowth: s.hcGrowth,
+            ticketPer100HC: s.sumJun > 0 ? (s.ticketCur / s.sumJun) * 100 : 0,
+            highRisk: s.highRisk,
+          }}
+        />
 
         {/* Key Insights */}
         <KeyInsights items={insights} />
