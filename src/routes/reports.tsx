@@ -23,6 +23,8 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { ArcDistribution } from "@/components/chart-kit";
+import { AnalystInsights } from "@/components/analyst-insights";
+
 import { useDataStore } from "@/lib/store";
 import { useGlobalClusters } from "@/hooks/use-global-filters";
 import { GlobalFilterBar } from "@/components/global-filter";
