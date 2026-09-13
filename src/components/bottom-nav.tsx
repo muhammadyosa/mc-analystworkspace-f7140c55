@@ -38,6 +38,7 @@ const secondary = [
 export function BottomNav() {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const { isAdmin } = useRole();
+  const { canInstall, install } = useInstallPrompt();
   const [open, setOpen] = useState(false);
   const isActive = (p: string) => (p === "/" ? pathname === "/" : pathname.startsWith(p));
   const more = secondary.filter((i) => !i.adminOnly || isAdmin);
