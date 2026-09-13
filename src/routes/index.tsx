@@ -409,7 +409,7 @@ function Dashboard() {
           periodLabel={period.curLabel}
           actuals={{
             hcGrowth: s.hcGrowth,
-            ticketPer100HC: s.sumJun > 0 ? (s.totalTicket / s.sumJun) * 100 : 0,
+            ticketPer100HC: s.sumJun > 0 ? (s.ticketCur / s.sumJun) * 100 : 0,
             highRisk: s.highRisk,
           }}
         />
