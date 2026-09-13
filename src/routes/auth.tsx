@@ -139,9 +139,7 @@ function AuthPage() {
             <div className="pointer-events-none absolute -bottom-24 -left-24 h-56 w-56 rounded-full bg-blue-500/20 blur-3xl" />
 
             <div className="relative flex flex-col items-center text-center">
-              <div className="grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-br from-cyan-400/20 to-blue-500/20 ring-1 ring-white/15 backdrop-blur-md">
-                <img src={iconnetLogo.url} alt="Iconnet" className="h-12 w-12 object-contain" />
-              </div>
+              <img src={iconnetLogo.url} alt="Iconnet" className="h-16 w-16 object-contain drop-shadow-[0_4px_12px_rgba(0,0,0,0.35)]" />
               <h2 className="mt-5 font-display text-2xl font-bold tracking-tight">
                 {pending ? "Menunggu Persetujuan" : "Selamat Datang"}
               </h2>
