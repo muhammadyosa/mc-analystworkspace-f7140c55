@@ -1,13 +1,23 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-export type WorkspaceRole = "admin" | "viewer";
+export type WorkspaceRole = "admin" | "manager" | "analyst" | "viewer";
+
+const PRIORITY: WorkspaceRole[] = ["admin", "manager", "analyst", "viewer"];
 
 let cachedRole: WorkspaceRole | null = null;
 
+function pickRole(roles: string[]): WorkspaceRole {
+  for (const r of PRIORITY) if (roles.includes(r)) return r;
+  return "viewer";
+}
+
 /**
- * Role workspace: admin (akses penuh) atau viewer (hanya melihat).
- * Semua akun non-admin diperlakukan sebagai viewer.
+ * Role workspace:
+ * - admin   : akses penuh, kelola user & data
+ * - manager : kelola data & action plan, tanpa kelola user
+ * - analyst : membuat & mengelola action plan
+ * - viewer  : hanya melihat
  */
 export function useRole() {
   const [role, setRole] = useState<WorkspaceRole | null>(cachedRole);
@@ -24,8 +34,11 @@ export function useRole() {
         }
         return;
       }
-      const { data } = await supabase.rpc("has_role", { _user_id: u.user.id, _role: "admin" });
-      cachedRole = data ? "admin" : "viewer";
+      const { data } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", u.user.id);
+      cachedRole = pickRole((data ?? []).map((r) => r.role as string));
       if (mounted) {
         setRole(cachedRole);
         setLoading(false);
@@ -44,5 +57,15 @@ export function useRole() {
     };
   }, []);
 
-  return { role, loading, isAdmin: role === "admin", canEdit: role === "admin" };
+  return {
+    role,
+    loading,
+    isAdmin: role === "admin",
+    /** Boleh mengubah data (upload, edit master). */
+    canEdit: role === "admin" || role === "manager",
+    /** Boleh membuat & mengelola action plan. */
+    canPlan: role === "admin" || role === "manager" || role === "analyst",
+    /** Boleh membuka menu Settings. */
+    canAccessSettings: role === "admin",
+  };
 }

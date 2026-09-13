@@ -13,6 +13,17 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2.1.0",
+    date: "2026-09-13",
+    title: "Role Manager & Analyst, Aksi Cepat Ctrl+K, Ekspor PNG",
+    items: [
+      { kind: "fitur", text: "Role baru Manager dan Analyst: Admin penuh, Manager kelola data & action plan, Analyst membuat action plan, Viewer hanya melihat." },
+      { kind: "fitur", text: "Pencarian cepat (Ctrl+K) kini punya Aksi Cepat: Upload Data, Buat Action Plan, Generate Report, Export Data — plus pencarian action plan." },
+      { kind: "fitur", text: "Report Center bisa mengunduh grafik sebagai gambar PNG." },
+      { kind: "perbaikan", text: "Pemeriksaan role dipindah ke area internal agar lebih aman." },
+    ],
+  },
+  {
     version: "2.0.0",
     date: "2026-09-13",
     title: "Report Center, Insight → Action Plan & Filter Global Menyeluruh",

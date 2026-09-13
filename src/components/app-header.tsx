@@ -45,15 +45,19 @@ export function AppHeader({ title, subtitle }: { title: string; subtitle?: strin
       const u = data.user;
       if (!u) return setUser(null);
       const md = (u.user_metadata ?? {}) as Record<string, string | undefined>;
-      const { data: isAdmin } = await supabase.rpc("has_role", {
-        _user_id: u.id,
-        _role: "admin",
-      });
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", u.id);
+      const roleList = (roles ?? []).map((r) => r.role as string);
+      const role = (["admin", "manager", "analyst", "viewer", "user"] as const).find((r) =>
+        roleList.includes(r),
+      );
       setUser({
         email: u.email ?? null,
         name: md.full_name ?? md.name ?? u.email ?? null,
         avatar: md.avatar_url ?? md.picture ?? null,
-        role: isAdmin ? "admin" : "user",
+        role: role === "admin" ? "admin" : "user",
       });
     })();
   }, []);

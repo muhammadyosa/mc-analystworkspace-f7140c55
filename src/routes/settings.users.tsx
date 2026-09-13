@@ -52,7 +52,17 @@ type Row = {
   role: AppRole;
 };
 
-type AppRole = "admin" | "user" | "viewer";
+type AppRole = "admin" | "manager" | "analyst" | "viewer" | "user";
+
+const ROLE_LABEL: Record<AppRole, string> = {
+  admin: "Admin",
+  manager: "Manager",
+  analyst: "Analyst",
+  viewer: "Viewer",
+  user: "Viewer",
+};
+
+const ROLE_OPTIONS: AppRole[] = ["admin", "manager", "analyst", "viewer"];
 
 
 const ONLINE_WINDOW_MS = 5 * 60_000;
@@ -89,11 +99,12 @@ function UserManagementPage() {
       setRefreshing(false);
       return;
     }
-    const { data: adminCheck } = await supabase.rpc("has_role", {
-      _user_id: u.user.id,
-      _role: "admin",
-    });
-    setIsAdmin(!!adminCheck);
+    const { data: myRoles } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", u.user.id);
+    const adminCheck = (myRoles ?? []).some((r) => r.role === "admin");
+    setIsAdmin(adminCheck);
     if (!adminCheck) {
       setRows([]);
       setRefreshing(false);
@@ -149,7 +160,7 @@ function UserManagementPage() {
     load(true);
   }
 
-  async function changeRole(row: Row, next: "admin" | "viewer") {
+  async function changeRole(row: Row, next: AppRole) {
     if (row.role === next) return;
     setBusy(row.id);
     const del = await supabase.from("user_roles").delete().eq("user_id", row.id);
@@ -160,7 +171,7 @@ function UserManagementPage() {
     const { error } = await supabase.from("user_roles").insert({ user_id: row.id, role: next });
     setBusy(null);
     if (error) return toast.error(error.message);
-    toast.success(next === "admin" ? "Dijadikan Admin" : "Diubah menjadi Viewer");
+    toast.success(`Role diubah menjadi ${ROLE_LABEL[next]}`);
     load(true);
   }
 
@@ -312,16 +323,19 @@ function UserManagementPage() {
                       </TableCell>
                       <TableCell>
                         <Select
-                          value={r.role === "admin" ? "admin" : "viewer"}
+                          value={ROLE_OPTIONS.includes(r.role) ? r.role : "viewer"}
                           disabled={busy === r.id}
-                          onValueChange={(v) => changeRole(r, v as "admin" | "viewer")}
+                          onValueChange={(v) => changeRole(r, v as AppRole)}
                         >
                           <SelectTrigger className="h-8 w-[118px] text-xs">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="admin">Admin</SelectItem>
-                            <SelectItem value="viewer">Viewer</SelectItem>
+                            {ROLE_OPTIONS.map((opt) => (
+                              <SelectItem key={opt} value={opt}>
+                                {ROLE_LABEL[opt]}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </TableCell>
