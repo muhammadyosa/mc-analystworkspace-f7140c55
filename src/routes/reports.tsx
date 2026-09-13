@@ -22,6 +22,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cn } from "@/lib/utils";
 import { ArcDistribution } from "@/components/chart-kit";
 import { useDataStore } from "@/lib/store";
+import { useGlobalClusters } from "@/hooks/use-global-filters";
+import { GlobalFilterBar } from "@/components/global-filter";
 import type { AnalystRow, ClusterRow, CompetitorRow, PromoCategory, TicketRow } from "@/lib/excel";
 
 // Parse various profiling date formats to a Date (or null)
