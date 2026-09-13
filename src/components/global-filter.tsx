@@ -169,20 +169,25 @@ export function GlobalFilterBar({ hideMonths = false }: { hideMonths?: boolean }
       </div>
 
       <div className="mt-3 grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-6">
-        <FilterSelect
-          label="Dari bulan"
-          value={filters.monthFrom}
-          onChange={(v) => setFilter("monthFrom", v as MonthKey | "auto")}
-          autoLabel="Otomatis"
-          items={options.months.map((m) => ({ value: m, label: MONTH_LABELS[m] }))}
-        />
-        <FilterSelect
-          label="Sampai bulan"
-          value={filters.monthTo}
-          onChange={(v) => setFilter("monthTo", v as MonthKey | "auto")}
-          autoLabel="Otomatis"
-          items={options.months.map((m) => ({ value: m, label: MONTH_LABELS[m] }))}
-        />
+        {!hideMonths && (
+          <>
+            <FilterSelect
+              label="Dari bulan"
+              value={filters.monthFrom}
+              onChange={(v) => setFilter("monthFrom", v as MonthKey | "auto")}
+              autoLabel="Otomatis"
+              items={options.months.map((m) => ({ value: m, label: MONTH_LABELS[m] }))}
+            />
+            <FilterSelect
+              label="Sampai bulan"
+              value={filters.monthTo}
+              onChange={(v) => setFilter("monthTo", v as MonthKey | "auto")}
+              autoLabel="Otomatis"
+              items={options.months.map((m) => ({ value: m, label: MONTH_LABELS[m] }))}
+            />
+          </>
+        )}
+
         <FilterSelect
           label="Provinsi"
           value={filters.provinsi}
