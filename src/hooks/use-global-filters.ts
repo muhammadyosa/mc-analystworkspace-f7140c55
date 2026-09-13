@@ -57,12 +57,18 @@ export function useGlobalClusters() {
       return true;
     });
 
+    /** Baris asli (nilai bulan tidak diubah) tapi tetap mengikuti filter wilayah/cluster/PIC/kategori.
+     *  Dipakai halaman yang punya kontrol bulan sendiri (Loyalty, Reports, Competitor). */
+    const keep = new Set(rows.map((c) => c.id));
+    const dimRows = clusters.filter((c) => keep.has(c.id));
+
     const uniq = (arr: (string | undefined)[]) =>
       [...new Set(arr.map((v) => v || "N/A"))].filter(Boolean).sort((a, b) => a.localeCompare(b));
 
     return {
       all: clusters,
       rows,
+      dimRows,
       filled,
       rangeKeys,
       curKey,
