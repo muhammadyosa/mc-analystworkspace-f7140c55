@@ -13,6 +13,11 @@ import {
   Settings,
   MapPin,
   UserRound,
+  Upload,
+  PlusCircle,
+  FileBarChart,
+  Download,
+  Zap,
 } from "lucide-react";
 import {
   CommandDialog,
@@ -95,9 +100,35 @@ export function CommandCenter() {
       </button>
 
       <CommandDialog open={open} onOpenChange={setOpen}>
-        <CommandInput placeholder="Cari menu, cluster, atau nama PIC…" />
+        <CommandInput placeholder="Cari menu, cluster, PIC, atau aksi cepat…" />
         <CommandList>
           <CommandEmpty>Tidak ada hasil.</CommandEmpty>
+          <CommandGroup heading="Aksi Cepat">
+            <CommandItem
+              value="aksi upload data impor excel"
+              onSelect={() => go(() => navigate({ to: "/settings/data" }))}
+            >
+              <Upload className="mr-2 h-4 w-4" /> Upload Data
+            </CommandItem>
+            <CommandItem
+              value="aksi buat action plan baru"
+              onSelect={() => go(() => navigate({ to: "/action-plan" }))}
+            >
+              <PlusCircle className="mr-2 h-4 w-4" /> Buat Action Plan
+            </CommandItem>
+            <CommandItem
+              value="aksi generate report laporan"
+              onSelect={() => go(() => navigate({ to: "/reports" }))}
+            >
+              <FileBarChart className="mr-2 h-4 w-4" /> Generate Report
+            </CommandItem>
+            <CommandItem
+              value="aksi export data unduh"
+              onSelect={() => go(() => navigate({ to: "/settings/data" }))}
+            >
+              <Download className="mr-2 h-4 w-4" /> Export Data
+            </CommandItem>
+          </CommandGroup>
           <CommandGroup heading="Menu">
             {pages
               .filter((p) => !("adminOnly" in p && p.adminOnly) || isAdmin)
