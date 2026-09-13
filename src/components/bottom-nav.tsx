@@ -25,6 +25,7 @@ const primary = [
 
 const secondary = [
   { title: "Master Cluster", url: "/master", icon: Database },
+  { title: "Data Health", url: "/data-health", icon: Activity },
   { title: "Priority Engine", url: "/priority", icon: Target },
   { title: "Customer Loyalty", url: "/loyalty", icon: Users },
   { title: "Competitor Intelligence", url: "/competitor-intel", icon: Radar },
