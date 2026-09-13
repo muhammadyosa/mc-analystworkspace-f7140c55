@@ -273,7 +273,7 @@ function CompetitorIntelPage() {
     };
   }, [filtered, topCompetitors, priceByCompetitor, clusterThreats, promoBreakdown, stats]);
 
-  if (!competitorData.length) {
+  if (!allCompetitor.length) {
     return (
       <>
         <AppHeader title="Competitor Intelligence" subtitle="Analisa persaingan otomatis dari KOMPETITOR.xlsx" />
