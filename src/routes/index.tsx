@@ -578,7 +578,8 @@ function Dashboard() {
             </Card>
           </TabsContent>
         </Tabs>
-
+          </section>
+        )}
 
         <div className="text-center text-xs text-muted-foreground">
           Butuh detail cluster?{" "}
