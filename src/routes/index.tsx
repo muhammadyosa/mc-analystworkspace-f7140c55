@@ -22,6 +22,7 @@ import { DrilldownDialog, type DrilldownState } from "@/components/drilldown-dia
 import { KeyInsights, fmtFull, fmtPct, type Insight } from "@/components/chart-kit";
 import { GlobalFilterBar } from "@/components/global-filter";
 import { useGlobalClusters } from "@/hooks/use-global-filters";
+import { AnalystInsights } from "@/components/analyst-insights";
 
 const DashboardCharts = lazy(() => import("@/components/dashboard-charts"));
 
