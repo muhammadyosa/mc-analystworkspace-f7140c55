@@ -29,7 +29,7 @@ type UserInfo = {
   email: string | null;
   name: string | null;
   avatar: string | null;
-  role: "admin" | "user";
+  role: "admin" | "manager" | "analyst" | "viewer";
 };
 
 export function AppHeader({ title, subtitle }: { title: string; subtitle?: string }) {
@@ -50,14 +50,14 @@ export function AppHeader({ title, subtitle }: { title: string; subtitle?: strin
         .select("role")
         .eq("user_id", u.id);
       const roleList = (roles ?? []).map((r) => r.role as string);
-      const role = (["admin", "manager", "analyst", "viewer", "user"] as const).find((r) =>
+      const role = (["admin", "manager", "analyst", "viewer"] as const).find((r) =>
         roleList.includes(r),
       );
       setUser({
         email: u.email ?? null,
         name: md.full_name ?? md.name ?? u.email ?? null,
         avatar: md.avatar_url ?? md.picture ?? null,
-        role: role === "admin" ? "admin" : "user",
+        role: role ?? "viewer",
       });
     })();
   }, []);
@@ -139,7 +139,8 @@ export function AppHeader({ title, subtitle }: { title: string; subtitle?: strin
                 </Badge>
               ) : (
                 <Badge variant="secondary" className="gap-1">
-                  <UserRound className="h-3 w-3" /> User
+                  <UserRound className="h-3 w-3" />
+                  {user.role === "manager" ? "Manager" : user.role === "analyst" ? "Analyst" : "Viewer"}
                 </Badge>
               )}
             </div>
