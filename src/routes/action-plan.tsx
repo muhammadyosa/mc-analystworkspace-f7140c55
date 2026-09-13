@@ -132,11 +132,25 @@ function DraggableCard({
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
             <p className="truncate text-sm font-semibold">{row.cluster || "—"}</p>
-            {hasResult && (
-              <Badge className="shrink-0 border-emerald-500/40 bg-emerald-500/10 text-[9px] text-emerald-600">
-                Hasil ✓
-              </Badge>
-            )}
+            <div className="flex shrink-0 items-center gap-1">
+              {hasResult && (
+                <Badge className="border-emerald-500/40 bg-emerald-500/10 text-[9px] text-emerald-600">
+                  Hasil ✓
+                </Badge>
+              )}
+              <button
+                type="button"
+                aria-label={`Hapus action plan ${row.program} di ${row.cluster}`}
+                title="Hapus action plan"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(row);
+                }}
+                className="rounded-md p-1 text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            </div>
           </div>
           <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{row.program}</p>
           <div className="mt-2 flex items-center justify-between text-[10px] text-muted-foreground">
