@@ -212,6 +212,8 @@ function Dashboard() {
     };
   }, [rows, period]);
 
+  const [drill, setDrill] = useState<DrilldownState>(null);
+
   if (!clusters.length) {
     return (
       <>
