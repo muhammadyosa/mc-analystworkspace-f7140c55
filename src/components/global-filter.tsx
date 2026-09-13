@@ -25,8 +25,9 @@ const KATEGORI = [
   { value: "high-risk", label: "Risiko Tinggi" },
 ] as const;
 
-/** Filter global: periode, wilayah, provinsi, cluster, PIC, kategori + saved views. */
-export function GlobalFilterBar() {
+/** Filter global: periode, wilayah, provinsi, cluster, PIC, kategori + saved views.
+ *  `hideMonths` dipakai halaman yang punya pemilih bulan/tanggal sendiri. */
+export function GlobalFilterBar({ hideMonths = false }: { hideMonths?: boolean }) {
   const filters = usePrefsStore((s) => s.filters);
   const setFilter = usePrefsStore((s) => s.setFilter);
   const setFilters = usePrefsStore((s) => s.setFilters);
