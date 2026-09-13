@@ -549,3 +549,30 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/* ===== Aplikasi lintas perangkat (PWA + ponsel) ===== */
+.bottom-nav {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Ruang agar konten tidak tertutup navigasi bawah di ponsel */
+@media (max-width: 767px) {
+  .app-scroll {
+    padding-bottom: calc(64px + env(safe-area-inset-bottom));
+  }
+}
+
+/* Cegah scroll horizontal di seluruh aplikasi */
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Target sentuh yang nyaman untuk navigasi bawah */
+@media (pointer: coarse) {
+  .bottom-nav a,
+  .bottom-nav button {
+    min-height: 56px;
+  }
+}
