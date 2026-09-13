@@ -43,7 +43,8 @@ const ticketOf = (c: { ticketByMonth?: Record<string, number>; ticket: number },
   k === "all" ? c.ticket : Number(c.ticketByMonth?.[k] ?? 0);
 
 function MasterPage() {
-  const clusters = useDataStore((s) => s.clusters);
+  const { rows: clusters } = useGlobalClusters();
+  const density = usePrefsStore((s) => s.density);
   const [q, setQ] = useState("");
   const [prov, setProv] = useState<string>("all");
   const [month, setMonth] = useState<MonthKey | "all">("all");
