@@ -309,6 +309,7 @@ function CompetitorIntelPage() {
     <>
       <AppHeader title="Competitor Intelligence" subtitle="Analisa persaingan otomatis dari KOMPETITOR.xlsx" />
       <div className="space-y-6 p-4 md:p-6">
+        <GlobalFilterBar hideMonths />
         {/* Search bar */}
         <div className="flex items-center justify-end">
           <div className="relative w-full md:w-96">
