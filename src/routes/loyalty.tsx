@@ -164,6 +164,7 @@ function LoyaltyPage() {
     <>
       <AppHeader title="Customer Loyalty" subtitle="Deteksi risiko churn dan rekomendasi retensi" />
       <div className="space-y-4 p-4 sm:p-6">
+        <GlobalFilterBar hideMonths />
         <Card className="glass-card border-0">
           <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
             <div className="flex items-center gap-2 text-sm font-medium">
