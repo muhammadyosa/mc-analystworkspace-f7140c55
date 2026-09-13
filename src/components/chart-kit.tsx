@@ -187,7 +187,7 @@ export function ChartCard({
   children: ReactNode;
 }) {
   return (
-    <Card className={`glass-card overflow-hidden rounded-2xl border-0 ${className}`}>
+    <Card className={`glass-card lazy-block overflow-hidden rounded-2xl border-0 ${className}`}>
       <CardHeader className="gap-3 pb-2">
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
           <div className="flex min-w-0 items-start gap-2.5">
