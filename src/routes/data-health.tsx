@@ -227,13 +227,14 @@ function DataHealthPage() {
             )}
             {store.history.slice(0, 8).map((h, i) => (
               <div
-                key={`${h.filename}-${i}`}
+                key={`${h.fileName}-${i}`}
                 className="flex flex-wrap items-center gap-2 rounded-lg border border-border/60 bg-muted/20 px-3 py-2 text-xs"
               >
                 <Badge variant="secondary" className="text-[10px]">{h.kind}</Badge>
-                <span className="min-w-0 flex-1 truncate font-medium">{h.filename}</span>
+                <span className="min-w-0 flex-1 truncate font-medium">{h.fileName}</span>
                 <span className="text-muted-foreground">{h.rowCount?.toLocaleString("id-ID")} baris</span>
                 <span className="text-muted-foreground">{h.mode}</span>
+                <span className="text-muted-foreground">Mapping {Math.round(h.mappingPct ?? 0)}%</span>
               </div>
             ))}
           </CardContent>
