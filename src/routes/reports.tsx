@@ -3,7 +3,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import * as XLSX from "xlsx";
-import { Printer, FileText, Calendar as CalendarIcon, Radar as RadarIcon, Lightbulb, Sparkles } from "lucide-react";
+import { Printer, FileText, Calendar as CalendarIcon, Radar as RadarIcon, Lightbulb, Sparkles, ClipboardPlus } from "lucide-react";
+import { toast } from "sonner";
+import { ReportExportMenu } from "@/components/report-export";
 import {
   Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Line, LineChart,
   Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend,
@@ -883,7 +885,31 @@ function InsightBox({ items }: { items: string[] }) {
   );
 }
 
-function RecommendationBox({ items }: { items: string[] }) {
+/** Recommendation Box — setiap rekomendasi bisa langsung dijadikan Action Plan. */
+function RecommendationBox({ items, source = "Reports" }: { items: string[]; source?: string }) {
+  const addActionPlans = useDataStore((s) => s.addActionPlans);
+
+  const createPlan = (text: string) => {
+    const today = new Date();
+    const end = new Date(today.getTime() + 14 * 86400000);
+    const iso = (d: Date) => d.toISOString().slice(0, 10);
+    addActionPlans([
+      {
+        id: `insight-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        pic: "Belum ditentukan",
+        cluster: "GLOBAL",
+        program: text.length > 80 ? text.slice(0, 77) + "…" : text,
+        startDate: iso(today),
+        endDate: iso(end),
+        description: `Dibuat otomatis dari rekomendasi ${source}: ${text}`,
+        result: "",
+        status: "planned",
+        durationDays: 14,
+      },
+    ]);
+    toast.success("Rekomendasi ditambahkan ke Action Plan");
+  };
+
   return (
     <Card className="glass-card border-0 border-l-4 border-l-success">
       <CardHeader className="pb-2"><CardTitle className="flex items-center gap-2 font-display text-sm"><Lightbulb className="h-4 w-4 text-success" /> Recommendation Box</CardTitle></CardHeader>
@@ -891,7 +917,15 @@ function RecommendationBox({ items }: { items: string[] }) {
         {items.map((t, i) => (
           <div key={i} className="flex items-start gap-2">
             <Badge variant="outline" className="mt-0.5 shrink-0">{i + 1}</Badge>
-            <span>{t}</span>
+            <span className="min-w-0 flex-1">{t}</span>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="no-print h-7 shrink-0 px-2 text-xs text-success"
+              onClick={() => createPlan(t)}
+            >
+              <ClipboardPlus className="mr-1 h-3.5 w-3.5" /> Action Plan
+            </Button>
           </div>
         ))}
       </CardContent>
@@ -1263,7 +1297,24 @@ function ReportsPage() {
           ) : (
             <DateRange from={from} to={to} onFrom={setFrom} onTo={setTo} avail={avail} />
           )}
-          <Button size="sm" onClick={() => handlePrint(ref)}><Printer className="mr-1 h-4 w-4" /> Export PDF</Button>
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="outline" className="no-print h-9" onClick={() => handlePrint(ref)}><Printer className="mr-1 h-4 w-4" /> Cetak</Button>
+            <ReportExportMenu
+              rows={s.perCluster.map((c) => ({
+                Cluster: c.cluster,
+                PIC: c.pic || "-",
+                "HC Aktif": c.hcStart,
+                "HC Aktif Akhir": c.hcEnd,
+                "Δ HC Aktif": c.delta,
+                Ticket: c.ticket,
+                Status: c.delta < 0 ? "Decline" : c.delta === 0 ? "Flat" : "Growth",
+                Periode: label,
+              }))}
+              label={`Report ${kind === "weekly" ? "Weekly" : "Monthly"} ${label}`}
+              sheetName={kind === "weekly" ? "Weekly" : "Monthly"}
+              printRef={ref}
+            />
+          </div>
         </div>
 
 
@@ -1499,9 +1550,22 @@ function ReportsPage() {
                   onFrom={setCDFrom}
                   onTo={setCDTo}
                   actions={
-                    (cDFrom || cDTo) ? (
-                      <Button size="sm" variant="ghost" className="h-9 text-xs" onClick={() => { setCDFrom(""); setCDTo(""); }}>Reset tanggal</Button>
-                    ) : null
+                    <div className="flex items-center gap-2">
+                      {(cDFrom || cDTo) && (
+                        <Button size="sm" variant="ghost" className="h-9 text-xs" onClick={() => { setCDFrom(""); setCDTo(""); }}>Reset tanggal</Button>
+                      )}
+                      <ReportExportMenu
+                        rows={(compCharts?.threats ?? []).map((t) => ({
+                          Cluster: t.cluster,
+                          "Threat Score": Math.round(t.score),
+                          "Level Ancaman": t.score >= 71 ? "Tinggi" : t.score >= 41 ? "Sedang" : "Rendah",
+                          "Jumlah Kompetitor": t.competitors,
+                          "Avg Harga Kompetitor": Math.round(t.avgPrice),
+                        }))}
+                        label="Report Competitor Intelligence"
+                        sheetName="Competitor"
+                      />
+                    </div>
                   }
                   info={
                     <>

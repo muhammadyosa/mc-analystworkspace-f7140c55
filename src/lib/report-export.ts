@@ -1,0 +1,65 @@
+import * as XLSX from "xlsx";
+
+/** Baris laporan generik: kunci = judul kolom. */
+export type ExportRow = Record<string, string | number>;
+
+const stamp = () => new Date().toISOString().slice(0, 10);
+
+const safe = (s: string) => s.replace(/[^\w.-]+/g, "-").replace(/-+/g, "-").toLowerCase();
+
+/** Unduh laporan sebagai file Excel (.xlsx). */
+export function exportExcel(rows: ExportRow[], sheetName: string, fileLabel: string) {
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), sheetName.slice(0, 31) || "Report");
+  XLSX.writeFile(wb, `${safe(fileLabel)}-${stamp()}.xlsx`);
+}
+
+/** Unduh laporan sebagai CSV (bisa dibuka di Excel / Google Sheets). */
+export function exportCSV(rows: ExportRow[], fileLabel: string) {
+  const csv = XLSX.utils.sheet_to_csv(XLSX.utils.json_to_sheet(rows));
+  triggerDownload(new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" }), `${safe(fileLabel)}-${stamp()}.csv`);
+}
+
+/** Unduh data mentah laporan sebagai JSON (untuk integrasi lanjutan). */
+export function exportJSON(rows: ExportRow[], fileLabel: string) {
+  triggerDownload(
+    new Blob([JSON.stringify(rows, null, 2)], { type: "application/json" }),
+    `${safe(fileLabel)}-${stamp()}.json`,
+  );
+}
+
+function triggerDownload(blob: Blob, name: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = name;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/** Cetak / simpan PDF satu bagian halaman lewat jendela cetak browser. */
+export function printSection(el: HTMLElement | null, title: string) {
+  if (!el) {
+    window.print();
+    return;
+  }
+  const win = window.open("", "_blank", "width=1200,height=900");
+  if (!win) {
+    window.print();
+    return;
+  }
+  const styles = [...document.querySelectorAll('link[rel="stylesheet"], style')]
+    .map((n) => n.outerHTML)
+    .join("");
+  win.document.write(
+    `<!doctype html><html><head><title>${title}</title>${styles}` +
+      `<style>body{padding:24px;background:#fff;color:#111} .no-print{display:none!important}</style>` +
+      `</head><body>${el.outerHTML}</body></html>`,
+  );
+  win.document.close();
+  win.focus();
+  setTimeout(() => {
+    win.print();
+    win.close();
+  }, 600);
+}
