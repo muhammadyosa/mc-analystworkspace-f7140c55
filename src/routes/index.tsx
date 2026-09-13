@@ -20,6 +20,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDataStore, computePriority } from "@/lib/store";
 import { DrilldownDialog, type DrilldownState } from "@/components/drilldown-dialog";
 import { KeyInsights, fmtFull, fmtPct, type Insight } from "@/components/chart-kit";
+import { GlobalFilterBar } from "@/components/global-filter";
+import { useGlobalClusters } from "@/hooks/use-global-filters";
 
 const DashboardCharts = lazy(() => import("@/components/dashboard-charts"));
 
