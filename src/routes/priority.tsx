@@ -5,6 +5,8 @@ import { EmptyState } from "@/components/empty-state";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useDataStore, computePriority, recommendStrategy } from "@/lib/store";
+import { useGlobalClusters } from "@/hooks/use-global-filters";
+import { GlobalFilterBar } from "@/components/global-filter";
 
 export const Route = createFileRoute("/priority")({
   head: () => ({ meta: [{ title: "Priority Engine — MCA Workspace" }] }),
@@ -12,7 +14,8 @@ export const Route = createFileRoute("/priority")({
 });
 
 function PriorityPage() {
-  const clusters = useDataStore((s) => s.clusters);
+  const allClusters = useDataStore((s) => s.clusters);
+  const { rows: clusters } = useGlobalClusters();
   const scored = useMemo(() => {
     const max = Math.max(...clusters.map((c) => c.ticket), 1);
     return clusters
@@ -20,7 +23,7 @@ function PriorityPage() {
       .sort((a, b) => b.score - a.score);
   }, [clusters]);
 
-  if (!clusters.length) return (<><AppHeader title="Priority Engine" /><div className="p-6"><EmptyState /></div></>);
+  if (!allClusters.length) return (<><AppHeader title="Priority Engine" /><div className="p-6"><EmptyState /></div></>);
 
   const groups = {
     Tinggi: scored.filter((s) => s.level === "Tinggi"),
@@ -32,6 +35,12 @@ function PriorityPage() {
     <>
       <AppHeader title="Priority Engine" subtitle="Scoring cluster + rekomendasi strategi" />
       <div className="space-y-4 p-4 sm:p-6">
+        <GlobalFilterBar />
+        {!clusters.length && (
+          <div className="glass-card rounded-2xl p-8 text-center text-sm text-muted-foreground">
+            Tidak ada cluster yang cocok dengan filter saat ini.
+          </div>
+        )}
         <div className="grid gap-3 md:grid-cols-3">
           {(["Tinggi", "Sedang", "Rendah"] as const).map((lvl) => (
             <Card key={lvl} className="glass-card border-0">

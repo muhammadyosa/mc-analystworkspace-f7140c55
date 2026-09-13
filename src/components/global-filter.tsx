@@ -25,8 +25,9 @@ const KATEGORI = [
   { value: "high-risk", label: "Risiko Tinggi" },
 ] as const;
 
-/** Filter global: periode, wilayah, provinsi, cluster, PIC, kategori + saved views. */
-export function GlobalFilterBar() {
+/** Filter global: periode, wilayah, provinsi, cluster, PIC, kategori + saved views.
+ *  `hideMonths` dipakai halaman yang punya pemilih bulan/tanggal sendiri. */
+export function GlobalFilterBar({ hideMonths = false }: { hideMonths?: boolean }) {
   const filters = usePrefsStore((s) => s.filters);
   const setFilter = usePrefsStore((s) => s.setFilter);
   const setFilters = usePrefsStore((s) => s.setFilters);
@@ -54,9 +55,11 @@ export function GlobalFilterBar() {
         <Badge variant="secondary" className="text-[10px]">
           {rows.length} / {all.length} cluster
         </Badge>
-        <Badge variant="outline" className="text-[10px]">
-          {prevLabel} → {curLabel}
-        </Badge>
+        {!hideMonths && (
+          <Badge variant="outline" className="text-[10px]">
+            {prevLabel} → {curLabel}
+          </Badge>
+        )}
         <div className="ml-auto flex items-center gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -166,20 +169,25 @@ export function GlobalFilterBar() {
       </div>
 
       <div className="mt-3 grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-6">
-        <FilterSelect
-          label="Dari bulan"
-          value={filters.monthFrom}
-          onChange={(v) => setFilter("monthFrom", v as MonthKey | "auto")}
-          autoLabel="Otomatis"
-          items={options.months.map((m) => ({ value: m, label: MONTH_LABELS[m] }))}
-        />
-        <FilterSelect
-          label="Sampai bulan"
-          value={filters.monthTo}
-          onChange={(v) => setFilter("monthTo", v as MonthKey | "auto")}
-          autoLabel="Otomatis"
-          items={options.months.map((m) => ({ value: m, label: MONTH_LABELS[m] }))}
-        />
+        {!hideMonths && (
+          <>
+            <FilterSelect
+              label="Dari bulan"
+              value={filters.monthFrom}
+              onChange={(v) => setFilter("monthFrom", v as MonthKey | "auto")}
+              autoLabel="Otomatis"
+              items={options.months.map((m) => ({ value: m, label: MONTH_LABELS[m] }))}
+            />
+            <FilterSelect
+              label="Sampai bulan"
+              value={filters.monthTo}
+              onChange={(v) => setFilter("monthTo", v as MonthKey | "auto")}
+              autoLabel="Otomatis"
+              items={options.months.map((m) => ({ value: m, label: MONTH_LABELS[m] }))}
+            />
+          </>
+        )}
+
         <FilterSelect
           label="Provinsi"
           value={filters.provinsi}

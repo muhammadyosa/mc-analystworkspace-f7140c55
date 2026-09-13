@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertTriangle, TrendingDown, Ticket, ShieldCheck, Plus, ChevronRight, CalendarRange } from "lucide-react";
 import { useDataStore } from "@/lib/store";
+import { useGlobalClusters } from "@/hooks/use-global-filters";
+import { GlobalFilterBar } from "@/components/global-filter";
 import { computeActionStatus, type ClusterRow } from "@/lib/excel";
 
 export const Route = createFileRoute("/loyalty")({
@@ -38,7 +40,8 @@ const ticketOf = (c: ClusterRow, m: MonthKey) => c.ticketByMonth?.[m] ?? 0;
 type LoyaltyRow = { cluster: ClusterRow; delta: number; ticket: number; hcStart: number; hcEnd: number };
 
 function LoyaltyPage() {
-  const clusters = useDataStore((s) => s.clusters);
+  const allClusters = useDataStore((s) => s.clusters);
+  const { dimRows: clusters } = useGlobalClusters();
   const addActionPlans = useDataStore((s) => s.addActionPlans);
 
   const availableMonths = useMemo(
@@ -86,7 +89,7 @@ function LoyaltyPage() {
     return { decline, highRisk, topTicket };
   }, [rows]);
 
-  if (!clusters.length) return (<><AppHeader title="Customer Loyalty" /><div className="p-6"><EmptyState /></div></>);
+  if (!allClusters.length) return (<><AppHeader title="Customer Loyalty" /><div className="p-6"><EmptyState /></div></>);
 
   const rangeLabel = from && to ? `${from.label} – ${to.label}` : "Semua bulan";
 
@@ -161,6 +164,7 @@ function LoyaltyPage() {
     <>
       <AppHeader title="Customer Loyalty" subtitle="Deteksi risiko churn dan rekomendasi retensi" />
       <div className="space-y-4 p-4 sm:p-6">
+        <GlobalFilterBar hideMonths />
         <Card className="glass-card border-0">
           <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
             <div className="flex items-center gap-2 text-sm font-medium">

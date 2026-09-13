@@ -22,6 +22,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cn } from "@/lib/utils";
 import { ArcDistribution } from "@/components/chart-kit";
 import { useDataStore } from "@/lib/store";
+import { useGlobalClusters } from "@/hooks/use-global-filters";
+import { GlobalFilterBar } from "@/components/global-filter";
 import type { AnalystRow, ClusterRow, CompetitorRow, PromoCategory, TicketRow } from "@/lib/excel";
 
 // Parse various profiling date formats to a Date (or null)
@@ -996,7 +998,8 @@ function computeStats(
 }
 
 function ReportsPage() {
-  const clusters = useDataStore((s) => s.clusters);
+  const allClusters = useDataStore((s) => s.clusters);
+  const { dimRows: clusters } = useGlobalClusters();
   const actionPlans = useDataStore((s) => s.actionPlans);
   const actions = useDataStore((s) => s.actions);
   const competitorData = useDataStore((s) => s.competitorData);
@@ -1156,7 +1159,19 @@ function ReportsPage() {
     setTimeout(() => w.print(), 300);
   };
 
-  if (!clusters.length) return (<><AppHeader title="Reports" /><div className="p-6"><EmptyState /></div></>);
+  if (!allClusters.length) return (<><AppHeader title="Reports" /><div className="p-6"><EmptyState /></div></>);
+  if (!clusters.length)
+    return (
+      <>
+        <AppHeader title="Reports" />
+        <div className="space-y-4 p-4 sm:p-6">
+          <GlobalFilterBar hideMonths />
+          <div className="glass-card rounded-2xl p-8 text-center text-sm text-muted-foreground">
+            Tidak ada cluster yang cocok dengan filter saat ini.
+          </div>
+        </div>
+      </>
+    );
 
   const runningA = actions.filter((a) => a.status === "onprogress").length;
   const doneA = actions.filter((a) => a.status === "done").length;
@@ -1430,6 +1445,7 @@ function ReportsPage() {
     <>
       <AppHeader title="Reports" subtitle="Weekly · Day · Monthly · Competitor Intelligence" />
       <div className="min-w-0 space-y-4 p-3 sm:p-5 lg:p-6">
+        <GlobalFilterBar hideMonths />
         <Tabs defaultValue="day">
           <div className="scroll-x pb-1">
           <TabsList className="w-max min-w-full justify-start sm:min-w-0">

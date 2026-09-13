@@ -26,6 +26,9 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { AppHeader } from "@/components/app-header";
 import { useDataStore } from "@/lib/store";
+import { useGlobalClusters } from "@/hooks/use-global-filters";
+import { usePrefsStore } from "@/lib/prefs";
+import { GlobalFilterBar } from "@/components/global-filter";
 import type { CompetitorRow, PromoCategory } from "@/lib/excel";
 import {
   C,
@@ -83,9 +86,22 @@ function threatFromRows(rows: CompetitorRow[]): { level: "Rendah" | "Sedang" | "
 }
 
 function CompetitorIntelPage() {
-  const competitorData = useDataStore((s) => s.competitorData);
-  const clusters = useDataStore((s) => s.clusters);
+  const allCompetitor = useDataStore((s) => s.competitorData);
+  const { dimRows: clusters } = useGlobalClusters();
+  const gf = usePrefsStore((s) => s.filters);
   const [q, setQ] = useState("");
+
+  /** Filter global (provinsi / wilayah / cluster) juga berlaku untuk data kompetitor. */
+  const competitorData = useMemo(() => {
+    const names = new Set(clusters.map((c) => c.cluster));
+    return allCompetitor.filter((r) => {
+      if (gf.provinsi !== "all" && (r.provinsi || "N/A") !== gf.provinsi) return false;
+      if (gf.kabupaten !== "all" && (r.kabupaten || "N/A") !== gf.kabupaten) return false;
+      if (gf.cluster !== "all" && r.cluster !== gf.cluster) return false;
+      if (gf.pic !== "all" || gf.kategori !== "all") return names.has(r.cluster);
+      return true;
+    });
+  }, [allCompetitor, clusters, gf]);
 
   const filtered = useMemo(() => {
     if (!q.trim()) return competitorData;
@@ -257,7 +273,7 @@ function CompetitorIntelPage() {
     };
   }, [filtered, topCompetitors, priceByCompetitor, clusterThreats, promoBreakdown, stats]);
 
-  if (!competitorData.length) {
+  if (!allCompetitor.length) {
     return (
       <>
         <AppHeader title="Competitor Intelligence" subtitle="Analisa persaingan otomatis dari KOMPETITOR.xlsx" />
@@ -293,6 +309,7 @@ function CompetitorIntelPage() {
     <>
       <AppHeader title="Competitor Intelligence" subtitle="Analisa persaingan otomatis dari KOMPETITOR.xlsx" />
       <div className="space-y-6 p-4 md:p-6">
+        <GlobalFilterBar hideMonths />
         {/* Search bar */}
         <div className="flex items-center justify-end">
           <div className="relative w-full md:w-96">
