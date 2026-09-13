@@ -13,6 +13,18 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2.0.0",
+    date: "2026-09-13",
+    title: "Report Center, Insight → Action Plan & Filter Global Menyeluruh",
+    items: [
+      { kind: "fitur", text: "Filter global kini juga berlaku di Priority Engine, Customer Loyalty, Competitor Intelligence, dan Reports." },
+      { kind: "fitur", text: "Report Center: unduh laporan dalam PDF/cetak, Excel, CSV, atau JSON dari satu tombol." },
+      { kind: "fungsi", text: "Setiap rekomendasi di Recommendation Box bisa langsung dijadikan Action Plan dengan sekali klik." },
+      { kind: "tampilan", text: "Tampilan cetak lebih bersih: tombol dan menu tidak lagi ikut tercetak." },
+      { kind: "perbaikan", text: "Fokus keyboard selalu terlihat dan tombol lebih nyaman disentuh di ponsel." },
+    ],
+  },
+  {
     version: "1.9.0",
     date: "2026-09-13",
     title: "Filter Global, Tampilan Tersimpan & Data Health",
