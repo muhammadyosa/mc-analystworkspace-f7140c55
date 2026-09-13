@@ -55,9 +55,11 @@ export function GlobalFilterBar({ hideMonths = false }: { hideMonths?: boolean }
         <Badge variant="secondary" className="text-[10px]">
           {rows.length} / {all.length} cluster
         </Badge>
-        <Badge variant="outline" className="text-[10px]">
-          {prevLabel} → {curLabel}
-        </Badge>
+        {!hideMonths && (
+          <Badge variant="outline" className="text-[10px]">
+            {prevLabel} → {curLabel}
+          </Badge>
+        )}
         <div className="ml-auto flex items-center gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
