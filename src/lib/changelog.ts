@@ -13,6 +13,17 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2.2.0",
+    date: "2026-09-13",
+    title: "Analyst Insight Engine, Ekspor PowerPoint & Riwayat Laporan",
+    items: [
+      { kind: "fitur", text: "Analyst Insight Engine: setiap temuan dilengkapi metrik pendukung, dugaan penyebab, dampak bisnis, dan rekomendasi." },
+      { kind: "fitur", text: "Insight bisa langsung dijadikan Action Plan dengan satu klik (Dashboard & Priority Engine)." },
+      { kind: "fitur", text: "Ekspor laporan ke PowerPoint (.pptx) berisi slide ringkasan dan tabel data." },
+      { kind: "fungsi", text: "Riwayat 10 laporan terakhir tercatat di menu Ekspor Laporan lengkap dengan filter yang dipakai." },
+    ],
+  },
+  {
     version: "2.1.0",
     date: "2026-09-13",
     title: "Role Manager & Analyst, Aksi Cepat Ctrl+K, Ekspor PNG",
