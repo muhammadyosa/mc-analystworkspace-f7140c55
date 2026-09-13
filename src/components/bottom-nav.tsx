@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useRole } from "@/hooks/use-role";
+import { useInstallPrompt } from "@/components/install-app";
 import { cn } from "@/lib/utils";
 
 const primary = [
@@ -37,6 +38,7 @@ const secondary = [
 export function BottomNav() {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const { isAdmin } = useRole();
+  const { canInstall, install } = useInstallPrompt();
   const [open, setOpen] = useState(false);
   const isActive = (p: string) => (p === "/" ? pathname === "/" : pathname.startsWith(p));
   const more = secondary.filter((i) => !i.adminOnly || isAdmin);
@@ -94,6 +96,17 @@ export function BottomNav() {
                   </Link>
                 ))}
               </div>
+              {canInstall && (
+                <button
+                  onClick={() => {
+                    void install();
+                    setOpen(false);
+                  }}
+                  className="mt-3 flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-primary text-sm font-semibold text-primary-foreground"
+                >
+                  Pasang MCA Workspace ke Layar Utama
+                </button>
+              )}
             </SheetContent>
           </Sheet>
         </li>

@@ -98,7 +98,7 @@ export function AppHeader({ title, subtitle }: { title: string; subtitle?: strin
       )}
       <CommandCenter />
       <NotificationCenter />
-      <InstallApp />
+      <InstallApp className="hidden md:inline-flex" />
       <WhatsNew />
       {user && (
         <DropdownMenu>
