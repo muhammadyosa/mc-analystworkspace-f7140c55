@@ -401,9 +401,22 @@ function TemplateFormats() {
     <Card className="glass-card border-0">
       <CardHeader className="flex-row items-center gap-2 space-y-0">
         <FileSpreadsheet className="h-5 w-5 text-primary" />
-        <CardTitle className="font-display text-base">Format File yang Didukung</CardTitle>
+        <CardTitle className="font-display text-base">Format File yang Didukung &amp; Data Health</CardTitle>
       </CardHeader>
       <CardContent>
+        <Tabs defaultValue="format" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="format">Format File</TabsTrigger>
+            <TabsTrigger value="health">Data Health</TabsTrigger>
+          </TabsList>
+          <TabsContent value="health" className="mt-0">
+            <p className="mb-4 text-xs text-muted-foreground">
+              Kesegaran data, jumlah baris, duplikasi, nilai kosong, dan skor kualitas seluruh dataset
+              workspace.
+            </p>
+            <DataHealthPanel />
+          </TabsContent>
+          <TabsContent value="format" className="mt-0">
         <p className="mb-4 text-xs text-muted-foreground">
           Pastikan nama kolom pada file Excel sesuai daftar berikut agar data terbaca dan lolos
           validasi. Kolom bertanda <span className="text-destructive">wajib</span> harus ada. Setelah
