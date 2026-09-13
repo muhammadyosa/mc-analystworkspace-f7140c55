@@ -14,7 +14,8 @@ export const Route = createFileRoute("/priority")({
 });
 
 function PriorityPage() {
-  const clusters = useDataStore((s) => s.clusters);
+  const allClusters = useDataStore((s) => s.clusters);
+  const { rows: clusters } = useGlobalClusters();
   const scored = useMemo(() => {
     const max = Math.max(...clusters.map((c) => c.ticket), 1);
     return clusters
