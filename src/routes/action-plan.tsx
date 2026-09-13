@@ -97,7 +97,15 @@ function fmtDate(iso: string) {
   }
 }
 
-function DraggableCard({ row, onOpen }: { row: ActionPlanRow; onOpen: (r: ActionPlanRow) => void }) {
+function DraggableCard({
+  row,
+  onOpen,
+  onDelete,
+}: {
+  row: ActionPlanRow;
+  onOpen: (r: ActionPlanRow) => void;
+  onDelete: (r: ActionPlanRow) => void;
+}) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: row.id });
   const style = transform
     ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`, opacity: isDragging ? 0.5 : 1 }
