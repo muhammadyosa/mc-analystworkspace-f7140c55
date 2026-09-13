@@ -601,3 +601,16 @@ body {
     min-height: 56px;
   }
 }
+
+/* Fokus keyboard selalu terlihat (aksesibilitas) */
+:where(a, button, [role="button"], input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+  border-radius: 0.375rem;
+}
+
+/* Elemen yang tidak ikut tercetak / tidak masuk PDF laporan */
+@media print {
+  .no-print { display: none !important; }
+  .app-scroll { overflow: visible !important; height: auto !important; }
+}
