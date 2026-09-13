@@ -13,6 +13,17 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.8.0",
+    date: "2026-09-13",
+    title: "Pencarian Cepat, Smart Alert & Pasang Aplikasi",
+    items: [
+      { kind: "fitur", text: "Pencarian cepat di header (atau tekan Ctrl/Cmd + K) untuk melompat ke menu, cluster, atau nama PIC." },
+      { kind: "fitur", text: "Pusat notifikasi Smart Alert: program lewat tenggat, HC Aktif turun, dan ticket tinggi langsung terlihat." },
+      { kind: "fungsi", text: "Tombol 'Pasang App' muncul otomatis di perangkat yang mendukung pemasangan ke layar utama." },
+      { kind: "tampilan", text: "Tampilan tablet lebih lega dan semua tombol nyaman disentuh di layar sentuh." },
+    ],
+  },
+  {
     version: "1.7.0",
     date: "2026-09-13",
     title: "Aplikasi Ponsel & Pemasangan di Layar Utama",
