@@ -402,6 +402,16 @@ function Dashboard() {
           <KpiCard label="Cycle Completed" value={actionDone} icon={TrendingUp} tint="success" onClick={() => openActions("done", "Action Plan — Done")} />
         </div>
 
+        {/* Target & KPI bulanan */}
+        <KpiTargetsCard
+          periodLabel={period.curLabel}
+          actuals={{
+            hcGrowth: s.hcGrowth,
+            ticketPer100HC: s.sumJun > 0 ? (s.totalTicket / s.sumJun) * 100 : 0,
+            highRisk: s.highRisk,
+          }}
+        />
+
         {/* Key Insights */}
         <KeyInsights items={insights} />
 
