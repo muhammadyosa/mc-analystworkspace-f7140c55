@@ -13,6 +13,7 @@ export const Route = createFileRoute("/settings")({
 const tabs = [
   { to: "/settings/data", label: "Data Management", icon: Database, adminOnly: false },
   { to: "/settings/users", label: "User Management", icon: Users, adminOnly: true },
+  { to: "/settings/preferences", label: "Preferensi", icon: SlidersHorizontal, adminOnly: false },
 ] as const;
 
 function SettingsLayout() {
