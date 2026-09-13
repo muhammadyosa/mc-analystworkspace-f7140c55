@@ -17,7 +17,6 @@ import {
   PlusCircle,
   FileBarChart,
   Download,
-  Zap,
 } from "lucide-react";
 import {
   CommandDialog,
@@ -155,6 +154,20 @@ export function CommandCenter() {
                 >
                   <MapPin className="mr-2 h-4 w-4" />
                   {name}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          )}
+          {actionPlans.length > 0 && (
+            <CommandGroup heading="Action Plan">
+              {actionPlans.slice(0, 50).map((a) => (
+                <CommandItem
+                  key={a.id}
+                  value={`action plan program ${a.program} ${a.cluster} ${a.pic}`}
+                  onSelect={() => go(() => navigate({ to: "/action-plan" }))}
+                >
+                  <ListTodo className="mr-2 h-4 w-4" />
+                  <span className="truncate">{a.program}</span>
                 </CommandItem>
               ))}
             </CommandGroup>
