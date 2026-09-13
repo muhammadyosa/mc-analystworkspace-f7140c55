@@ -14,6 +14,7 @@ import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as PriorityRouteImport } from './routes/priority'
 import { Route as MasterRouteImport } from './routes/master'
 import { Route as LoyaltyRouteImport } from './routes/loyalty'
+import { Route as DataHealthRouteImport } from './routes/data-health'
 import { Route as CompetitorIntelRouteImport } from './routes/competitor-intel'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AnalystRouteImport } from './routes/analyst'
@@ -47,6 +48,11 @@ const MasterRoute = MasterRouteImport.update({
 const LoyaltyRoute = LoyaltyRouteImport.update({
   id: '/loyalty',
   path: '/loyalty',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DataHealthRoute = DataHealthRouteImport.update({
+  id: '/data-health',
+  path: '/data-health',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CompetitorIntelRoute = CompetitorIntelRouteImport.update({
@@ -101,6 +107,7 @@ export interface FileRoutesByFullPath {
   '/analyst': typeof AnalystRoute
   '/auth': typeof AuthRoute
   '/competitor-intel': typeof CompetitorIntelRoute
+  '/data-health': typeof DataHealthRoute
   '/loyalty': typeof LoyaltyRoute
   '/master': typeof MasterRoute
   '/priority': typeof PriorityRoute
@@ -117,6 +124,7 @@ export interface FileRoutesByTo {
   '/analyst': typeof AnalystRoute
   '/auth': typeof AuthRoute
   '/competitor-intel': typeof CompetitorIntelRoute
+  '/data-health': typeof DataHealthRoute
   '/loyalty': typeof LoyaltyRoute
   '/master': typeof MasterRoute
   '/priority': typeof PriorityRoute
@@ -133,6 +141,7 @@ export interface FileRoutesById {
   '/analyst': typeof AnalystRoute
   '/auth': typeof AuthRoute
   '/competitor-intel': typeof CompetitorIntelRoute
+  '/data-health': typeof DataHealthRoute
   '/loyalty': typeof LoyaltyRoute
   '/master': typeof MasterRoute
   '/priority': typeof PriorityRoute
@@ -151,6 +160,7 @@ export interface FileRouteTypes {
     | '/analyst'
     | '/auth'
     | '/competitor-intel'
+    | '/data-health'
     | '/loyalty'
     | '/master'
     | '/priority'
@@ -167,6 +177,7 @@ export interface FileRouteTypes {
     | '/analyst'
     | '/auth'
     | '/competitor-intel'
+    | '/data-health'
     | '/loyalty'
     | '/master'
     | '/priority'
@@ -182,6 +193,7 @@ export interface FileRouteTypes {
     | '/analyst'
     | '/auth'
     | '/competitor-intel'
+    | '/data-health'
     | '/loyalty'
     | '/master'
     | '/priority'
@@ -199,6 +211,7 @@ export interface RootRouteChildren {
   AnalystRoute: typeof AnalystRoute
   AuthRoute: typeof AuthRoute
   CompetitorIntelRoute: typeof CompetitorIntelRoute
+  DataHealthRoute: typeof DataHealthRoute
   LoyaltyRoute: typeof LoyaltyRoute
   MasterRoute: typeof MasterRoute
   PriorityRoute: typeof PriorityRoute
@@ -242,6 +255,13 @@ declare module '@tanstack/react-router' {
       path: '/loyalty'
       fullPath: '/loyalty'
       preLoaderRoute: typeof LoyaltyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/data-health': {
+      id: '/data-health'
+      path: '/data-health'
+      fullPath: '/data-health'
+      preLoaderRoute: typeof DataHealthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/competitor-intel': {
@@ -332,6 +352,7 @@ const rootRouteChildren: RootRouteChildren = {
   AnalystRoute: AnalystRoute,
   AuthRoute: AuthRoute,
   CompetitorIntelRoute: CompetitorIntelRoute,
+  DataHealthRoute: DataHealthRoute,
   LoyaltyRoute: LoyaltyRoute,
   MasterRoute: MasterRoute,
   PriorityRoute: PriorityRoute,
