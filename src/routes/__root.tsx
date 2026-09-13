@@ -246,7 +246,7 @@ function AuthedShell({ children }: { children: ReactNode }) {
         role="main"
         aria-label="Konten utama"
         className="app-scroll min-h-0 min-w-0 overflow-x-hidden overflow-y-auto"
-        tabIndex={-1}
+        tabIndex={0}
       >
         {children}
       </SidebarInset>
