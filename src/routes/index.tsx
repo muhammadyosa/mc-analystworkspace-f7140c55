@@ -478,9 +478,20 @@ function Dashboard() {
               </div>
             </CardContent>
           </Card>
-        </div>
+              </div>
+            </div>
 
-        {/* Charts & PIC in Tabs (lazy) */}
+            {/* Analysis Engine — insight terstruktur */}
+            {w.analystInsights && (
+              <AnalystInsights rows={rows} curLabel={period.curLabel} prevLabel={period.prevLabel} />
+            )}
+          </section>
+        )}
+
+        {/* Bagian 3 — Visualisasi */}
+        {w.charts && (
+          <section className="space-y-3">
+            <SectionTitle title="Visualisasi & Performa" hint="Grafik tren dan peringkat PIC" />
         <Tabs defaultValue="charts" className={w.charts ? "space-y-4" : "hidden"}>
           <TabsList>
             <TabsTrigger value="charts">Visualisasi</TabsTrigger>
