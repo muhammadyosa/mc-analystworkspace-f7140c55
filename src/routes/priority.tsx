@@ -5,6 +5,8 @@ import { EmptyState } from "@/components/empty-state";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useDataStore, computePriority, recommendStrategy } from "@/lib/store";
+import { useGlobalClusters } from "@/hooks/use-global-filters";
+import { GlobalFilterBar } from "@/components/global-filter";
 
 export const Route = createFileRoute("/priority")({
   head: () => ({ meta: [{ title: "Priority Engine — MCA Workspace" }] }),
