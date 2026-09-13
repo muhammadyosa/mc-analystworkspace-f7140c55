@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useRole } from "@/hooks/use-role";
+import { useInstallPrompt } from "@/components/install-app";
 import { cn } from "@/lib/utils";
 
 const primary = [
