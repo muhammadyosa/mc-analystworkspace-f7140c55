@@ -23,6 +23,8 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { ArcDistribution } from "@/components/chart-kit";
+import { AnalystInsights } from "@/components/analyst-insights";
+
 import { useDataStore } from "@/lib/store";
 import { useGlobalClusters } from "@/hooks/use-global-filters";
 import { GlobalFilterBar } from "@/components/global-filter";
@@ -1475,7 +1477,15 @@ function ReportsPage() {
           </CardContent>
         </Card>
 
+        <AnalystInsights
+          rows={s.perCluster.map((c) => ({ ...c, hcCur: c.hcEnd, hcPrev: c.hcStart, ticketView: c.ticket }))}
+          curLabel={MONTHS[to].label}
+          prevLabel={MONTHS[Math.max(0, from === to ? from - 1 : from)].label}
+          title={`Analyst Insight Engine — ${kind === "weekly" ? weekLabel : label}`}
+        />
+
         <div className="grid gap-4 lg:grid-cols-2">
+
           <InsightBox items={insights} />
           <RecommendationBox items={recs} />
         </div>
