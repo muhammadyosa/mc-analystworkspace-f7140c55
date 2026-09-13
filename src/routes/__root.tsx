@@ -20,6 +20,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { usePresenceHeartbeat } from "@/hooks/use-presence";
 import { useCloudData } from "@/hooks/use-cloud-data";
+import { usePrefsStore } from "@/lib/prefs";
 
 function NotFoundComponent() {
   return (
@@ -144,6 +145,14 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+/** Terapkan Saved View default satu kali saat aplikasi dibuka. */
+function useDefaultView() {
+  useEffect(() => {
+    const { defaultViewId, applyView } = usePrefsStore.getState();
+    if (defaultViewId) applyView(defaultViewId);
+  }, []);
+}
+
 function AuthGate({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const navigate = useNavigate();
@@ -216,6 +225,7 @@ function AuthGate({ children }: { children: ReactNode }) {
 function AuthedShell({ children }: { children: ReactNode }) {
   usePresenceHeartbeat();
   useCloudData();
+  useDefaultView();
   return (
     <SidebarProvider className="h-svh min-h-0 overflow-hidden">
       <AppSidebar />

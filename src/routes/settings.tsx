@@ -1,6 +1,6 @@
 import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { Database, Users } from "lucide-react";
+import { Database, Users, SlidersHorizontal } from "lucide-react";
 import { AppHeader } from "@/components/app-header";
 import { useRole } from "@/hooks/use-role";
 import { cn } from "@/lib/utils";
@@ -13,6 +13,7 @@ export const Route = createFileRoute("/settings")({
 const tabs = [
   { to: "/settings/data", label: "Data Management", icon: Database, adminOnly: false },
   { to: "/settings/users", label: "User Management", icon: Users, adminOnly: true },
+  { to: "/settings/preferences", label: "Preferensi", icon: SlidersHorizontal, adminOnly: false },
 ] as const;
 
 function SettingsLayout() {

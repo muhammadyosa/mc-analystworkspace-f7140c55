@@ -14,6 +14,7 @@ import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as PriorityRouteImport } from './routes/priority'
 import { Route as MasterRouteImport } from './routes/master'
 import { Route as LoyaltyRouteImport } from './routes/loyalty'
+import { Route as DataHealthRouteImport } from './routes/data-health'
 import { Route as CompetitorIntelRouteImport } from './routes/competitor-intel'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AnalystRouteImport } from './routes/analyst'
@@ -21,6 +22,7 @@ import { Route as ActionPlanRouteImport } from './routes/action-plan'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SettingsIndexRouteImport } from './routes/settings.index'
 import { Route as SettingsUsersRouteImport } from './routes/settings.users'
+import { Route as SettingsPreferencesRouteImport } from './routes/settings.preferences'
 import { Route as SettingsDataRouteImport } from './routes/settings.data'
 import { Route as ClusterNameRouteImport } from './routes/cluster.$name'
 
@@ -47,6 +49,11 @@ const MasterRoute = MasterRouteImport.update({
 const LoyaltyRoute = LoyaltyRouteImport.update({
   id: '/loyalty',
   path: '/loyalty',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DataHealthRoute = DataHealthRouteImport.update({
+  id: '/data-health',
+  path: '/data-health',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CompetitorIntelRoute = CompetitorIntelRouteImport.update({
@@ -84,6 +91,11 @@ const SettingsUsersRoute = SettingsUsersRouteImport.update({
   path: '/users',
   getParentRoute: () => SettingsRoute,
 } as any)
+const SettingsPreferencesRoute = SettingsPreferencesRouteImport.update({
+  id: '/preferences',
+  path: '/preferences',
+  getParentRoute: () => SettingsRoute,
+} as any)
 const SettingsDataRoute = SettingsDataRouteImport.update({
   id: '/data',
   path: '/data',
@@ -101,6 +113,7 @@ export interface FileRoutesByFullPath {
   '/analyst': typeof AnalystRoute
   '/auth': typeof AuthRoute
   '/competitor-intel': typeof CompetitorIntelRoute
+  '/data-health': typeof DataHealthRoute
   '/loyalty': typeof LoyaltyRoute
   '/master': typeof MasterRoute
   '/priority': typeof PriorityRoute
@@ -108,6 +121,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRouteWithChildren
   '/cluster/$name': typeof ClusterNameRoute
   '/settings/data': typeof SettingsDataRoute
+  '/settings/preferences': typeof SettingsPreferencesRoute
   '/settings/users': typeof SettingsUsersRoute
   '/settings/': typeof SettingsIndexRoute
 }
@@ -117,12 +131,14 @@ export interface FileRoutesByTo {
   '/analyst': typeof AnalystRoute
   '/auth': typeof AuthRoute
   '/competitor-intel': typeof CompetitorIntelRoute
+  '/data-health': typeof DataHealthRoute
   '/loyalty': typeof LoyaltyRoute
   '/master': typeof MasterRoute
   '/priority': typeof PriorityRoute
   '/reports': typeof ReportsRoute
   '/cluster/$name': typeof ClusterNameRoute
   '/settings/data': typeof SettingsDataRoute
+  '/settings/preferences': typeof SettingsPreferencesRoute
   '/settings/users': typeof SettingsUsersRoute
   '/settings': typeof SettingsIndexRoute
 }
@@ -133,6 +149,7 @@ export interface FileRoutesById {
   '/analyst': typeof AnalystRoute
   '/auth': typeof AuthRoute
   '/competitor-intel': typeof CompetitorIntelRoute
+  '/data-health': typeof DataHealthRoute
   '/loyalty': typeof LoyaltyRoute
   '/master': typeof MasterRoute
   '/priority': typeof PriorityRoute
@@ -140,6 +157,7 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRouteWithChildren
   '/cluster/$name': typeof ClusterNameRoute
   '/settings/data': typeof SettingsDataRoute
+  '/settings/preferences': typeof SettingsPreferencesRoute
   '/settings/users': typeof SettingsUsersRoute
   '/settings/': typeof SettingsIndexRoute
 }
@@ -151,6 +169,7 @@ export interface FileRouteTypes {
     | '/analyst'
     | '/auth'
     | '/competitor-intel'
+    | '/data-health'
     | '/loyalty'
     | '/master'
     | '/priority'
@@ -158,6 +177,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/cluster/$name'
     | '/settings/data'
+    | '/settings/preferences'
     | '/settings/users'
     | '/settings/'
   fileRoutesByTo: FileRoutesByTo
@@ -167,12 +187,14 @@ export interface FileRouteTypes {
     | '/analyst'
     | '/auth'
     | '/competitor-intel'
+    | '/data-health'
     | '/loyalty'
     | '/master'
     | '/priority'
     | '/reports'
     | '/cluster/$name'
     | '/settings/data'
+    | '/settings/preferences'
     | '/settings/users'
     | '/settings'
   id:
@@ -182,6 +204,7 @@ export interface FileRouteTypes {
     | '/analyst'
     | '/auth'
     | '/competitor-intel'
+    | '/data-health'
     | '/loyalty'
     | '/master'
     | '/priority'
@@ -189,6 +212,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/cluster/$name'
     | '/settings/data'
+    | '/settings/preferences'
     | '/settings/users'
     | '/settings/'
   fileRoutesById: FileRoutesById
@@ -199,6 +223,7 @@ export interface RootRouteChildren {
   AnalystRoute: typeof AnalystRoute
   AuthRoute: typeof AuthRoute
   CompetitorIntelRoute: typeof CompetitorIntelRoute
+  DataHealthRoute: typeof DataHealthRoute
   LoyaltyRoute: typeof LoyaltyRoute
   MasterRoute: typeof MasterRoute
   PriorityRoute: typeof PriorityRoute
@@ -242,6 +267,13 @@ declare module '@tanstack/react-router' {
       path: '/loyalty'
       fullPath: '/loyalty'
       preLoaderRoute: typeof LoyaltyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/data-health': {
+      id: '/data-health'
+      path: '/data-health'
+      fullPath: '/data-health'
+      preLoaderRoute: typeof DataHealthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/competitor-intel': {
@@ -293,6 +325,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsUsersRouteImport
       parentRoute: typeof SettingsRoute
     }
+    '/settings/preferences': {
+      id: '/settings/preferences'
+      path: '/preferences'
+      fullPath: '/settings/preferences'
+      preLoaderRoute: typeof SettingsPreferencesRouteImport
+      parentRoute: typeof SettingsRoute
+    }
     '/settings/data': {
       id: '/settings/data'
       path: '/data'
@@ -312,12 +351,14 @@ declare module '@tanstack/react-router' {
 
 interface SettingsRouteChildren {
   SettingsDataRoute: typeof SettingsDataRoute
+  SettingsPreferencesRoute: typeof SettingsPreferencesRoute
   SettingsUsersRoute: typeof SettingsUsersRoute
   SettingsIndexRoute: typeof SettingsIndexRoute
 }
 
 const SettingsRouteChildren: SettingsRouteChildren = {
   SettingsDataRoute: SettingsDataRoute,
+  SettingsPreferencesRoute: SettingsPreferencesRoute,
   SettingsUsersRoute: SettingsUsersRoute,
   SettingsIndexRoute: SettingsIndexRoute,
 }
@@ -332,6 +373,7 @@ const rootRouteChildren: RootRouteChildren = {
   AnalystRoute: AnalystRoute,
   AuthRoute: AuthRoute,
   CompetitorIntelRoute: CompetitorIntelRoute,
+  DataHealthRoute: DataHealthRoute,
   LoyaltyRoute: LoyaltyRoute,
   MasterRoute: MasterRoute,
   PriorityRoute: PriorityRoute,

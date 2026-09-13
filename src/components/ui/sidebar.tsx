@@ -46,6 +46,11 @@ function useSidebar() {
   return context;
 }
 
+/** Aman dipakai di komponen yang bisa dirender di luar SidebarProvider (mis. saat transisi halaman login). */
+function useHasSidebar() {
+  return React.useContext(SidebarContext) !== null;
+}
+
 const SidebarProvider = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<"div"> & {
@@ -741,4 +746,5 @@ export {
   SidebarSeparator,
   SidebarTrigger,
   useSidebar,
+  useHasSidebar,
 };

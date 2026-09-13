@@ -20,6 +20,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDataStore, computePriority } from "@/lib/store";
 import { DrilldownDialog, type DrilldownState } from "@/components/drilldown-dialog";
 import { KeyInsights, fmtFull, fmtPct, type Insight } from "@/components/chart-kit";
+import { GlobalFilterBar } from "@/components/global-filter";
+import { useGlobalClusters } from "@/hooks/use-global-filters";
 
 const DashboardCharts = lazy(() => import("@/components/dashboard-charts"));
 
@@ -111,35 +113,21 @@ const KpiCard = memo(function KpiCard({
 function Dashboard() {
   const clusters = useDataStore((s) => s.clusters);
   const actions = useDataStore((s) => s.actions);
+  const global = useGlobalClusters();
 
-  /** Bulan yang benar-benar terisi pada data upload — dashboard mengikuti bulan terakhir, bukan Juni statis. */
-  const period = useMemo(() => {
-    const filled = MONTHS.map((m, i) => ({
-      key: m,
-      idx: i,
-      total: clusters.reduce((a, c) => a + (Number(c[m]) || 0), 0),
-    })).filter((m) => m.total > 0);
-    const cur = filled[filled.length - 1];
-    const prev = filled[filled.length - 2];
-    return {
-      filled,
-      curKey: cur?.key ?? "juni",
-      prevKey: prev?.key ?? "mei",
-      curLabel: cur ? MONTH_FULL[cur.idx] : "Juni",
-      prevLabel: prev ? MONTH_FULL[prev.idx] : "Mei",
-    };
-  }, [clusters]);
-
-  /** Normalisasi: juni = bulan terakhir, mei = bulan sebelumnya (agar semua chart & kartu akurat). */
-  const rows = useMemo(
-    () =>
-      clusters.map((c) => {
-        const cur = Number(c[period.curKey as keyof typeof c]) || 0;
-        const prev = Number(c[period.prevKey as keyof typeof c]) || 0;
-        return { ...c, juni: cur, mei: prev, deltaMeiJuni: cur - prev };
-      }),
-    [clusters, period],
+  /** Periode & baris mengikuti filter global (periode, wilayah, cluster, PIC, kategori). */
+  const period = useMemo(
+    () => ({
+      filled: global.filled,
+      curKey: global.curKey,
+      prevKey: global.prevKey,
+      curLabel: global.curLabel,
+      prevLabel: global.prevLabel,
+    }),
+    [global],
   );
+
+  const rows = global.rows;
 
   const stats = useMemo(() => {
     if (!rows.length) return null;
@@ -225,7 +213,21 @@ function Dashboard() {
     );
   }
 
-  const s = stats!;
+  if (!stats) {
+    return (
+      <>
+        <AppHeader title="Dashboard" subtitle="Executive Overview" />
+        <div className="space-y-4 p-4 sm:p-6">
+          <GlobalFilterBar />
+          <div className="glass-card rounded-2xl p-8 text-center text-sm text-muted-foreground">
+            Tidak ada cluster yang cocok dengan filter saat ini. Ubah atau reset filter di atas.
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  const s = stats;
   const actionActive = actions.filter((a) => a.status === "onprogress").length;
   const actionDone = actions.filter((a) => a.status === "done").length;
 
@@ -375,6 +377,7 @@ function Dashboard() {
     <>
       <AppHeader title="Dashboard" subtitle={`Executive Overview — data s/d ${period.curLabel}`} />
       <div className="space-y-6 p-4 sm:p-6">
+        <GlobalFilterBar />
         {/* KPI Row 1 - Cluster */}
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-4">
           <KpiCard label="Total Cluster" value={s.totalCluster} icon={Target} tint="primary" onClick={() => openTop("Semua Cluster", "juni")} />
