@@ -1,6 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useState } from "react";
 import {
+  Activity,
   LayoutDashboard,
   UserSearch,
   ListTodo,
