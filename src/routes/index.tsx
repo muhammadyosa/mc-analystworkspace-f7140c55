@@ -23,6 +23,7 @@ import { KeyInsights, fmtFull, fmtPct, type Insight } from "@/components/chart-k
 import { GlobalFilterBar } from "@/components/global-filter";
 import { useGlobalClusters } from "@/hooks/use-global-filters";
 import { AnalystInsights } from "@/components/analyst-insights";
+import { KpiTargetsCard } from "@/components/kpi-targets";
 
 const DashboardCharts = lazy(() => import("@/components/dashboard-charts"));
 
