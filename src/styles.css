@@ -576,3 +576,28 @@ body {
     min-height: 56px;
   }
 }
+
+/* ===== Tablet 768–1023px: konten lebih lega, tabel tetap terbaca ===== */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .app-scroll {
+    font-size: 0.95rem;
+  }
+  .app-scroll table {
+    font-size: 0.85rem;
+  }
+}
+
+/* Target sentuh minimal 44px pada perangkat sentuh */
+@media (pointer: coarse) {
+  button,
+  [role="button"],
+  a[href],
+  summary,
+  select {
+    min-height: 44px;
+  }
+  .bottom-nav a,
+  .bottom-nav button {
+    min-height: 56px;
+  }
+}

@@ -12,6 +12,9 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/hooks/use-theme";
 import { WhatsNew } from "@/components/whats-new";
+import { CommandCenter } from "@/components/command-center";
+import { NotificationCenter } from "@/components/notification-center";
+import { InstallApp } from "@/components/install-app";
 import { useDataStore } from "@/lib/store";
 import { formatDistanceToNow } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -90,6 +93,9 @@ export function AppHeader({ title, subtitle }: { title: string; subtitle?: strin
           Updated {formatDistanceToNow(lastUpdated, { addSuffix: true })}
         </div>
       )}
+      <CommandCenter />
+      <NotificationCenter />
+      <InstallApp />
       <WhatsNew />
       {user && (
         <DropdownMenu>
