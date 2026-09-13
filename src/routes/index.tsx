@@ -480,7 +480,7 @@ function Dashboard() {
         </div>
 
         {/* Charts & PIC in Tabs (lazy) */}
-        <Tabs defaultValue="charts" className="space-y-4">
+        <Tabs defaultValue="charts" className={w.charts ? "space-y-4" : "hidden"}>
           <TabsList>
             <TabsTrigger value="charts">Visualisasi</TabsTrigger>
             <TabsTrigger value="pic">PIC Performance</TabsTrigger>
