@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { exportCSV, exportExcel, exportJSON, printSection, type ExportRow } from "@/lib/report-export";
+import { exportCSV, exportExcel, exportJSON, exportPNG, printSection, type ExportRow } from "@/lib/report-export";
 
 /** Report Center: satu tombol untuk ekspor PDF / Excel / CSV / JSON. */
 export function ReportExportMenu({
@@ -54,6 +54,15 @@ export function ReportExportMenu({
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={guard(() => exportJSON(rows, label))}>
           <FileJson className="mr-2 h-4 w-4" /> JSON
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onSelect={() => {
+            exportPNG(printRef?.current ?? null, label)
+              .then(() => toast.success("Gambar grafik sedang diunduh"))
+              .catch((e: Error) => toast.error(e.message));
+          }}
+        >
+          <Download className="mr-2 h-4 w-4" /> PNG (grafik)
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuLabel className="text-[10px] font-normal text-muted-foreground">

@@ -37,6 +37,35 @@ function triggerDownload(blob: Blob, name: string) {
   URL.revokeObjectURL(url);
 }
 
+/** Unduh grafik (SVG Recharts) di dalam elemen sebagai gambar PNG. */
+export async function exportPNG(el: HTMLElement | null, fileLabel: string) {
+  const svg = el?.querySelector("svg");
+  if (!svg) throw new Error("Tidak ada grafik untuk diekspor");
+  const box = svg.getBoundingClientRect();
+  const xml = new XMLSerializer().serializeToString(svg);
+  const img = new Image();
+  const url = URL.createObjectURL(new Blob([xml], { type: "image/svg+xml;charset=utf-8" }));
+  await new Promise<void>((resolve, reject) => {
+    img.onload = () => resolve();
+    img.onerror = () => reject(new Error("Gagal memuat grafik"));
+    img.src = url;
+  });
+  const scale = 2;
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, Math.round(box.width * scale));
+  canvas.height = Math.max(1, Math.round(box.height * scale));
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Canvas tidak tersedia");
+  const bg = getComputedStyle(document.documentElement).getPropertyValue("--background").trim();
+  ctx.fillStyle = bg ? `hsl(${bg})` : "#ffffff";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  URL.revokeObjectURL(url);
+  const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
+  if (!blob) throw new Error("Gagal membuat PNG");
+  triggerDownload(blob, `${safe(fileLabel)}-${stamp()}.png`);
+}
+
 /** Cetak / simpan PDF satu bagian halaman lewat jendela cetak browser. */
 export function printSection(el: HTMLElement | null, title: string) {
   if (!el) {
