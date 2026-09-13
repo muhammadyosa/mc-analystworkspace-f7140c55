@@ -96,6 +96,17 @@ export function BottomNav() {
                   </Link>
                 ))}
               </div>
+              {canInstall && (
+                <button
+                  onClick={() => {
+                    void install();
+                    setOpen(false);
+                  }}
+                  className="mt-3 flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-primary text-sm font-semibold text-primary-foreground"
+                >
+                  Pasang MCA Workspace ke Layar Utama
+                </button>
+              )}
             </SheetContent>
           </Sheet>
         </li>
