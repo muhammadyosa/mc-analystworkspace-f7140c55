@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { useDataStore, computePriority, recommendStrategy } from "@/lib/store";
 import { useGlobalClusters } from "@/hooks/use-global-filters";
 import { GlobalFilterBar } from "@/components/global-filter";
+import { AnalystInsights } from "@/components/analyst-insights";
 
 export const Route = createFileRoute("/priority")({
   head: () => ({ meta: [{ title: "Priority Engine — MCA Workspace" }] }),
