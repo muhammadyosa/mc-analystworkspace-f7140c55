@@ -179,6 +179,12 @@ export const usePrefsStore = create<PrefsState>()(
       favorites: [],
       readAlerts: [],
       notifPrefs: { kritis: true, perhatian: true, info: true, sistem: true },
+      kpiTargets: defaultKpiTargets,
+      setKpiTarget: (metric, target) =>
+        set((s) => ({
+          kpiTargets: s.kpiTargets.map((t) => (t.metric === metric ? { ...t, target } : t)),
+        })),
+      resetKpiTargets: () => set({ kpiTargets: defaultKpiTargets }),
       density: "comfortable",
       setFilter: (key, value) =>
         set((s) => {
