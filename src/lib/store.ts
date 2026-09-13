@@ -96,6 +96,7 @@ type DataState = {
   addActionPlans: (a: ActionPlanRow[]) => void;
   updateActionPlan: (id: string, patch: Partial<ActionPlanRow>) => void;
   overrideActionPlanStatus: (id: string, status: ActionPlanRow["status"]) => void;
+  removeActionPlan: (id: string) => void;
   pushHistory: (h: UploadHistoryEntry) => void;
   addAction: (a: ActionItem) => void;
   updateActionStatus: (id: string, status: ActionStatus) => void;
@@ -144,6 +145,8 @@ export const useDataStore = create<DataState>()(
         set((s) => ({ actionPlans: s.actionPlans.map((a) => (a.id === id ? { ...a, ...patch } : a)) })),
       overrideActionPlanStatus: (id, status) =>
         set((s) => ({ actionPlans: s.actionPlans.map((a) => (a.id === id ? { ...a, status } : a)) })),
+      removeActionPlan: (id) =>
+        set((s) => ({ actionPlans: s.actionPlans.filter((a) => a.id !== id), lastUpdated: Date.now() })),
       pushHistory: (h) => set((s) => ({ history: [h, ...s.history].slice(0, 20) })),
       addAction: (a) => set((s) => ({ actions: [...s.actions, a] })),
       updateActionStatus: (id, status) =>
