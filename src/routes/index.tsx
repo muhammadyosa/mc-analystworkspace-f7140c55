@@ -113,6 +113,16 @@ const KpiCard = memo(function KpiCard({
 });
 
 
+/** Judul pemisah antar bagian Dashboard agar tata letak lebih mudah dibaca. */
+function SectionTitle({ title, hint }: { title: string; hint?: string }) {
+  return (
+    <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 border-b border-border/50 pb-2">
+      <h2 className="font-display text-sm font-semibold tracking-wide">{title}</h2>
+      {hint && <p className="text-[11px] text-muted-foreground">{hint}</p>}
+    </div>
+  );
+}
+
 function Dashboard() {
   const clusters = useDataStore((s) => s.clusters);
   const actions = useDataStore((s) => s.actions);
