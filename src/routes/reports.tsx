@@ -996,7 +996,8 @@ function computeStats(
 }
 
 function ReportsPage() {
-  const clusters = useDataStore((s) => s.clusters);
+  const allClusters = useDataStore((s) => s.clusters);
+  const { dimRows: clusters } = useGlobalClusters();
   const actionPlans = useDataStore((s) => s.actionPlans);
   const actions = useDataStore((s) => s.actions);
   const competitorData = useDataStore((s) => s.competitorData);
