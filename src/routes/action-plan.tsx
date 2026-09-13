@@ -15,6 +15,7 @@ import {
   Link2,
   Download,
   RotateCcw,
+  Trash2,
 } from "lucide-react";
 import {
   DndContext,
