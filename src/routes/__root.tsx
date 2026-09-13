@@ -20,6 +20,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { usePresenceHeartbeat } from "@/hooks/use-presence";
 import { useCloudData } from "@/hooks/use-cloud-data";
+import { usePrefsStore } from "@/lib/prefs";
 
 function NotFoundComponent() {
   return (
