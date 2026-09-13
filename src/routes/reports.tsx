@@ -883,7 +883,31 @@ function InsightBox({ items }: { items: string[] }) {
   );
 }
 
-function RecommendationBox({ items }: { items: string[] }) {
+/** Recommendation Box — setiap rekomendasi bisa langsung dijadikan Action Plan. */
+function RecommendationBox({ items, source = "Reports" }: { items: string[]; source?: string }) {
+  const addActionPlans = useDataStore((s) => s.addActionPlans);
+
+  const createPlan = (text: string) => {
+    const today = new Date();
+    const end = new Date(today.getTime() + 14 * 86400000);
+    const iso = (d: Date) => d.toISOString().slice(0, 10);
+    addActionPlans([
+      {
+        id: `insight-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        pic: "Belum ditentukan",
+        cluster: "GLOBAL",
+        program: text.length > 80 ? text.slice(0, 77) + "…" : text,
+        startDate: iso(today),
+        endDate: iso(end),
+        description: `Dibuat otomatis dari rekomendasi ${source}: ${text}`,
+        result: "",
+        status: "belum",
+        durationDays: 14,
+      },
+    ]);
+    toast.success("Rekomendasi ditambahkan ke Action Plan");
+  };
+
   return (
     <Card className="glass-card border-0 border-l-4 border-l-success">
       <CardHeader className="pb-2"><CardTitle className="flex items-center gap-2 font-display text-sm"><Lightbulb className="h-4 w-4 text-success" /> Recommendation Box</CardTitle></CardHeader>
@@ -891,7 +915,15 @@ function RecommendationBox({ items }: { items: string[] }) {
         {items.map((t, i) => (
           <div key={i} className="flex items-start gap-2">
             <Badge variant="outline" className="mt-0.5 shrink-0">{i + 1}</Badge>
-            <span>{t}</span>
+            <span className="min-w-0 flex-1">{t}</span>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="no-print h-7 shrink-0 px-2 text-xs text-success"
+              onClick={() => createPlan(t)}
+            >
+              <ClipboardPlus className="mr-1 h-3.5 w-3.5" /> Action Plan
+            </Button>
           </div>
         ))}
       </CardContent>
