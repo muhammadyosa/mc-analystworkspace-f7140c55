@@ -901,7 +901,7 @@ function RecommendationBox({ items, source = "Reports" }: { items: string[]; sou
         endDate: iso(end),
         description: `Dibuat otomatis dari rekomendasi ${source}: ${text}`,
         result: "",
-        status: "belum",
+        status: "planned",
         durationDays: 14,
       },
     ]);
