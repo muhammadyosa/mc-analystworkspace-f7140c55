@@ -70,9 +70,11 @@ export function AppHeader({ title, subtitle }: { title: string; subtitle?: strin
 
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border/60 bg-background/70 px-4 backdrop-blur-xl">
-      <div className="md:hidden">
-        <SidebarTrigger />
-      </div>
+      {hasSidebar && (
+        <div className="md:hidden">
+          <SidebarTrigger />
+        </div>
+      )}
       <img
         src={theme === "dark" ? danantaraDark.url : danantaraLight.url}
         alt="Danantara Indonesia"
