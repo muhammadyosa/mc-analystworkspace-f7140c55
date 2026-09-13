@@ -13,6 +13,19 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.9.0",
+    date: "2026-09-13",
+    title: "Filter Global, Tampilan Tersimpan & Data Health",
+    items: [
+      { kind: "fitur", text: "Filter global (periode, provinsi, wilayah, cluster, PIC, kategori) yang dipakai bersama oleh kartu, grafik, dan tabel." },
+      { kind: "fitur", text: "Tampilan tersimpan: simpan, ganti nama, duplikat, hapus, dan tandai satu tampilan sebagai default." },
+      { kind: "menu", text: "Menu baru Data Health: kesegaran data, jumlah baris/kolom, duplikat, nilai kosong, dan riwayat impor." },
+      { kind: "fitur", text: "Notifikasi kini punya status sudah/belum dibaca, filter belum dibaca, dan pengaturan jenis peringatan." },
+      { kind: "menu", text: "Settings › Preferensi: mode terang/gelap/ikuti sistem, tema warna, tabel ringkas, halaman favorit." },
+      { kind: "tampilan", text: "Di ponsel, tabel Master Cluster dan Data Health berubah menjadi kartu yang mudah dibaca." },
+    ],
+  },
+  {
     version: "1.8.0",
     date: "2026-09-13",
     title: "Pencarian Cepat, Smart Alert & Pasang Aplikasi",
