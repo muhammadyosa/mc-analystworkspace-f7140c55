@@ -377,6 +377,7 @@ function Dashboard() {
     <>
       <AppHeader title="Dashboard" subtitle={`Executive Overview — data s/d ${period.curLabel}`} />
       <div className="space-y-6 p-4 sm:p-6">
+        <GlobalFilterBar />
         {/* KPI Row 1 - Cluster */}
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-4">
           <KpiCard label="Total Cluster" value={s.totalCluster} icon={Target} tint="primary" onClick={() => openTop("Semua Cluster", "juni")} />
