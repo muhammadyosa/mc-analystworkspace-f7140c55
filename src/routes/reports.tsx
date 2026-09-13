@@ -1445,6 +1445,7 @@ function ReportsPage() {
     <>
       <AppHeader title="Reports" subtitle="Weekly · Day · Monthly · Competitor Intelligence" />
       <div className="min-w-0 space-y-4 p-3 sm:p-5 lg:p-6">
+        <GlobalFilterBar hideMonths />
         <Tabs defaultValue="day">
           <div className="scroll-x pb-1">
           <TabsList className="w-max min-w-full justify-start sm:min-w-0">
