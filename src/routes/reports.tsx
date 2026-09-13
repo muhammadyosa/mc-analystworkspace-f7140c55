@@ -1475,7 +1475,15 @@ function ReportsPage() {
           </CardContent>
         </Card>
 
+        <AnalystInsights
+          rows={s.perCluster.map((c) => ({ ...c, hcCur: c.hcEnd, hcPrev: c.hcStart, ticketView: c.ticket }))}
+          curLabel={MONTHS[to].label}
+          prevLabel={MONTHS[Math.max(0, from === to ? from - 1 : from)].label}
+          title={`Analyst Insight Engine — ${kind === "weekly" ? weekLabel : label}`}
+        />
+
         <div className="grid gap-4 lg:grid-cols-2">
+
           <InsightBox items={insights} />
           <RecommendationBox items={recs} />
         </div>
