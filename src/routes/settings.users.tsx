@@ -89,11 +89,12 @@ function UserManagementPage() {
       setRefreshing(false);
       return;
     }
-    const { data: adminCheck } = await supabase.rpc("has_role", {
-      _user_id: u.user.id,
-      _role: "admin",
-    });
-    setIsAdmin(!!adminCheck);
+    const { data: myRoles } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", u.user.id);
+    const adminCheck = (myRoles ?? []).some((r) => r.role === "admin");
+    setIsAdmin(adminCheck);
     if (!adminCheck) {
       setRows([]);
       setRefreshing(false);
