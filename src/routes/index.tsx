@@ -188,6 +188,7 @@ function Dashboard() {
       sumMei,
       hcGrowth,
       totalTicket,
+      ticketCur,
       ticketGrowth,
       highRisk,
       highPriority,
