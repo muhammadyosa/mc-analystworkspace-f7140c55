@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertTriangle, TrendingDown, Ticket, ShieldCheck, Plus, ChevronRight, CalendarRange } from "lucide-react";
 import { useDataStore } from "@/lib/store";
+import { useGlobalClusters } from "@/hooks/use-global-filters";
+import { GlobalFilterBar } from "@/components/global-filter";
 import { computeActionStatus, type ClusterRow } from "@/lib/excel";
 
 export const Route = createFileRoute("/loyalty")({
