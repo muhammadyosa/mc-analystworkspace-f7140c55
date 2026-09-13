@@ -13,6 +13,17 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.7.0",
+    date: "2026-09-13",
+    title: "Aplikasi Ponsel & Pemasangan di Layar Utama",
+    items: [
+      { kind: "menu", text: "Navigasi bawah khusus ponsel: Dashboard, Analyst, Action, Reports, dan Lainnya." },
+      { kind: "fitur", text: "Aplikasi bisa dipasang di layar utama ponsel/desktop dengan ikon dan nama MCA." },
+      { kind: "tampilan", text: "Dukungan area aman iPhone dan tidak ada lagi geser ke samping yang tidak perlu." },
+      { kind: "perbaikan", text: "Dashboard tidak lagi gagal dimuat saat data baru selesai dimuat." },
+    ],
+  },
+  {
     version: "1.6.0",
     date: "2026-09-11",
     title: "Pusat Pembaruan & Optimasi Semua Perangkat",
