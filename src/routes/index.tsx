@@ -111,35 +111,21 @@ const KpiCard = memo(function KpiCard({
 function Dashboard() {
   const clusters = useDataStore((s) => s.clusters);
   const actions = useDataStore((s) => s.actions);
+  const global = useGlobalClusters();
 
-  /** Bulan yang benar-benar terisi pada data upload — dashboard mengikuti bulan terakhir, bukan Juni statis. */
-  const period = useMemo(() => {
-    const filled = MONTHS.map((m, i) => ({
-      key: m,
-      idx: i,
-      total: clusters.reduce((a, c) => a + (Number(c[m]) || 0), 0),
-    })).filter((m) => m.total > 0);
-    const cur = filled[filled.length - 1];
-    const prev = filled[filled.length - 2];
-    return {
-      filled,
-      curKey: cur?.key ?? "juni",
-      prevKey: prev?.key ?? "mei",
-      curLabel: cur ? MONTH_FULL[cur.idx] : "Juni",
-      prevLabel: prev ? MONTH_FULL[prev.idx] : "Mei",
-    };
-  }, [clusters]);
-
-  /** Normalisasi: juni = bulan terakhir, mei = bulan sebelumnya (agar semua chart & kartu akurat). */
-  const rows = useMemo(
-    () =>
-      clusters.map((c) => {
-        const cur = Number(c[period.curKey as keyof typeof c]) || 0;
-        const prev = Number(c[period.prevKey as keyof typeof c]) || 0;
-        return { ...c, juni: cur, mei: prev, deltaMeiJuni: cur - prev };
-      }),
-    [clusters, period],
+  /** Periode & baris mengikuti filter global (periode, wilayah, cluster, PIC, kategori). */
+  const period = useMemo(
+    () => ({
+      filled: global.filled,
+      curKey: global.curKey,
+      prevKey: global.prevKey,
+      curLabel: global.curLabel,
+      prevLabel: global.prevLabel,
+    }),
+    [global],
   );
+
+  const rows = global.rows;
 
   const stats = useMemo(() => {
     if (!rows.length) return null;
