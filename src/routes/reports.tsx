@@ -1159,7 +1159,19 @@ function ReportsPage() {
     setTimeout(() => w.print(), 300);
   };
 
-  if (!clusters.length) return (<><AppHeader title="Reports" /><div className="p-6"><EmptyState /></div></>);
+  if (!allClusters.length) return (<><AppHeader title="Reports" /><div className="p-6"><EmptyState /></div></>);
+  if (!clusters.length)
+    return (
+      <>
+        <AppHeader title="Reports" />
+        <div className="space-y-4 p-4 sm:p-6">
+          <GlobalFilterBar hideMonths />
+          <div className="glass-card rounded-2xl p-8 text-center text-sm text-muted-foreground">
+            Tidak ada cluster yang cocok dengan filter saat ini.
+          </div>
+        </div>
+      </>
+    );
 
   const runningA = actions.filter((a) => a.status === "onprogress").length;
   const doneA = actions.filter((a) => a.status === "done").length;
