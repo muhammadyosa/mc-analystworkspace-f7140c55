@@ -404,6 +404,9 @@ function Dashboard() {
         {/* Key Insights */}
         <KeyInsights items={insights} />
 
+        {/* Analysis Engine — insight terstruktur */}
+        <AnalystInsights rows={rows} curLabel={period.curLabel} prevLabel={period.prevLabel} />
+
 
 
         {/* Executive Summary */}
