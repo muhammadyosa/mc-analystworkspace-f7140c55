@@ -116,6 +116,9 @@ function Dashboard() {
   const clusters = useDataStore((s) => s.clusters);
   const actions = useDataStore((s) => s.actions);
   const global = useGlobalClusters();
+  const storedWidgets = usePrefsStore((st) => st.widgets);
+  /** Widget yang tampil di Dashboard (bisa diatur di Settings → Preferensi). */
+  const w = { ...defaultWidgets, ...(storedWidgets ?? {}) };
 
   /** Periode & baris mengikuti filter global (periode, wilayah, cluster, PIC, kategori). */
   const period = useMemo(
