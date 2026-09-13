@@ -206,6 +206,11 @@ export const usePrefsStore = create<PrefsState>()(
           kpiTargets: s.kpiTargets.map((t) => (t.metric === metric ? { ...t, target } : t)),
         })),
       resetKpiTargets: () => set({ kpiTargets: defaultKpiTargets }),
+      widgets: defaultWidgets,
+      toggleWidget: (id, value) => set((s) => ({ widgets: { ...s.widgets, [id]: value } })),
+      resetWidgets: () => set({ widgets: defaultWidgets }),
+      reduceMotion: false,
+      setReduceMotion: (reduceMotion) => set({ reduceMotion }),
       density: "comfortable",
       setFilter: (key, value) =>
         set((s) => {
