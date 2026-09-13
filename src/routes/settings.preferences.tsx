@@ -44,6 +44,7 @@ const NOTIF: { key: "kritis" | "perhatian" | "info" | "sistem"; label: string; d
 function PreferencesPage() {
   const { mode, colorTheme, setMode, setColorTheme } = useTheme();
   const prefs = usePrefsStore();
+  const widgets = { ...defaultWidgets, ...(prefs.widgets ?? {}) };
 
   return (
     <div className="grid gap-4 lg:grid-cols-2">
