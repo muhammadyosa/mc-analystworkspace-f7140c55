@@ -1550,9 +1550,22 @@ function ReportsPage() {
                   onFrom={setCDFrom}
                   onTo={setCDTo}
                   actions={
-                    (cDFrom || cDTo) ? (
-                      <Button size="sm" variant="ghost" className="h-9 text-xs" onClick={() => { setCDFrom(""); setCDTo(""); }}>Reset tanggal</Button>
-                    ) : null
+                    <div className="flex items-center gap-2">
+                      {(cDFrom || cDTo) && (
+                        <Button size="sm" variant="ghost" className="h-9 text-xs" onClick={() => { setCDFrom(""); setCDTo(""); }}>Reset tanggal</Button>
+                      )}
+                      <ReportExportMenu
+                        rows={(compCharts?.threats ?? []).map((t) => ({
+                          Cluster: t.cluster,
+                          "Threat Score": Math.round(t.score),
+                          "Level Ancaman": t.score >= 71 ? "Tinggi" : t.score >= 41 ? "Sedang" : "Rendah",
+                          "Jumlah Kompetitor": t.competitors,
+                          "Avg Harga Kompetitor": Math.round(t.avgPrice),
+                        }))}
+                        label="Report Competitor Intelligence"
+                        sheetName="Competitor"
+                      />
+                    </div>
                   }
                   info={
                     <>
