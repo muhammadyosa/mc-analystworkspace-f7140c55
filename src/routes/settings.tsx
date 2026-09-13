@@ -1,6 +1,6 @@
 import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { Database, Users } from "lucide-react";
+import { Database, Users, SlidersHorizontal } from "lucide-react";
 import { AppHeader } from "@/components/app-header";
 import { useRole } from "@/hooks/use-role";
 import { cn } from "@/lib/utils";
