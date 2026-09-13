@@ -216,6 +216,7 @@ function AuthGate({ children }: { children: ReactNode }) {
 function AuthedShell({ children }: { children: ReactNode }) {
   usePresenceHeartbeat();
   useCloudData();
+  useDefaultView();
   return (
     <SidebarProvider className="h-svh min-h-0 overflow-hidden">
       <AppSidebar />
