@@ -12,7 +12,7 @@ type Alert = {
   icon: typeof AlertTriangle;
   title: string;
   detail: string;
-  to: string;
+  to: "/action-plan" | "/loyalty" | "/priority" | "/settings";
 };
 
 /** Pusat notifikasi: peringatan otomatis dari data terbaru (tanpa mengubah data). */
