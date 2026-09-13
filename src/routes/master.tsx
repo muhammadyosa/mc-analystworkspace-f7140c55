@@ -145,6 +145,7 @@ function MasterPage() {
     <>
       <AppHeader title="Master Cluster" subtitle={`${clusters.length} cluster · ${monthLabel}`} />
       <div className="space-y-4 p-4 sm:p-6">
+        <GlobalFilterBar />
         <Card className="glass-card border-0 p-3 sm:p-4">
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <div className="relative w-full sm:min-w-[220px] sm:flex-1">
