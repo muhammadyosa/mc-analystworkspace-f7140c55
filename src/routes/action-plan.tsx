@@ -211,11 +211,13 @@ function KanbanColumn({
   rows,
   onOpen,
   onOpenGroup,
+  onDelete,
 }: {
   status: ActionPlanStatus;
   rows: ActionPlanRow[];
   onOpen: (r: ActionPlanRow) => void;
   onOpenGroup: (cluster: string, rows: ActionPlanRow[]) => void;
+  onDelete: (r: ActionPlanRow) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: status });
   const meta = STATUS_META[status];
@@ -247,7 +249,7 @@ function KanbanColumn({
       <div className="space-y-2">
         {groups.map(([cluster, list]) =>
           list.length === 1 ? (
-            <DraggableCard key={list[0].id} row={list[0]} onOpen={onOpen} />
+            <DraggableCard key={list[0].id} row={list[0]} onOpen={onOpen} onDelete={onDelete} />
           ) : (
             <OltGroupCard key={cluster} cluster={cluster} rows={list} onOpenGroup={onOpenGroup} />
           ),
@@ -434,7 +436,7 @@ function CalendarView({ rows }: { rows: ActionPlanRow[] }) {
 }
 
 function ActionPlanPage() {
-  const { actionPlans, clusters, tickets, analyst, competitorData, overrideActionPlanStatus, addActionPlans, updateActionPlan } = useDataStore();
+  const { actionPlans, clusters, tickets, analyst, competitorData, overrideActionPlanStatus, addActionPlans, updateActionPlan, removeActionPlan } = useDataStore();
   const [search, setSearch] = useState("");
   const [filterPic, setFilterPic] = useState("");
   const [filterCluster, setFilterCluster] = useState("");
@@ -445,6 +447,8 @@ function ActionPlanPage() {
   const [openRow, setOpenRow] = useState<ActionPlanRow | null>(null);
   const [oltGroup, setOltGroup] = useState<{ cluster: string; rows: ActionPlanRow[] } | null>(null);
   const [addOpen, setAddOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<ActionPlanRow | null>(null);
+  const askDelete = (r: ActionPlanRow) => setDeleteTarget(r);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
   // Cluster meta lookup by name (case-insensitive)
@@ -724,6 +728,7 @@ function ActionPlanPage() {
                     rows={filtered.filter((r) => r.status === c)}
                     onOpen={setOpenRow}
                     onOpenGroup={(cluster, rows) => setOltGroup({ cluster, rows })}
+                    onDelete={askDelete}
                   />
                 ))}
               </div>
