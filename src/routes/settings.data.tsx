@@ -48,6 +48,8 @@ import { TEMPLATE_SPECS, evaluateTemplateFormat } from "@/lib/template-specs";
 import { clearCloudDatasets, fetchDatasetStatus, pushDataset } from "@/lib/cloud-sync";
 import { useRole } from "@/hooks/use-role";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DataHealthPanel } from "@/components/data-health-panel";
 
 export const Route = createFileRoute("/settings/data")({
   head: () => ({ meta: [{ title: "Data Management — MCA Workspace" }] }),
@@ -506,6 +508,8 @@ function TemplateFormats() {
             );
           })}
         </div>
+          </TabsContent>
+        </Tabs>
       </CardContent>
     </Card>
   );
