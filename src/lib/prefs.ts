@@ -76,6 +76,28 @@ export type ReportHistoryItem = {
   at: number;
 };
 
+/** Target KPI bulanan yang dipantau di Dashboard. */
+export type KpiMetric = "hcGrowth" | "ticketPer100HC" | "highRisk";
+export type KpiTarget = {
+  id: string;
+  metric: KpiMetric;
+  /** "min" = realisasi harus >= target; "max" = realisasi harus <= target. */
+  direction: "min" | "max";
+  target: number;
+};
+
+export const KPI_METRIC_META: Record<KpiMetric, { label: string; unit: string; hint: string }> = {
+  hcGrowth: { label: "Pertumbuhan HC", unit: "%", hint: "Target pertumbuhan HC bulan berjalan vs bulan sebelumnya" },
+  ticketPer100HC: { label: "Ticket per 100 HC", unit: "", hint: "Batas maksimal rasio ticket per 100 HC" },
+  highRisk: { label: "Cluster Risiko Tinggi", unit: "cluster", hint: "Batas maksimal jumlah cluster prioritas tinggi" },
+};
+
+export const defaultKpiTargets: KpiTarget[] = [
+  { id: "kpi-hc-growth", metric: "hcGrowth", direction: "min", target: 2 },
+  { id: "kpi-ticket-ratio", metric: "ticketPer100HC", direction: "max", target: 5 },
+  { id: "kpi-high-risk", metric: "highRisk", direction: "max", target: 15 },
+];
+
 type PrefsState = {
   filters: GlobalFilters;
   recentReports: ReportHistoryItem[];
@@ -87,6 +109,9 @@ type PrefsState = {
   favorites: string[];
   readAlerts: string[];
   notifPrefs: NotificationPrefs;
+  kpiTargets: KpiTarget[];
+  setKpiTarget: (metric: KpiMetric, target: number) => void;
+  resetKpiTargets: () => void;
   density: "comfortable" | "compact";
   setFilter: <K extends keyof GlobalFilters>(key: K, value: GlobalFilters[K]) => void;
   setFilters: (f: GlobalFilters) => void;
