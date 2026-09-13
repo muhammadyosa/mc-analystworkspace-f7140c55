@@ -89,7 +89,7 @@ function LoyaltyPage() {
     return { decline, highRisk, topTicket };
   }, [rows]);
 
-  if (!clusters.length) return (<><AppHeader title="Customer Loyalty" /><div className="p-6"><EmptyState /></div></>);
+  if (!allClusters.length) return (<><AppHeader title="Customer Loyalty" /><div className="p-6"><EmptyState /></div></>);
 
   const rangeLabel = from && to ? `${from.label} – ${to.label}` : "Semua bulan";
 
