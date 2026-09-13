@@ -212,6 +212,8 @@ function Dashboard() {
     };
   }, [rows, period]);
 
+  const [drill, setDrill] = useState<DrilldownState>(null);
+
   if (!clusters.length) {
     return (
       <>
@@ -295,7 +297,6 @@ function Dashboard() {
     return out;
   })();
 
-  const [drill, setDrill] = useState<DrilldownState>(null);
 
   const maxTicket = Math.max(...rows.map((c) => c.ticket), 1);
   const priorities = rows.map((c) => ({ ...c, ...computePriority(c, maxTicket) }));
