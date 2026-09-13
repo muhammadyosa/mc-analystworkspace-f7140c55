@@ -889,6 +889,36 @@ function ActionPlanPage() {
           setAddOpen(false);
         }}
       />
+
+      <Dialog open={!!deleteTarget} onOpenChange={(o) => { if (!o) setDeleteTarget(null); }}>
+        <DialogContent className="w-[calc(100vw-1.5rem)] max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-display">Hapus action plan?</DialogTitle>
+            <DialogDescription>
+              {deleteTarget
+                ? `"${deleteTarget.program || "—"}" di cluster ${deleteTarget.cluster || "—"} akan dihapus permanen dari daftar action plan.`
+                : ""}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setDeleteTarget(null)}>Batal</Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (deleteTarget) {
+                  removeActionPlan(deleteTarget.id);
+                  setOltGroup((g) =>
+                    g ? { ...g, rows: g.rows.filter((r) => r.id !== deleteTarget.id) } : g,
+                  );
+                }
+                setDeleteTarget(null);
+              }}
+            >
+              <Trash2 className="mr-1 h-4 w-4" /> Hapus
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
