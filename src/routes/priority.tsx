@@ -23,7 +23,7 @@ function PriorityPage() {
       .sort((a, b) => b.score - a.score);
   }, [clusters]);
 
-  if (!clusters.length) return (<><AppHeader title="Priority Engine" /><div className="p-6"><EmptyState /></div></>);
+  if (!allClusters.length) return (<><AppHeader title="Priority Engine" /><div className="p-6"><EmptyState /></div></>);
 
   const groups = {
     Tinggi: scored.filter((s) => s.level === "Tinggi"),
@@ -35,6 +35,12 @@ function PriorityPage() {
     <>
       <AppHeader title="Priority Engine" subtitle="Scoring cluster + rekomendasi strategi" />
       <div className="space-y-4 p-4 sm:p-6">
+        <GlobalFilterBar />
+        {!clusters.length && (
+          <div className="glass-card rounded-2xl p-8 text-center text-sm text-muted-foreground">
+            Tidak ada cluster yang cocok dengan filter saat ini.
+          </div>
+        )}
         <div className="grid gap-3 md:grid-cols-3">
           {(["Tinggi", "Sedang", "Rendah"] as const).map((lvl) => (
             <Card key={lvl} className="glass-card border-0">
