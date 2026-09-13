@@ -1297,7 +1297,24 @@ function ReportsPage() {
           ) : (
             <DateRange from={from} to={to} onFrom={setFrom} onTo={setTo} avail={avail} />
           )}
-          <Button size="sm" onClick={() => handlePrint(ref)}><Printer className="mr-1 h-4 w-4" /> Export PDF</Button>
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="outline" className="no-print h-9" onClick={() => handlePrint(ref)}><Printer className="mr-1 h-4 w-4" /> Cetak</Button>
+            <ReportExportMenu
+              rows={s.perCluster.map((c) => ({
+                Cluster: c.cluster,
+                PIC: c.pic || "-",
+                "HC Aktif": c.hcStart,
+                "HC Aktif Akhir": c.hcEnd,
+                "Δ HC Aktif": c.delta,
+                Ticket: c.ticket,
+                Status: c.delta < 0 ? "Decline" : c.delta === 0 ? "Flat" : "Growth",
+                Periode: label,
+              }))}
+              label={`Report ${kind === "weekly" ? "Weekly" : "Monthly"} ${label}`}
+              sheetName={kind === "weekly" ? "Weekly" : "Monthly"}
+              printRef={ref}
+            />
+          </div>
         </div>
 
 
