@@ -24,6 +24,7 @@ import { GlobalFilterBar } from "@/components/global-filter";
 import { useGlobalClusters } from "@/hooks/use-global-filters";
 import { AnalystInsights } from "@/components/analyst-insights";
 import { KpiTargetsCard } from "@/components/kpi-targets";
+import { defaultWidgets, usePrefsStore } from "@/lib/prefs";
 
 const DashboardCharts = lazy(() => import("@/components/dashboard-charts"));
 
