@@ -222,14 +222,28 @@ function AuthGate({ children }: { children: ReactNode }) {
   return <AuthedShell>{children}</AuthedShell>;
 }
 
+/** Terapkan preferensi "kurangi animasi" ke seluruh aplikasi. */
+function useReduceMotion() {
+  const reduceMotion = usePrefsStore((s) => s.reduceMotion);
+  useEffect(() => {
+    document.documentElement.classList.toggle("reduce-motion", !!reduceMotion);
+  }, [reduceMotion]);
+}
+
 function AuthedShell({ children }: { children: ReactNode }) {
   usePresenceHeartbeat();
   useCloudData();
   useDefaultView();
+  useReduceMotion();
   return (
     <SidebarProvider className="h-svh min-h-0 overflow-hidden">
+      <a href="#main-content" className="skip-link">
+        Lompat ke konten utama
+      </a>
       <AppSidebar />
       <SidebarInset
+        id="main-content"
+        role="main"
         aria-label="Konten utama"
         className="app-scroll min-h-0 min-w-0 overflow-x-hidden overflow-y-auto"
         tabIndex={0}

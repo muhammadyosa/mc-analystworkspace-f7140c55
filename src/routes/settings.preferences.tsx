@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTheme, type ColorTheme, type ThemeMode } from "@/hooks/use-theme";
-import { filterSummary, usePrefsStore } from "@/lib/prefs";
+import { DASHBOARD_WIDGETS, defaultWidgets, filterSummary, usePrefsStore } from "@/lib/prefs";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/settings/preferences")({
@@ -44,6 +44,7 @@ const NOTIF: { key: "kritis" | "perhatian" | "info" | "sistem"; label: string; d
 function PreferencesPage() {
   const { mode, colorTheme, setMode, setColorTheme } = useTheme();
   const prefs = usePrefsStore();
+  const widgets = { ...defaultWidgets, ...(prefs.widgets ?? {}) };
 
   return (
     <div className="grid gap-4 lg:grid-cols-2">
@@ -88,6 +89,51 @@ function PreferencesPage() {
               aria-label="Tampilan tabel ringkas"
             />
           </div>
+          <div className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/20 px-3 py-2.5">
+            <div>
+              <p className="text-sm font-medium">Kurangi animasi</p>
+              <p className="text-xs text-muted-foreground">Nonaktifkan transisi agar lebih nyaman & ringan.</p>
+            </div>
+            <Switch
+              checked={prefs.reduceMotion}
+              onCheckedChange={(v) => prefs.setReduceMotion(v)}
+              aria-label="Kurangi animasi"
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="glass-card border-0">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 font-display text-base">
+            <LayoutGrid className="h-4 w-4 text-primary" /> Widget Dashboard
+          </CardTitle>
+          <CardDescription>Pilih bagian yang ingin ditampilkan di Dashboard.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {DASHBOARD_WIDGETS.map((wg) => (
+            <div
+              key={wg.id}
+              className="flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-muted/20 px-3 py-2.5"
+            >
+              <p className="min-w-0 truncate text-sm font-medium">{wg.label}</p>
+              <Switch
+                checked={widgets[wg.id]}
+                onCheckedChange={(v) => prefs.toggleWidget(wg.id, v)}
+                aria-label={wg.label}
+              />
+            </div>
+          ))}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              prefs.resetWidgets();
+              toast.success("Widget Dashboard dikembalikan ke bawaan");
+            }}
+          >
+            Tampilkan semua widget
+          </Button>
         </CardContent>
       </Card>
 

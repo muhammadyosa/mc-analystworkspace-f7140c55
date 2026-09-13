@@ -24,6 +24,7 @@ import { GlobalFilterBar } from "@/components/global-filter";
 import { useGlobalClusters } from "@/hooks/use-global-filters";
 import { AnalystInsights } from "@/components/analyst-insights";
 import { KpiTargetsCard } from "@/components/kpi-targets";
+import { defaultWidgets, usePrefsStore } from "@/lib/prefs";
 
 const DashboardCharts = lazy(() => import("@/components/dashboard-charts"));
 
@@ -116,6 +117,9 @@ function Dashboard() {
   const clusters = useDataStore((s) => s.clusters);
   const actions = useDataStore((s) => s.actions);
   const global = useGlobalClusters();
+  const storedWidgets = usePrefsStore((st) => st.widgets);
+  /** Widget yang tampil di Dashboard (bisa diatur di Settings → Preferensi). */
+  const w = { ...defaultWidgets, ...(storedWidgets ?? {}) };
 
   /** Periode & baris mengikuti filter global (periode, wilayah, cluster, PIC, kategori). */
   const period = useMemo(
@@ -382,7 +386,7 @@ function Dashboard() {
       <div className="space-y-6 p-4 sm:p-6">
         <GlobalFilterBar />
         {/* KPI Row 1 - Cluster */}
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-4">
+        <div className={w.kpiCluster ? "grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-4" : "hidden"}>
           <KpiCard label="Total Cluster" value={s.totalCluster} icon={Target} tint="primary" onClick={() => openTop("Semua Cluster", "juni")} />
           <KpiCard label="Total Kabupaten" value={s.totalKab} icon={MapPin} tint="info" onClick={() => openGrouped("Distribusi per Kabupaten", "kabupaten")} />
           <KpiCard label="Total Provinsi" value={s.totalProv} icon={Building2} tint="info" onClick={() => openGrouped("Distribusi per Provinsi", "provinsi")} />
@@ -390,7 +394,7 @@ function Dashboard() {
         </div>
 
         {/* KPI Row 2 */}
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <div className={w.kpiPeriod ? "grid grid-cols-2 gap-3 md:grid-cols-4" : "hidden"}>
           <KpiCard label={`HC Aktif ${period.curLabel}`} value={s.sumJun.toLocaleString("id-ID")} icon={Activity} tint="success" onClick={() => openTop(`HC Aktif ${period.curLabel}`, "juni")} />
           <KpiCard label={`HC Aktif ${period.prevLabel}`} value={s.sumMei.toLocaleString("id-ID")} icon={Activity} tint="info" onClick={() => openTop(`HC Aktif ${period.prevLabel}`, "mei")} />
           <KpiCard label="Total Ticket" value={s.totalTicket.toLocaleString("id-ID")} icon={Ticket} tint="warning" delta={{ value: s.ticketGrowth }} onClick={() => openTop("Top Ticket", "ticket")} />
@@ -398,32 +402,34 @@ function Dashboard() {
         </div>
 
         {/* KPI Row 3 - Progress */}
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+        <div className={w.kpiProgress ? "grid grid-cols-2 gap-3 md:grid-cols-3" : "hidden"}>
           <KpiCard label="Cluster Prioritas" value={s.highPriority} icon={Target} tint="warning" onClick={openHighRisk} />
           <KpiCard label="Action Plan Aktif" value={actionActive} icon={Activity} tint="info" onClick={() => openActions("onprogress", "Action Plan — On Progress")} />
           <KpiCard label="Cycle Completed" value={actionDone} icon={TrendingUp} tint="success" onClick={() => openActions("done", "Action Plan — Done")} />
         </div>
 
         {/* Target & KPI bulanan */}
-        <KpiTargetsCard
-          periodLabel={period.curLabel}
-          actuals={{
-            hcGrowth: s.hcGrowth,
-            ticketPer100HC: s.sumJun > 0 ? (s.ticketCur / s.sumJun) * 100 : 0,
-            highRisk: s.highRisk,
-          }}
-        />
+        {w.kpiTargets && (
+          <KpiTargetsCard
+            periodLabel={period.curLabel}
+            actuals={{
+              hcGrowth: s.hcGrowth,
+              ticketPer100HC: s.sumJun > 0 ? (s.ticketCur / s.sumJun) * 100 : 0,
+              highRisk: s.highRisk,
+            }}
+          />
+        )}
 
         {/* Key Insights */}
-        <KeyInsights items={insights} />
+        {w.keyInsights && <KeyInsights items={insights} />}
 
         {/* Analysis Engine — insight terstruktur */}
-        <AnalystInsights rows={rows} curLabel={period.curLabel} prevLabel={period.prevLabel} />
-
-
+        {w.analystInsights && (
+          <AnalystInsights rows={rows} curLabel={period.curLabel} prevLabel={period.prevLabel} />
+        )}
 
         {/* Executive Summary */}
-        <div className="animate-in fade-in duration-500">
+        <div className={w.execSummary ? "animate-in fade-in duration-500" : "hidden"}>
           <Card className="glass-card border-0 overflow-hidden">
             <div className="absolute inset-0 gradient-primary opacity-[0.03] pointer-events-none" />
             <CardHeader className="flex-row items-center gap-2 space-y-0">
@@ -474,7 +480,7 @@ function Dashboard() {
         </div>
 
         {/* Charts & PIC in Tabs (lazy) */}
-        <Tabs defaultValue="charts" className="space-y-4">
+        <Tabs defaultValue="charts" className={w.charts ? "space-y-4" : "hidden"}>
           <TabsList>
             <TabsTrigger value="charts">Visualisasi</TabsTrigger>
             <TabsTrigger value="pic">PIC Performance</TabsTrigger>

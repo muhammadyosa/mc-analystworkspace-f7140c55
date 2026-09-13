@@ -92,6 +92,22 @@ export const KPI_METRIC_META: Record<KpiMetric, { label: string; unit: string; h
   highRisk: { label: "Cluster Risiko Tinggi", unit: "cluster", hint: "Batas maksimal jumlah cluster prioritas tinggi" },
 };
 
+/** Widget Dashboard yang bisa disembunyikan pengguna (personalisasi). */
+export const DASHBOARD_WIDGETS = [
+  { id: "kpiCluster", label: "KPI Cluster & Wilayah" },
+  { id: "kpiPeriod", label: "KPI HC & Ticket" },
+  { id: "kpiProgress", label: "KPI Prioritas & Action Plan" },
+  { id: "kpiTargets", label: "Target & KPI Bulanan" },
+  { id: "keyInsights", label: "Key Insights" },
+  { id: "analystInsights", label: "Analisa Otomatis" },
+  { id: "execSummary", label: "Executive Summary" },
+  { id: "charts", label: "Grafik & Visualisasi" },
+] as const;
+export type DashboardWidgetId = (typeof DASHBOARD_WIDGETS)[number]["id"];
+export const defaultWidgets = Object.fromEntries(
+  DASHBOARD_WIDGETS.map((w) => [w.id, true]),
+) as Record<DashboardWidgetId, boolean>;
+
 export const defaultKpiTargets: KpiTarget[] = [
   { id: "kpi-hc-growth", metric: "hcGrowth", direction: "min", target: 2 },
   { id: "kpi-ticket-ratio", metric: "ticketPer100HC", direction: "max", target: 5 },
@@ -109,6 +125,11 @@ type PrefsState = {
   favorites: string[];
   readAlerts: string[];
   notifPrefs: NotificationPrefs;
+  widgets: Record<DashboardWidgetId, boolean>;
+  toggleWidget: (id: DashboardWidgetId, value: boolean) => void;
+  resetWidgets: () => void;
+  reduceMotion: boolean;
+  setReduceMotion: (v: boolean) => void;
   kpiTargets: KpiTarget[];
   setKpiTarget: (metric: KpiMetric, target: number) => void;
   resetKpiTargets: () => void;
@@ -185,6 +206,11 @@ export const usePrefsStore = create<PrefsState>()(
           kpiTargets: s.kpiTargets.map((t) => (t.metric === metric ? { ...t, target } : t)),
         })),
       resetKpiTargets: () => set({ kpiTargets: defaultKpiTargets }),
+      widgets: defaultWidgets,
+      toggleWidget: (id, value) => set((s) => ({ widgets: { ...s.widgets, [id]: value } })),
+      resetWidgets: () => set({ widgets: defaultWidgets }),
+      reduceMotion: false,
+      setReduceMotion: (reduceMotion) => set({ reduceMotion }),
       density: "comfortable",
       setFilter: (key, value) =>
         set((s) => {
