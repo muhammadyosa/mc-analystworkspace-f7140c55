@@ -189,8 +189,58 @@ function MasterPage() {
         </Card>
 
         <Card className="glass-card overflow-hidden border-0">
-          <div className="scroll-x">
-          <Table className="min-w-[1180px]">
+          {/* Mobile: setiap baris menjadi kartu agar tidak melebar */}
+          <div className="space-y-2 p-3 md:hidden">
+            {paginated.map((c) => {
+              const pr = computePriority(
+                { ...c, juni: c.hcView, ticket: c.ticketView, deltaMeiJuni: c.deltaView },
+                maxTicket,
+              );
+              return (
+                <Link
+                  key={c.id}
+                  to="/cluster/$name"
+                  params={{ name: encodeURIComponent(c.cluster) }}
+                  className="block rounded-xl border border-border/60 bg-muted/20 p-3 active:bg-muted/40"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="truncate font-medium">{c.cluster}</p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {c.kabupaten} · {c.provinsi}
+                      </p>
+                    </div>
+                    <Badge
+                      variant="outline"
+                      className={
+                        pr.level === "Tinggi"
+                          ? "border-destructive/40 bg-destructive/10 text-[10px] text-destructive"
+                          : pr.level === "Sedang"
+                            ? "border-warning/40 bg-warning/10 text-[10px] text-warning"
+                            : "border-success/40 bg-success/10 text-[10px] text-success"
+                      }
+                    >
+                      {pr.level}
+                    </Badge>
+                  </div>
+                  <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                    <div>HC Aktif: <b className="text-foreground tabular-nums">{c.hcView.toLocaleString("id-ID")}</b></div>
+                    <div>Ticket: <b className="text-foreground tabular-nums">{c.ticketView.toLocaleString("id-ID")}</b></div>
+                    <div>
+                      Δ HC Aktif:{" "}
+                      <b className={c.deltaView >= 0 ? "text-success" : "text-destructive"}>
+                        {c.deltaView >= 0 ? "+" : ""}
+                        {c.deltaView}
+                      </b>
+                    </div>
+                    <div>PIC: <b className="text-foreground">{c.pic || "—"}</b></div>
+                  </dl>
+                </Link>
+              );
+            })}
+          </div>
+          <div className="scroll-x hidden md:block">
+          <Table className={density === "compact" ? "min-w-[1180px] [&_td]:py-1.5" : "min-w-[1180px]"}>
 
             <TableHeader>
               <TableRow>
