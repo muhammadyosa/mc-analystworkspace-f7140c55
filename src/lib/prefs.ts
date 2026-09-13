@@ -142,6 +142,12 @@ export const usePrefsStore = create<PrefsState>()(
   persist(
     (set, get) => ({
       filters: emptyFilters,
+      recentReports: [],
+      addReport: (item) =>
+        set((s) => ({
+          recentReports: [{ ...item, id: uid(), at: Date.now() }, ...s.recentReports].slice(0, 10),
+        })),
+      clearReports: () => set({ recentReports: [] }),
       recent: [],
       views: [],
       defaultViewId: null,
