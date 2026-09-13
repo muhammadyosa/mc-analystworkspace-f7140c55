@@ -24,7 +24,7 @@ type Alert = {
   icon: typeof AlertTriangle;
   title: string;
   detail: string;
-  to: "/action-plan" | "/loyalty" | "/priority" | "/settings" | "/data-health";
+  to: "/action-plan" | "/loyalty" | "/priority" | "/settings" | "/settings/data";
 };
 
 const LEVEL_LABEL: Record<Level, string> = {
@@ -94,7 +94,7 @@ export function NotificationCenter() {
         icon: Settings2,
         title: `${missingPic} cluster belum punya PIC`,
         detail: "Lengkapi penugasan PIC agar analisa wilayah akurat.",
-        to: "/data-health",
+        to: "/settings/data",
       });
     }
 
@@ -105,7 +105,7 @@ export function NotificationCenter() {
         icon: ServerCog,
         title: "Data belum diperbarui lebih dari 7 hari",
         detail: "Periksa Data Health dan unggah data terbaru.",
-        to: "/data-health",
+        to: "/settings/data",
       });
     }
 

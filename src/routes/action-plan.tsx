@@ -15,6 +15,7 @@ import {
   Link2,
   Download,
   RotateCcw,
+  Trash2,
 } from "lucide-react";
 import {
   DndContext,
@@ -97,7 +98,15 @@ function fmtDate(iso: string) {
   }
 }
 
-function DraggableCard({ row, onOpen }: { row: ActionPlanRow; onOpen: (r: ActionPlanRow) => void }) {
+function DraggableCard({
+  row,
+  onOpen,
+  onDelete,
+}: {
+  row: ActionPlanRow;
+  onOpen: (r: ActionPlanRow) => void;
+  onDelete: (r: ActionPlanRow) => void;
+}) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: row.id });
   const style = transform
     ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`, opacity: isDragging ? 0.5 : 1 }
@@ -124,11 +133,25 @@ function DraggableCard({ row, onOpen }: { row: ActionPlanRow; onOpen: (r: Action
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
             <p className="truncate text-sm font-semibold">{row.cluster || "—"}</p>
-            {hasResult && (
-              <Badge className="shrink-0 border-emerald-500/40 bg-emerald-500/10 text-[9px] text-emerald-600">
-                Hasil ✓
-              </Badge>
-            )}
+            <div className="flex shrink-0 items-center gap-1">
+              {hasResult && (
+                <Badge className="border-emerald-500/40 bg-emerald-500/10 text-[9px] text-emerald-600">
+                  Hasil ✓
+                </Badge>
+              )}
+              <button
+                type="button"
+                aria-label={`Hapus action plan ${row.program} di ${row.cluster}`}
+                title="Hapus action plan"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(row);
+                }}
+                className="rounded-md p-1 text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            </div>
           </div>
           <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{row.program}</p>
           <div className="mt-2 flex items-center justify-between text-[10px] text-muted-foreground">
@@ -188,11 +211,13 @@ function KanbanColumn({
   rows,
   onOpen,
   onOpenGroup,
+  onDelete,
 }: {
   status: ActionPlanStatus;
   rows: ActionPlanRow[];
   onOpen: (r: ActionPlanRow) => void;
   onOpenGroup: (cluster: string, rows: ActionPlanRow[]) => void;
+  onDelete: (r: ActionPlanRow) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: status });
   const meta = STATUS_META[status];
@@ -224,7 +249,7 @@ function KanbanColumn({
       <div className="space-y-2">
         {groups.map(([cluster, list]) =>
           list.length === 1 ? (
-            <DraggableCard key={list[0].id} row={list[0]} onOpen={onOpen} />
+            <DraggableCard key={list[0].id} row={list[0]} onOpen={onOpen} onDelete={onDelete} />
           ) : (
             <OltGroupCard key={cluster} cluster={cluster} rows={list} onOpenGroup={onOpenGroup} />
           ),
@@ -411,7 +436,7 @@ function CalendarView({ rows }: { rows: ActionPlanRow[] }) {
 }
 
 function ActionPlanPage() {
-  const { actionPlans, clusters, tickets, analyst, competitorData, overrideActionPlanStatus, addActionPlans, updateActionPlan } = useDataStore();
+  const { actionPlans, clusters, tickets, analyst, competitorData, overrideActionPlanStatus, addActionPlans, updateActionPlan, removeActionPlan } = useDataStore();
   const [search, setSearch] = useState("");
   const [filterPic, setFilterPic] = useState("");
   const [filterCluster, setFilterCluster] = useState("");
@@ -422,6 +447,8 @@ function ActionPlanPage() {
   const [openRow, setOpenRow] = useState<ActionPlanRow | null>(null);
   const [oltGroup, setOltGroup] = useState<{ cluster: string; rows: ActionPlanRow[] } | null>(null);
   const [addOpen, setAddOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<ActionPlanRow | null>(null);
+  const askDelete = (r: ActionPlanRow) => setDeleteTarget(r);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
   // Cluster meta lookup by name (case-insensitive)
@@ -701,6 +728,7 @@ function ActionPlanPage() {
                     rows={filtered.filter((r) => r.status === c)}
                     onOpen={setOpenRow}
                     onOpenGroup={(cluster, rows) => setOltGroup({ cluster, rows })}
+                    onDelete={askDelete}
                   />
                 ))}
               </div>
@@ -793,23 +821,39 @@ function ActionPlanPage() {
                 const StatusIcon = meta.icon;
                 const pct = progressOf(r);
                 return (
-                  <button
+                  <div
                     key={r.id}
+                    role="button"
+                    tabIndex={0}
                     onClick={() => { setOltGroup(null); setOpenRow(r); }}
-                    className={`w-full rounded-xl border border-border/60 bg-muted/30 p-3 text-left transition hover:border-primary/60 hover:bg-muted/60`}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") { setOltGroup(null); setOpenRow(r); }
+                    }}
+                    className={`w-full cursor-pointer rounded-xl border border-border/60 bg-muted/30 p-3 text-left transition hover:border-primary/60 hover:bg-muted/60`}
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
                         <div className="truncate font-display text-sm font-semibold">{r.program || "—"}</div>
                         <div className="mt-0.5 text-[11px] text-muted-foreground">PIC: {r.pic || "-"} · {fmtDate(r.startDate)} → {fmtDate(r.endDate)}</div>
                       </div>
-                      <Badge variant="outline" className={`shrink-0 gap-1 text-[10px] ${meta.color}`}>
-                        <StatusIcon className="h-3 w-3" /> {meta.label}
-                      </Badge>
+                      <div className="flex shrink-0 items-center gap-1">
+                        <Badge variant="outline" className={`gap-1 text-[10px] ${meta.color}`}>
+                          <StatusIcon className="h-3 w-3" /> {meta.label}
+                        </Badge>
+                        <button
+                          type="button"
+                          aria-label={`Hapus action plan ${r.program}`}
+                          title="Hapus action plan"
+                          onClick={(e) => { e.stopPropagation(); askDelete(r); }}
+                          className="rounded-md p-1 text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
                     </div>
                     {r.description && <p className="mt-1 line-clamp-2 text-[11px] text-muted-foreground">{r.description}</p>}
                     <Progress value={pct} className="mt-2 h-1.5" />
-                  </button>
+                  </div>
                 );
               })}
             </div>
@@ -845,6 +889,36 @@ function ActionPlanPage() {
           setAddOpen(false);
         }}
       />
+
+      <Dialog open={!!deleteTarget} onOpenChange={(o) => { if (!o) setDeleteTarget(null); }}>
+        <DialogContent className="w-[calc(100vw-1.5rem)] max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-display">Hapus action plan?</DialogTitle>
+            <DialogDescription>
+              {deleteTarget
+                ? `"${deleteTarget.program || "—"}" di cluster ${deleteTarget.cluster || "—"} akan dihapus permanen dari daftar action plan.`
+                : ""}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setDeleteTarget(null)}>Batal</Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (deleteTarget) {
+                  removeActionPlan(deleteTarget.id);
+                  setOltGroup((g) =>
+                    g ? { ...g, rows: g.rows.filter((r) => r.id !== deleteTarget.id) } : g,
+                  );
+                }
+                setDeleteTarget(null);
+              }}
+            >
+              <Trash2 className="mr-1 h-4 w-4" /> Hapus
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
