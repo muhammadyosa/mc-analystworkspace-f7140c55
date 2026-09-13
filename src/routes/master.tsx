@@ -9,8 +9,11 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useDataStore, computePriority } from "@/lib/store";
+import { computePriority } from "@/lib/store";
 import { exportToExcel } from "@/lib/excel";
+import { useGlobalClusters } from "@/hooks/use-global-filters";
+import { GlobalFilterBar } from "@/components/global-filter";
+import { usePrefsStore } from "@/lib/prefs";
 
 export const Route = createFileRoute("/master")({
   head: () => ({ meta: [{ title: "Master Cluster — MCA Workspace" }] }),
