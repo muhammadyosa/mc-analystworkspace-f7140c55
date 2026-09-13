@@ -66,8 +66,21 @@ export type NotificationPrefs = {
   sistem: boolean;
 };
 
+/** Riwayat laporan yang pernah diunduh pengguna (Report Center). */
+export type ReportHistoryItem = {
+  id: string;
+  label: string;
+  format: string;
+  rows: number;
+  filters: string;
+  at: number;
+};
+
 type PrefsState = {
   filters: GlobalFilters;
+  recentReports: ReportHistoryItem[];
+  addReport: (item: Omit<ReportHistoryItem, "id" | "at">) => void;
+  clearReports: () => void;
   recent: GlobalFilters[];
   views: SavedView[];
   defaultViewId: string | null;
@@ -129,6 +142,12 @@ export const usePrefsStore = create<PrefsState>()(
   persist(
     (set, get) => ({
       filters: emptyFilters,
+      recentReports: [],
+      addReport: (item) =>
+        set((s) => ({
+          recentReports: [{ ...item, id: uid(), at: Date.now() }, ...s.recentReports].slice(0, 10),
+        })),
+      clearReports: () => set({ recentReports: [] }),
       recent: [],
       views: [],
       defaultViewId: null,

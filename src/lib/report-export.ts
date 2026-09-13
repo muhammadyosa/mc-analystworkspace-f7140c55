@@ -92,3 +92,34 @@ export function printSection(el: HTMLElement | null, title: string) {
     win.close();
   }, 600);
 }
+
+/** Unduh laporan sebagai presentasi PowerPoint (.pptx) berisi ringkasan + tabel data. */
+export async function exportPPTX(rows: ExportRow[], fileLabel: string, subtitle = "") {
+  const { default: PptxGenJS } = await import("pptxgenjs");
+  const pptx = new PptxGenJS();
+  pptx.layout = "LAYOUT_WIDE";
+
+  const cover = pptx.addSlide();
+  cover.addText("MCA Workspace", { x: 0.6, y: 1.6, fontSize: 20, color: "5B8DEF" });
+  cover.addText(fileLabel, { x: 0.6, y: 2.1, fontSize: 34, bold: true });
+  cover.addText(subtitle || new Date().toLocaleDateString("id-ID"), { x: 0.6, y: 3.1, fontSize: 14, color: "666666" });
+
+  const headers = Object.keys(rows[0] ?? {});
+  const chunk = 14;
+  for (let i = 0; i < rows.length && i < chunk * 20; i += chunk) {
+    const slide = pptx.addSlide();
+    slide.addText(`${fileLabel} — data ${i + 1}-${Math.min(i + chunk, rows.length)}`, {
+      x: 0.4,
+      y: 0.3,
+      fontSize: 16,
+      bold: true,
+    });
+    const body = [
+      headers.map((h) => ({ text: h, options: { bold: true, fill: { color: "EEF2FF" } } })),
+      ...rows.slice(i, i + chunk).map((r) => headers.map((h) => ({ text: String(r[h] ?? "") }))),
+    ];
+    slide.addTable(body, { x: 0.4, y: 0.9, w: 12.4, fontSize: 10, border: { pt: 0.5, color: "DDDDDD" } });
+  }
+
+  await pptx.writeFile({ fileName: `${safe(fileLabel)}-${stamp()}.pptx` });
+}
