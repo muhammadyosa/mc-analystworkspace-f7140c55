@@ -109,6 +109,11 @@ type PrefsState = {
   favorites: string[];
   readAlerts: string[];
   notifPrefs: NotificationPrefs;
+  widgets: Record<DashboardWidgetId, boolean>;
+  toggleWidget: (id: DashboardWidgetId, value: boolean) => void;
+  resetWidgets: () => void;
+  reduceMotion: boolean;
+  setReduceMotion: (v: boolean) => void;
   kpiTargets: KpiTarget[];
   setKpiTarget: (metric: KpiMetric, target: number) => void;
   resetKpiTargets: () => void;
