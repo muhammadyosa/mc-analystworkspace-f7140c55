@@ -42,6 +42,7 @@ function PriorityPage() {
             Tidak ada cluster yang cocok dengan filter saat ini.
           </div>
         )}
+        <AnalystInsights rows={clusters} curLabel={curLabel} prevLabel={prevLabel} limit={4} title="Analisa Prioritas Otomatis" />
         <div className="grid gap-3 md:grid-cols-3">
           {(["Tinggi", "Sedang", "Rendah"] as const).map((lvl) => (
             <Card key={lvl} className="glass-card border-0">
