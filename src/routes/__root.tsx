@@ -226,7 +226,7 @@ function AuthedShell({ children }: { children: ReactNode }) {
       >
         {children}
       </SidebarInset>
-      {false && <BottomNav />}
+      <BottomNav />
     </SidebarProvider>
   );
 }
