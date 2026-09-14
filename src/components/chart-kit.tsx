@@ -3,18 +3,18 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
 /* ---------------- Semantic data palette ---------------- */
 export const C = {
-  primary: "#6366F1",
-  primaryLight: "#818CF8",
-  positive: "#22C55E",
-  positiveLight: "#4ADE80",
-  positiveDark: "#16A34A",
-  warning: "#F59E0B",
-  negative: "#EF4444",
-  info: "#06B6D4",
-  purple: "#A855F7",
-  pink: "#EC4899",
-  orange: "#F97316",
-  neutral: "#64748B",
+  primary: "var(--color-chart-1)",
+  primaryLight: "color-mix(in oklab, var(--color-chart-1) 68%, var(--color-card))",
+  positive: "var(--color-success)",
+  positiveLight: "color-mix(in oklab, var(--color-success) 72%, var(--color-card))",
+  positiveDark: "color-mix(in oklab, var(--color-success) 78%, var(--color-foreground))",
+  warning: "var(--color-warning)",
+  negative: "var(--color-destructive)",
+  info: "var(--color-info)",
+  purple: "var(--color-chart-5)",
+  pink: "color-mix(in oklab, var(--color-chart-5) 72%, var(--color-destructive))",
+  orange: "var(--color-chart-3)",
+  neutral: "var(--color-muted-foreground)",
 } as const;
 
 /** Categorical palette — stable order, used only where categories have no semantic meaning. */
@@ -26,9 +26,9 @@ export const CATEGORICAL = [
   C.positive,
   C.pink,
   C.orange,
-  "#14B8A6",
-  "#84CC16",
-  "#8B5CF6",
+  "color-mix(in oklab, var(--color-chart-2) 70%, var(--color-info))",
+  "color-mix(in oklab, var(--color-chart-2) 70%, var(--color-warning))",
+  "color-mix(in oklab, var(--color-chart-5) 70%, var(--color-primary))",
 ];
 
 const COMPETITOR_COLORS: Record<string, string> = {
@@ -36,10 +36,10 @@ const COMPETITOR_COLORS: Record<string, string> = {
   "rt/rw net": C.info,
   "xl home": C.warning,
   myrepublic: C.negative,
-  rt: "#8B5CF6",
+  rt: C.purple,
   rwnet: C.pink,
-  "rw net": "#14B8A6",
-  "prima home": "#84CC16",
+  "rw net": C.positiveLight,
+  "prima home": C.positiveDark,
 };
 
 export function competitorColor(name: string, index = 0) {
@@ -107,19 +107,20 @@ export function truncateLabel(value: unknown, max = 20): string {
 /* ---------------- Recharts shared props ---------------- */
 export const gridProps = {
   stroke: "var(--color-border)",
-  strokeDasharray: "3 3",
-  strokeOpacity: 0.55,
+  strokeDasharray: "3 4",
+  strokeOpacity: 0.65,
+  vertical: false,
 } as const;
 
-export const axisTick = { fontSize: 11, fill: "var(--color-muted-foreground)" } as const;
+export const axisTick = { fontSize: 10, fontWeight: 500, fill: "var(--color-muted-foreground)" } as const;
 
 export const axisProps = {
   tick: axisTick,
   tickLine: false,
-  axisLine: { stroke: "var(--color-border)" },
+  axisLine: false,
 } as const;
 
-export const legendStyle = { fontSize: 12, paddingTop: 8 } as const;
+export const legendStyle = { fontSize: 11, paddingTop: 6, color: "var(--color-muted-foreground)" } as const;
 
 export const hoverCursor = { fill: "var(--color-muted)", fillOpacity: 0.35 } as const;
 
@@ -128,15 +129,15 @@ export type TipRow = { label: string; value: ReactNode; color?: string; strong?:
 
 export function TooltipShell({ title, rows }: { title?: ReactNode; rows: TipRow[] }) {
   return (
-    <div className="min-w-[180px] rounded-[10px] border border-border bg-popover/95 p-3 text-popover-foreground shadow-[0_8px_30px_rgba(0,0,0,0.25)] backdrop-blur">
+    <div className="min-w-[168px] max-w-[260px] rounded-lg border border-border bg-popover/95 p-2.5 text-popover-foreground shadow-[var(--shadow-glass)] backdrop-blur">
       {title && (
-        <div className="mb-2 break-words border-b border-border/70 pb-1.5 text-[12px] font-semibold leading-snug">
+        <div className="mb-2 break-words border-b border-border/70 pb-1.5 font-display text-[11px] font-semibold leading-snug">
           {title}
         </div>
       )}
       <div className="space-y-1">
         {rows.map((r, i) => (
-          <div key={i} className="flex items-center justify-between gap-4 text-[12px]">
+          <div key={i} className="flex items-center justify-between gap-4 text-[11px]">
             <span className="flex items-center gap-1.5 text-muted-foreground">
               {r.color && <span className="h-2 w-2 shrink-0 rounded-[3px]" style={{ background: r.color }} />}
               {r.label}
@@ -172,7 +173,7 @@ export function ChartCard({
   badge,
   action,
   footer,
-  height = 320,
+  height = 260,
   className = "",
   children,
 }: {
@@ -187,18 +188,18 @@ export function ChartCard({
   children: ReactNode;
 }) {
   return (
-    <Card className={`glass-card lazy-block overflow-hidden rounded-2xl border-0 ${className}`}>
-      <CardHeader className="gap-3 pb-2">
+    <Card className={`analytics-card lazy-block rounded-lg ${className}`}>
+      <CardHeader className="gap-2 border-b border-border/60 px-4 py-3 sm:px-5">
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
           <div className="flex min-w-0 items-start gap-2.5">
             {Icon && (
-              <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
-                <Icon className="h-4 w-4" />
+              <span className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-md bg-primary/10 text-primary">
+                <Icon className="h-3.5 w-3.5" />
               </span>
             )}
             <div className="min-w-0">
-              <h3 className="truncate font-display text-[15px] font-semibold leading-tight">{title}</h3>
-              {subtitle && <p className="mt-0.5 truncate text-xs font-normal text-muted-foreground">{subtitle}</p>}
+              <h3 className="line-clamp-2 font-display text-[13px] font-semibold leading-snug">{title}</h3>
+              {subtitle && <p className="mt-0.5 line-clamp-2 text-[11px] font-normal leading-snug text-muted-foreground">{subtitle}</p>}
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-2">
@@ -207,12 +208,12 @@ export function ChartCard({
           </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-3 px-3 pb-4 sm:px-5">
-        <div style={{ height }} aria-label={title} role="img">
+      <CardContent className="space-y-2.5 px-2.5 pb-3 pt-3 sm:px-4">
+        <div className="chart-frame" style={{ height }} aria-label={title} role="img">
           {children}
         </div>
         {footer && (
-          <p className="border-t border-border/60 pt-2.5 text-xs leading-relaxed text-muted-foreground">{footer}</p>
+          <p className="border-t border-border/60 px-1 pt-2 text-[11px] leading-relaxed text-muted-foreground">{footer}</p>
         )}
       </CardContent>
     </Card>
@@ -224,11 +225,7 @@ export function DeltaBadge({ value, suffix = "%", label }: { value: number; suff
   const up = value >= 0;
   return (
     <span
-      className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold tabular-nums"
-      style={{
-        color: up ? C.positive : C.negative,
-        background: `${up ? C.positive : C.negative}1f`,
-      }}
+      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold tabular-nums ${up ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"}`}
     >
       {up ? "↑" : "↓"}
       {Math.abs(value).toFixed(1)}
