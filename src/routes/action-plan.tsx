@@ -864,27 +864,29 @@ function ActionPlanPage() {
       <AddProgramDialog
         open={addOpen}
         onClose={() => setAddOpen(false)}
-        clusterOptions={Array.from(new Set(clusters.map((c) => c.cluster).filter(Boolean))).sort()}
+        clusterList={clusters.map((c) => ({ cluster: c.cluster, kabupaten: c.kabupaten ?? "" }))}
         picOptions={Array.from(new Set(clusters.map((c) => c.pic).filter(Boolean))).sort()}
         onSubmit={(payload) => {
           const now = Date.now();
-          const created: ActionPlanRow[] = payload.programs.map((prog, i) => {
-            const durationDays = payload.startDate && payload.endDate
-              ? Math.max(1, Math.round((new Date(payload.endDate).getTime() - new Date(payload.startDate).getTime()) / 86400000) + 1)
-              : 0;
-            return {
-              id: `manual-${now}-${i}-${prog}`.slice(0, 120),
+          const durationDays = payload.startDate && payload.endDate
+            ? Math.max(1, Math.round((new Date(payload.endDate).getTime() - new Date(payload.startDate).getTime()) / 86400000) + 1)
+            : 0;
+          const created: ActionPlanRow[] = payload.clusters.flatMap((target, ci) =>
+            payload.programs.map((prog, i) => ({
+              id: `manual-${now}-${ci}-${i}-${target.cluster}-${prog}`.slice(0, 160),
               pic: payload.pic,
-              cluster: payload.cluster,
+              cluster: target.cluster,
               program: prog,
               startDate: payload.startDate,
               endDate: payload.endDate,
-              description: payload.description,
+              description: [payload.description, target.kabupaten ? `Kabupaten: ${target.kabupaten}` : ""]
+                .filter(Boolean)
+                .join("\n"),
               result: "",
               status: computeActionStatus(payload.startDate, payload.endDate, ""),
               durationDays,
-            };
-          });
+            })),
+          );
           addActionPlans(created);
           setAddOpen(false);
         }}
