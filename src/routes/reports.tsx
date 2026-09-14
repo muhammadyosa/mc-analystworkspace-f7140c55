@@ -22,7 +22,7 @@ import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { ArcDistribution } from "@/components/chart-kit";
+import { ArcDistribution, C, axisProps, gridProps, legendStyle } from "@/components/chart-kit";
 import { AnalystInsights } from "@/components/analyst-insights";
 
 import { useDataStore } from "@/lib/store";
@@ -531,17 +531,17 @@ function WeekCompare({
           <p className="py-8 text-center text-sm text-muted-foreground">Pilih minimal 2 minggu untuk membandingkan data.</p>
         ) : (
           <>
-            <div className="h-64">
+            <div className="chart-frame h-56 sm:h-60">
               <ResponsiveContainer>
                 <BarChart data={rows} margin={{ top: 8, right: 8, left: 0, bottom: 4 }}>
-                  <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.4} vertical={false} />
-                  <XAxis dataKey="name" fontSize={11} tickLine={false} />
-                  <YAxis fontSize={11} tickLine={false} axisLine={false} />
+                  <CartesianGrid {...gridProps} />
+                  <XAxis dataKey="name" {...axisProps} />
+                  <YAxis {...axisProps} width={36} />
                   <Tooltip />
-                  <Legend wrapperStyle={{ fontSize: 11 }} />
-                  <Bar dataKey="profiling" name="Profiling" fill="#6366f1" radius={[6, 6, 0, 0]} />
-                  <Bar dataKey="sf" name="SF" fill="#f59e0b" radius={[6, 6, 0, 0]} />
-                  <Bar dataKey="closeWon" name="Close Won" fill="#22c55e" radius={[6, 6, 0, 0]} />
+                  <Legend wrapperStyle={legendStyle} />
+                  <Bar dataKey="profiling" name="Profiling" fill={C.primary} radius={[4, 4, 0, 0]} maxBarSize={34} />
+                  <Bar dataKey="sf" name="SF" fill={C.warning} radius={[4, 4, 0, 0]} maxBarSize={34} />
+                  <Bar dataKey="closeWon" name="Close Won" fill={C.positive} radius={[4, 4, 0, 0]} maxBarSize={34} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -737,35 +737,35 @@ function WeeklyDailyAnalysis({ analyst, from, to, onFrom, onTo }: { analyst: Ana
             <KpiCard label="Konversi" value={`${totals.conversion.toFixed(1)}%`} tone={totals.conversion > 0 ? "up" : "warn"} hint="Close Won / SF" />
           </div>
 
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div className="analytics-grid lg:grid-cols-2">
             <Card className="glass-card border-0">
               <CardHeader><CardTitle className="font-display text-sm">Tren SF & Close Won per Tanggal</CardTitle></CardHeader>
-              <CardContent className="h-72">
+              <CardContent className="chart-frame h-60 px-3 pb-4 sm:h-64 sm:px-5">
                 <ResponsiveContainer>
                   <LineChart data={daily} margin={{ left: 0, right: 12 }}>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                    <XAxis dataKey="tanggal" fontSize={10} minTickGap={18} />
-                    <YAxis fontSize={10} allowDecimals={false} />
+                    <CartesianGrid {...gridProps} />
+                    <XAxis dataKey="tanggal" {...axisProps} minTickGap={22} />
+                    <YAxis {...axisProps} width={36} allowDecimals={false} />
                     <Tooltip labelFormatter={(_, payload) => payload[0]?.payload?.date ? formatDateID(payload[0].payload.date) : ""} formatter={(value: number, name: string) => [fmtN(value), name === "sf" ? "SF" : "Close Won"]} />
-                    <Legend formatter={(value) => value === "sf" ? "SF" : "Close Won"} />
-                    <Line type="monotone" dataKey="sf" stroke="var(--chart-3)" strokeWidth={2.5} dot={{ r: 3 }} activeDot={{ r: 5 }} />
-                    <Line type="monotone" dataKey="closeWon" stroke="var(--chart-2)" strokeWidth={2.5} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+                    <Legend wrapperStyle={legendStyle} formatter={(value) => value === "sf" ? "SF" : "Close Won"} />
+                    <Line type="monotone" dataKey="sf" stroke={C.warning} strokeWidth={2.5} dot={false} activeDot={{ r: 5 }} />
+                    <Line type="monotone" dataKey="closeWon" stroke={C.positive} strokeWidth={2.5} dot={false} activeDot={{ r: 5 }} />
                   </LineChart>
                 </ResponsiveContainer>
               </CardContent>
             </Card>
             <Card className="glass-card border-0">
               <CardHeader><CardTitle className="font-display text-sm">Aktivitas Profiling per Tanggal</CardTitle></CardHeader>
-              <CardContent className="h-72">
+              <CardContent className="chart-frame h-60 px-3 pb-4 sm:h-64 sm:px-5">
                 <ResponsiveContainer>
                   <BarChart data={daily} margin={{ left: 0, right: 12 }}>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                    <XAxis dataKey="tanggal" fontSize={10} minTickGap={18} />
-                    <YAxis fontSize={10} allowDecimals={false} />
+                    <CartesianGrid {...gridProps} />
+                    <XAxis dataKey="tanggal" {...axisProps} minTickGap={22} />
+                    <YAxis {...axisProps} width={36} allowDecimals={false} />
                     <Tooltip labelFormatter={(_, payload) => payload[0]?.payload?.date ? formatDateID(payload[0].payload.date) : ""} formatter={(value: number, name: string) => [fmtN(value), name === "profiling" ? "Profiling" : "Cluster"]} />
-                    <Legend formatter={(value) => value === "profiling" ? "Profiling" : "Cluster"} />
-                    <Bar dataKey="profiling" fill="var(--chart-1)" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="cluster" fill="var(--chart-4)" radius={[4, 4, 0, 0]} />
+                    <Legend wrapperStyle={legendStyle} formatter={(value) => value === "profiling" ? "Profiling" : "Cluster"} />
+                    <Bar dataKey="profiling" fill={C.primary} radius={[4, 4, 0, 0]} maxBarSize={30} />
+                    <Bar dataKey="cluster" fill={C.orange} radius={[4, 4, 0, 0]} maxBarSize={30} />
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -813,7 +813,7 @@ export const Route = createFileRoute("/reports")({
   component: ReportsPage,
 });
 
-const COLORS = ["#6366f1", "#22c55e", "#f59e0b", "#ef4444", "#06b6d4", "#a855f7", "#ec4899", "#84cc16"];
+const COLORS = [C.primary, C.positive, C.warning, C.negative, C.info, C.purple, C.pink, C.positiveDark];
 const MONTHS = [
   { key: "januari", label: "Jan" },
   { key: "februari", label: "Feb" },
@@ -1412,13 +1412,13 @@ function ReportsPage() {
         </div>
 
 
-        <div ref={ref} className="grid min-w-0 gap-4 lg:grid-cols-2">
+        <div ref={ref} className="analytics-grid lg:grid-cols-2">
           <Card className="glass-card min-w-0 overflow-hidden border-0">
             <CardHeader className="space-y-1 pb-2">
               <CardTitle className="font-display text-sm">Chart HC</CardTitle>
               <p className="text-xs text-muted-foreground">{label} · {fmtN(s.start)} menjadi {fmtN(s.end)} HC</p>
             </CardHeader>
-            <CardContent className="h-52 min-w-0 px-2 pb-4 sm:h-60 sm:px-5">
+            <CardContent className="chart-frame h-52 px-2 pb-4 sm:h-56 sm:px-5">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart
                   data={kind === "weekly" ? [{ bulan: "Awal", hc: s.start }, { bulan: "Akhir", hc: s.end }] : s.hcTrend}
@@ -1440,7 +1440,7 @@ function ReportsPage() {
               <CardTitle className="font-display text-sm">Chart Ticket</CardTitle>
               <p className="text-xs text-muted-foreground">{label} · {fmtN(ticketScaled)} ticket</p>
             </CardHeader>
-            <CardContent className="h-52 min-w-0 px-2 pb-4 sm:h-60 sm:px-5">
+            <CardContent className="chart-frame h-52 px-2 pb-4 sm:h-56 sm:px-5">
               <ResponsiveContainer width="100%" height="100%">
                 {kind === "weekly" ? (
                   <BarChart data={[{ periode: `Minggu ${wkWeek}`, ticket: ticketScaled }]} margin={{ top: 10, right: 12, left: 0, bottom: 0 }} barCategoryGap="45%">
@@ -1465,14 +1465,14 @@ function ReportsPage() {
 
           <Card className="glass-card border-0">
             <CardHeader><CardTitle className="font-display text-sm">Top 8 HC per Cluster</CardTitle></CardHeader>
-            <CardContent className="h-72">
+            <CardContent className="chart-frame h-60 px-3 pb-4 sm:h-64 sm:px-5">
               <ResponsiveContainer>
-                <BarChart data={s.topHC} layout="vertical" margin={{ left: 40 }}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis type="number" fontSize={10} />
-                  <YAxis type="category" dataKey="cluster" fontSize={10} width={100} />
+                <BarChart data={s.topHC} layout="vertical" margin={{ top: 4, right: 12, left: 4, bottom: 4 }}>
+                  <CartesianGrid {...gridProps} />
+                  <XAxis type="number" hide />
+                  <YAxis type="category" dataKey="cluster" {...axisProps} width={104} />
                   <Tooltip />
-                  <Bar dataKey="hc" fill="#6366f1" radius={[0, 6, 6, 0]} />
+                  <Bar dataKey="hc" fill={C.primary} radius={[0, 5, 5, 0]} barSize={14} />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
@@ -1480,14 +1480,14 @@ function ReportsPage() {
 
           <Card className="glass-card border-0">
             <CardHeader><CardTitle className="font-display text-sm">Top 8 Ticket per Cluster</CardTitle></CardHeader>
-            <CardContent className="h-72">
+            <CardContent className="chart-frame h-60 px-3 pb-4 sm:h-64 sm:px-5">
               <ResponsiveContainer>
-                <BarChart data={s.topTicket} layout="vertical" margin={{ left: 40 }}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis type="number" fontSize={10} />
-                  <YAxis type="category" dataKey="cluster" fontSize={10} width={100} />
+                <BarChart data={s.topTicket} layout="vertical" margin={{ top: 4, right: 12, left: 4, bottom: 4 }}>
+                  <CartesianGrid {...gridProps} />
+                  <XAxis type="number" hide />
+                  <YAxis type="category" dataKey="cluster" {...axisProps} width={104} />
                   <Tooltip />
-                  <Bar dataKey="ticket" fill="#ef4444" radius={[0, 6, 6, 0]} />
+                  <Bar dataKey="ticket" fill={C.negative} radius={[0, 5, 5, 0]} barSize={14} />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>

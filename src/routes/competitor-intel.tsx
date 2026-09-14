@@ -52,17 +52,6 @@ export const Route = createFileRoute("/competitor-intel")({
   component: CompetitorIntelPage,
 });
 
-const COLORS = [
-  "#6366f1",
-  "#22c55e",
-  "#f59e0b",
-  "#ef4444",
-  "#06b6d4",
-  "#a855f7",
-  "#ec4899",
-  "#84cc16",
-];
-
 function fmtRp(n: number) {
   if (!n) return "-";
   return `Rp${n.toLocaleString("id-ID")}`;
@@ -308,7 +297,7 @@ function CompetitorIntelPage() {
   return (
     <>
       <AppHeader title="Competitor Intelligence" subtitle="Analisa persaingan otomatis dari KOMPETITOR.xlsx" />
-      <div className="space-y-6 p-4 md:p-6">
+      <div className="space-y-5 p-4 md:p-6">
         <GlobalFilterBar hideMonths />
         {/* Search bar */}
         <div className="flex items-center justify-end">
@@ -327,7 +316,7 @@ function CompetitorIntelPage() {
       {/* KPIs */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-7">
         {kpis.map((k) => (
-          <Card key={k.label} className="glass-card border-0">
+           <Card key={k.label} className="analytics-card rounded-lg">
             <CardContent className="p-4">
               <div className="flex items-center gap-2 text-[11px] uppercase tracking-wide text-muted-foreground">
                 <k.icon className={`h-3.5 w-3.5 ${k.color}`} />
@@ -401,12 +390,13 @@ function CompetitorIntelPage() {
       )}
 
       {/* Charts */}
-      <div className="grid gap-5 lg:grid-cols-2">
+      <div className="analytics-grid lg:grid-cols-12">
         <ChartCard
           icon={RadarIcon}
           title="Top Kompetitor"
           subtitle="Frekuensi kemunculan di seluruh cluster"
-          height={330}
+          height={252}
+          className="lg:col-span-8"
           footer={
             topCompetitors[0]
               ? `${topCompetitors[0].name} paling dominan dengan ${fmtFull(topCompetitors[0].value)} kemunculan (${fmtPct((topCompetitors[0].value / (stats.appearances || 1)) * 100)} dari total).`
@@ -437,7 +427,8 @@ function CompetitorIntelPage() {
           icon={Layers}
           title="Cluster Paling Kompetitif"
           subtitle="Jumlah temuan kompetitor per cluster (Top 12)"
-          height={330}
+          height={252}
+          className="lg:col-span-4"
           footer={
             clusterPressure[0]
               ? `${clusterPressure[0].name} paling padat dengan ${fmtFull(clusterPressure[0].size)} temuan kompetitor.`
@@ -468,7 +459,8 @@ function CompetitorIntelPage() {
           icon={DollarSign}
           title="Rentang Harga Kompetitor"
           subtitle="Min · rata-rata · max, diurutkan dari termurah"
-          height={330}
+          height={252}
+          className="lg:col-span-6"
           footer={
             priceByCompetitor[0]
               ? `${priceByCompetitor[0].name} paling agresif dengan harga mulai ${fmtRp(priceByCompetitor[0].min)}.`
@@ -492,7 +484,8 @@ function CompetitorIntelPage() {
           icon={Sparkles}
           title="Analisis Promo"
           subtitle="Strategi promo yang paling sering digunakan"
-          height={330}
+          height={252}
+          className="lg:col-span-6"
           footer={
             promoRanked[0]
               ? `Promo dominan: ${promoRanked[0].name} (${fmtPct((promoRanked[0].value / (stats.appearances || 1)) * 100)} dari temuan).`
