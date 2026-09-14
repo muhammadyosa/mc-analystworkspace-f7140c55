@@ -976,36 +976,79 @@ function AddProgramDialog({
   open,
   onClose,
   onSubmit,
-  clusterOptions,
+  clusterList,
   picOptions,
 }: {
   open: boolean;
   onClose: () => void;
-  onSubmit: (p: { programs: string[]; cluster: string; pic: string; startDate: string; endDate: string; description: string }) => void;
-  clusterOptions: string[];
+  onSubmit: (p: {
+    programs: string[];
+    clusters: { cluster: string; kabupaten: string }[];
+    pic: string;
+    startDate: string;
+    endDate: string;
+    description: string;
+  }) => void;
+  clusterList: { cluster: string; kabupaten: string }[];
   picOptions: string[];
 }) {
   const [selected, setSelected] = useState<string[]>([]);
-  const [cluster, setCluster] = useState("");
+  const [kab, setKab] = useState("");
+  const [mode, setMode] = useState<"all" | "some">("all");
+  const [oltPick, setOltPick] = useState<string[]>([]);
+  const [oltSearch, setOltSearch] = useState("");
   const [pic, setPic] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [description, setDescription] = useState("");
 
+  const kabOptions = useMemo(
+    () => Array.from(new Set(clusterList.map((c) => c.kabupaten).filter(Boolean))).sort(),
+    [clusterList],
+  );
+  const oltInKab = useMemo(
+    () =>
+      clusterList
+        .filter((c) => c.cluster && (!kab || c.kabupaten === kab))
+        .filter((c, i, arr) => arr.findIndex((x) => x.cluster === c.cluster) === i)
+        .sort((a, b) => a.cluster.localeCompare(b.cluster)),
+    [clusterList, kab],
+  );
+  const visibleOlt = useMemo(() => {
+    const q = oltSearch.trim().toLowerCase();
+    return q ? oltInKab.filter((c) => c.cluster.toLowerCase().includes(q)) : oltInKab;
+  }, [oltInKab, oltSearch]);
+
+  const chosen = mode === "all" ? oltInKab : oltInKab.filter((c) => oltPick.includes(c.cluster));
+
   const toggle = (p: string) => setSelected((s) => (s.includes(p) ? s.filter((x) => x !== p) : [...s, p]));
+  const toggleOlt = (c: string) =>
+    setOltPick((s) => (s.includes(c) ? s.filter((x) => x !== c) : [...s, c]));
+
+  const resetAll = () => {
+    setSelected([]); setKab(""); setMode("all"); setOltPick([]); setOltSearch("");
+    setPic(""); setStartDate(""); setEndDate(""); setDescription("");
+  };
 
   const submit = () => {
-    if (!selected.length || !cluster.trim()) return;
-    onSubmit({ programs: selected, cluster: cluster.trim(), pic: pic.trim(), startDate, endDate, description });
-    setSelected([]); setCluster(""); setPic(""); setStartDate(""); setEndDate(""); setDescription("");
+    if (!selected.length || !chosen.length) return;
+    onSubmit({
+      programs: selected,
+      clusters: chosen.map((c) => ({ cluster: c.cluster, kabupaten: c.kabupaten })),
+      pic: pic.trim(),
+      startDate,
+      endDate,
+      description,
+    });
+    resetAll();
   };
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="w-[calc(100vw-1.5rem)] max-w-lg">
+      <DialogContent className="max-h-[90vh] w-[calc(100vw-1.5rem)] max-w-lg overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-display">Tambah ke Action Plan</DialogTitle>
-          <DialogDescription>Pilih satu atau beberapa program sekaligus.</DialogDescription>
+          <DialogDescription>Pilih program, kabupaten, lalu OLT yang menjadi target.</DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
           <div>
@@ -1030,17 +1073,100 @@ function AddProgramDialog({
               })}
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <Label className="text-xs">Cluster *</Label>
-              <Input list="ap-clusters" value={cluster} onChange={(e) => setCluster(e.target.value)} className="h-8" />
-              <datalist id="ap-clusters">{clusterOptions.map((c) => <option key={c} value={c} />)}</datalist>
+
+          <div className="rounded-xl border bg-muted/30 p-3">
+            <div className="grid gap-2 sm:grid-cols-2">
+              <div>
+                <Label className="text-xs">Kabupaten</Label>
+                <select
+                  value={kab}
+                  onChange={(e) => { setKab(e.target.value); setOltPick([]); }}
+                  className="mt-1 h-8 w-full rounded-md border border-input bg-background px-2 text-xs"
+                >
+                  <option value="">Semua Kabupaten</option>
+                  {kabOptions.map((k) => <option key={k} value={k}>{k}</option>)}
+                </select>
+              </div>
+              <div>
+                <Label className="text-xs">Cakupan OLT</Label>
+                <div className="mt-1 flex gap-1.5">
+                  {(["all", "some"] as const).map((m) => (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => setMode(m)}
+                      className={`flex-1 rounded-md border px-2 py-1.5 text-xs transition ${
+                        mode === m
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-border bg-background hover:bg-muted"
+                      }`}
+                    >
+                      {m === "all" ? "Semua OLT" : "OLT tertentu"}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
+
+            {mode === "some" && (
+              <div className="mt-2.5 space-y-2">
+                <Input
+                  value={oltSearch}
+                  onChange={(e) => setOltSearch(e.target.value)}
+                  placeholder="Cari OLT…"
+                  className="h-8"
+                />
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-[11px]"
+                    onClick={() => setOltPick(Array.from(new Set([...oltPick, ...visibleOlt.map((c) => c.cluster)])))}
+                  >
+                    Select All
+                  </Button>
+                  <Button size="sm" variant="ghost" className="h-7 text-[11px]" onClick={() => setOltPick([])}>
+                    Clear Selection
+                  </Button>
+                  <Badge variant="secondary" className="text-[10px]">{oltPick.length} OLT dipilih</Badge>
+                </div>
+                <div className="max-h-44 space-y-1 overflow-y-auto rounded-lg border bg-background p-1.5">
+                  {visibleOlt.length === 0 ? (
+                    <p className="p-2 text-xs text-muted-foreground">Tidak ada OLT pada filter ini.</p>
+                  ) : (
+                    visibleOlt.map((c) => (
+                      <label
+                        key={c.cluster}
+                        className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-muted"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={oltPick.includes(c.cluster)}
+                          onChange={() => toggleOlt(c.cluster)}
+                          className="h-3.5 w-3.5 accent-[var(--primary)]"
+                        />
+                        <span className="min-w-0 flex-1 truncate">{c.cluster}</span>
+                        <span className="shrink-0 text-[10px] text-muted-foreground">{c.kabupaten || "—"}</span>
+                      </label>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+
+            <p className="mt-2 text-[11px] text-muted-foreground">
+              Target: {chosen.length} OLT{kab ? ` di ${kab}` : ""} · total{" "}
+              {chosen.length * selected.length} action plan akan dibuat.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
             <div>
               <Label className="text-xs">PIC</Label>
               <Input list="ap-pics" value={pic} onChange={(e) => setPic(e.target.value)} className="h-8" />
               <datalist id="ap-pics">{picOptions.map((p) => <option key={p} value={p} />)}</datalist>
             </div>
+            <div />
             <div>
               <Label className="text-xs">Start Date</Label>
               <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="h-8" />
@@ -1057,8 +1183,8 @@ function AddProgramDialog({
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={onClose}>Batal</Button>
-          <Button onClick={submit} disabled={!selected.length || !cluster.trim()}>
-            Simpan {selected.length ? `(${selected.length})` : ""}
+          <Button onClick={submit} disabled={!selected.length || !chosen.length}>
+            Simpan {selected.length && chosen.length ? `(${selected.length * chosen.length})` : ""}
           </Button>
         </DialogFooter>
       </DialogContent>
