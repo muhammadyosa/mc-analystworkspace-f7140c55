@@ -168,6 +168,67 @@ function DateRangeFields({
   );
 }
 
+/** Preset rentang tanggal cepat (Today, Yesterday, This Week, dst). */
+function DatePresetBar({
+  from,
+  to,
+  onApply,
+  onReset,
+}: {
+  from: string;
+  to: string;
+  onApply: (f: string, t: string) => void;
+  onReset: () => void;
+}) {
+  const presets = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const shift = (d: Date, days: number) => {
+      const n = new Date(d);
+      n.setDate(n.getDate() + days);
+      return n;
+    };
+    const startOfWeek = shift(today, -((today.getDay() + 6) % 7));
+    const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+    const lastMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+    const lastMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0);
+    const y = shift(today, -1);
+    return [
+      { label: "Today", from: dateToKey(today), to: dateToKey(today) },
+      { label: "Yesterday", from: dateToKey(y), to: dateToKey(y) },
+      { label: "This Week", from: dateToKey(startOfWeek), to: dateToKey(today) },
+      { label: "Last 7 Days", from: dateToKey(shift(today, -6)), to: dateToKey(today) },
+      { label: "This Month", from: dateToKey(monthStart), to: dateToKey(today) },
+      { label: "Last Month", from: dateToKey(lastMonthStart), to: dateToKey(lastMonthEnd) },
+    ];
+  }, []);
+
+  const active = presets.find((p) => p.from === from && p.to === to)?.label ?? "Custom Range";
+
+  return (
+    <div className="flex flex-wrap items-center gap-1.5">
+      {presets.map((p) => (
+        <button
+          key={p.label}
+          type="button"
+          onClick={() => onApply(p.from, p.to)}
+          className={`rounded-full border px-2.5 py-1 text-[11px] transition ${
+            active === p.label
+              ? "border-primary bg-primary text-primary-foreground"
+              : "border-border bg-background hover:bg-muted"
+          }`}
+        >
+          {p.label}
+        </button>
+      ))}
+      <Badge variant="outline" className="text-[10px]">{active}</Badge>
+      <Button size="sm" variant="ghost" className="h-7 text-[11px]" onClick={onReset}>
+        Reset Filter
+      </Button>
+    </div>
+  );
+}
+
 /** Ringkas metrik profiling pada rentang tanggal terpilih. */
 function profilingRangeStats(analyst: AnalystRow[], from: string, to: string) {
   const rows = analyst.filter((r) => {
@@ -1553,6 +1614,12 @@ function ReportsPage() {
               </Card>
             ) : (
               <>
+                <DatePresetBar
+                  from={cDFromEff}
+                  to={cDToEff}
+                  onApply={(f, t) => { setCDFrom(f); setCDTo(t); }}
+                  onReset={() => { setCDFrom(""); setCDTo(""); }}
+                />
                 <DateRangeFields
                   title="Filter tanggal competitor intel"
                   from={cDFromEff}
