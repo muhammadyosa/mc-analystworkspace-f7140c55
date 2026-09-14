@@ -1669,48 +1669,48 @@ function ReportsPage() {
                   <KpiCard label="Growth HC Pasar" value={`${compBase.growth >= 0 ? "+" : ""}${compBase.growth.toFixed(1)}%`} tone={compBase.growth >= 0 ? "up" : "down"} hint={`${fmtN(compBase.start)} → ${fmtN(compBase.end)}`} />
                 </div>
 
-                <div className="grid gap-4 lg:grid-cols-2">
-                  <Card className="glass-card border-0">
+                <div className="analytics-grid lg:grid-cols-2">
+                  <Card className="analytics-card rounded-lg">
                     <CardHeader><CardTitle className="font-display text-sm">Chart HC (kontek pasar) — {MONTHS[cFrom].label} → {MONTHS[cTo].label}</CardTitle></CardHeader>
-                    <CardContent className="h-64">
+                    <CardContent className="chart-frame h-56 px-3 pb-4 sm:h-60 sm:px-5">
                       <ResponsiveContainer>
-                        <AreaChart data={compBase.hcTrend}>
-                          <defs><linearGradient id="hcg-intel" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#22c55e" stopOpacity={0.6} /><stop offset="100%" stopColor="#22c55e" stopOpacity={0.05} /></linearGradient></defs>
-                          <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                          <XAxis dataKey="bulan" fontSize={11} />
-                          <YAxis fontSize={11} tickFormatter={(v) => (v >= 1000 ? `${(v / 1000).toFixed(0)}K` : String(v))} />
+                        <AreaChart data={compBase.hcTrend} margin={{ top: 6, right: 10, left: 0, bottom: 0 }}>
+                          <defs><linearGradient id="hcg-intel" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={C.positive} stopOpacity={0.42} /><stop offset="100%" stopColor={C.positive} stopOpacity={0.04} /></linearGradient></defs>
+                          <CartesianGrid {...gridProps} />
+                          <XAxis dataKey="bulan" {...axisProps} />
+                          <YAxis {...axisProps} width={42} tickFormatter={(v) => (v >= 1000 ? `${(v / 1000).toFixed(0)}K` : String(v))} />
                           <Tooltip formatter={(v: number) => fmtN(v)} />
-                          <Area type="monotone" dataKey="hc" stroke="#22c55e" strokeWidth={2} fill="url(#hcg-intel)" />
+                          <Area type="monotone" dataKey="hc" stroke={C.positive} strokeWidth={2.5} fill="url(#hcg-intel)" />
                         </AreaChart>
                       </ResponsiveContainer>
                     </CardContent>
                   </Card>
 
-                  <Card className="glass-card border-0">
+                  <Card className="analytics-card rounded-lg">
                     <CardHeader><CardTitle className="font-display text-sm">Chart Ticket (kontek pasar)</CardTitle></CardHeader>
-                    <CardContent className="h-64">
+                    <CardContent className="chart-frame h-56 px-3 pb-4 sm:h-60 sm:px-5">
                       <ResponsiveContainer>
-                        <LineChart data={compBase.ticketTrend}>
-                          <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                          <XAxis dataKey="bulan" fontSize={11} />
-                          <YAxis fontSize={11} />
+                        <LineChart data={compBase.ticketTrend} margin={{ top: 6, right: 10, left: 0, bottom: 0 }}>
+                          <CartesianGrid {...gridProps} />
+                          <XAxis dataKey="bulan" {...axisProps} />
+                          <YAxis {...axisProps} width={36} />
                           <Tooltip />
-                          <Line type="monotone" dataKey="ticket" stroke="#ef4444" strokeWidth={2.5} dot={{ r: 4 }} />
+                          <Line type="monotone" dataKey="ticket" stroke={C.negative} strokeWidth={2.5} dot={false} activeDot={{ r: 5 }} />
                         </LineChart>
                       </ResponsiveContainer>
                     </CardContent>
                   </Card>
 
-                  <Card className="glass-card border-0">
+                  <Card className="analytics-card rounded-lg">
                     <CardHeader><CardTitle className="font-display text-sm">Top Competitor</CardTitle></CardHeader>
-                    <CardContent className="h-72">
+                    <CardContent className="chart-frame h-60 px-3 pb-4 sm:h-64 sm:px-5">
                       <ResponsiveContainer>
-                        <BarChart data={compCharts.topCompetitors} layout="vertical" margin={{ left: 40 }}>
-                          <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                          <XAxis type="number" fontSize={11} />
-                          <YAxis type="category" dataKey="name" fontSize={11} width={90} />
+                        <BarChart data={compCharts.topCompetitors} layout="vertical" margin={{ top: 4, right: 12, left: 4, bottom: 4 }}>
+                          <CartesianGrid {...gridProps} />
+                          <XAxis type="number" hide />
+                          <YAxis type="category" dataKey="name" {...axisProps} width={96} />
                           <Tooltip />
-                          <Bar dataKey="value" radius={[0, 6, 6, 0]}>
+                          <Bar dataKey="value" radius={[0, 5, 5, 0]} barSize={14}>
                             {compCharts.topCompetitors.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                           </Bar>
                         </BarChart>
@@ -1718,14 +1718,14 @@ function ReportsPage() {
                     </CardContent>
                   </Card>
 
-                  <Card className="glass-card border-0">
+                  <Card className="analytics-card rounded-lg">
                     <CardHeader><CardTitle className="font-display text-sm">Threat Level Distribution</CardTitle></CardHeader>
-                    <CardContent className="h-72">
+                    <CardContent className="chart-frame h-60 px-3 pb-4 sm:h-64 sm:px-5">
                       <ArcDistribution
                         items={[
-                          { name: "Rendah", value: compCharts.threatBuckets[0].value, color: "#22c55e", icon: "✅" },
-                          { name: "Sedang", value: compCharts.threatBuckets[1].value, color: "#f59e0b", icon: "⏳" },
-                          { name: "Tinggi", value: compCharts.threatBuckets[2].value, color: "#ef4444", icon: "🔥" },
+                          { name: "Rendah", value: compCharts.threatBuckets[0].value, color: C.positive, icon: "✅" },
+                          { name: "Sedang", value: compCharts.threatBuckets[1].value, color: C.warning, icon: "⏳" },
+                          { name: "Tinggi", value: compCharts.threatBuckets[2].value, color: C.negative, icon: "🔥" },
                         ]}
                       />
                     </CardContent>
