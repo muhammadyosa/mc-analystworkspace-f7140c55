@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useDataStore, computePriority, recommendStrategy } from "@/lib/store";
+import { ChartCard, C, axisProps, gridProps, makeTooltip, fmtFull } from "@/components/chart-kit";
 
 export const Route = createFileRoute("/cluster/$name")({
   head: () => ({ meta: [{ title: "Cluster Detail — MCA Workspace" }] }),
@@ -47,6 +48,10 @@ function DetailPage() {
   const hcChangePct = cluster.mei > 0 ? ((cluster.juni - cluster.mei) / cluster.mei) * 100 : 0;
   const pr = computePriority(cluster, maxTicket);
   const strategy = recommendStrategy(cluster);
+  const TrendTip = makeTooltip<(typeof trend)[number]>((d) => ({
+    title: d.month,
+    rows: [{ label: "HC Aktif", value: fmtFull(d.hc), color: C.primary, strong: true }],
+  }));
 
   const insights: string[] = [];
   if (hcChangePct < 0) insights.push(`HC turun ${Math.abs(hcChangePct).toFixed(1)}% dari Mei ke Juni.`);
@@ -89,25 +94,20 @@ function DetailPage() {
           </CardContent>
         </Card>
 
-        <div className="grid gap-4 lg:grid-cols-3">
-          <Card className="glass-card border-0 lg:col-span-2">
-            <CardHeader>
-              <CardTitle className="font-display text-base">Trend HC (6 bulan)</CardTitle>
-            </CardHeader>
-            <CardContent className="h-64">
+        <div className="analytics-grid lg:grid-cols-3">
+          <ChartCard title="Trend HC (6 bulan)" subtitle="Pergerakan HC aktif Januari–Juni" height={240} className="lg:col-span-2">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={trend}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                  <XAxis dataKey="month" stroke="var(--color-muted-foreground)" fontSize={12} />
-                  <YAxis stroke="var(--color-muted-foreground)" fontSize={12} />
-                  <Tooltip contentStyle={{ background: "var(--color-popover)", border: "1px solid var(--color-border)", borderRadius: 8 }} />
-                  <Line type="monotone" dataKey="hc" stroke="var(--color-chart-1)" strokeWidth={3} dot={{ r: 5 }} isAnimationActive={false} />
+                <LineChart data={trend} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
+                  <CartesianGrid {...gridProps} />
+                  <XAxis dataKey="month" {...axisProps} />
+                  <YAxis {...axisProps} width={42} />
+                  <Tooltip content={TrendTip} />
+                  <Line type="monotone" dataKey="hc" stroke={C.primary} strokeWidth={2.5} dot={false} activeDot={{ r: 5, strokeWidth: 0 }} isAnimationActive={false} />
                 </LineChart>
               </ResponsiveContainer>
-            </CardContent>
-          </Card>
+          </ChartCard>
 
-          <Card className="glass-card border-0">
+          <Card className="analytics-card rounded-lg">
             <CardHeader>
               <CardTitle className="font-display text-base">Priority Score</CardTitle>
             </CardHeader>

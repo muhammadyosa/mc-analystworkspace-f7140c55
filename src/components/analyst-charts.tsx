@@ -241,12 +241,13 @@ export default function AnalystCharts({
   const topStrategy = strategies[0];
 
   return (
-    <div className="grid gap-5 lg:grid-cols-2">
+    <div className="analytics-grid lg:grid-cols-12">
       <ChartCard
         icon={Building2}
         title="Top Kompetitor"
         subtitle="Frekuensi kemunculan di seluruh cluster"
-        height={330}
+        height={252}
+        className="lg:col-span-8"
         footer={
           competitors[0]
             ? `${competitors[0].name} paling dominan (${fmtPct((competitors[0].count / compTotal) * 100)} dari total temuan).`
@@ -267,7 +268,8 @@ export default function AnalystCharts({
         icon={Gauge}
         title="Potensi Cluster"
         subtitle="Sebaran level potensi hasil profiling"
-        height={330}
+        height={252}
+        className="lg:col-span-4"
         footer={
           potensiTotal
             ? `${fmtPct((s.potensi.tinggi / potensiTotal) * 100)} cluster berpotensi tinggi dan layak diprioritaskan.`
@@ -289,7 +291,8 @@ export default function AnalystCharts({
         icon={Wallet}
         title="Harga Rata-rata Kompetitor"
         subtitle="Diurutkan dari termurah — indikasi tekanan harga"
-        height={330}
+        height={252}
+        className="lg:col-span-6"
         footer={
           cheapest
             ? `${cheapest.name} termurah di Rp${fmtFull(cheapest.avgPrice)}, ${fmtPct(priceAvg ? ((priceAvg - cheapest.avgPrice) / priceAvg) * 100 : 0)} di bawah rata-rata pasar.`
@@ -311,7 +314,8 @@ export default function AnalystCharts({
         icon={Megaphone}
         title="Promo Kompetitor"
         subtitle="Jenis promo yang paling sering ditemukan"
-        height={330}
+        height={252}
+        className="lg:col-span-6"
         footer={topPromo ? `Promo dominan: ${topPromo.name} (${fmtFull(topPromo.value)} temuan).` : undefined}
       >
         <RankedBar
@@ -329,7 +333,8 @@ export default function AnalystCharts({
         icon={Target}
         title="Strategi Marketing"
         subtitle="Pendekatan yang direkomendasikan per cluster"
-        height={330}
+        height={252}
+        className="lg:col-span-6"
         footer={topStrategy ? `Strategi paling banyak dipakai: ${topStrategy.name}.` : undefined}
       >
         <RankedBar
@@ -347,7 +352,8 @@ export default function AnalystCharts({
         icon={Users}
         title="Segmen Pelanggan"
         subtitle="Profil segmen dominan"
-        height={330}
+        height={252}
+        className="lg:col-span-6"
         footer={segments[0] ? `Segmen terbesar: ${segments[0].name} (${fmtFull(segments[0].value)} cluster).` : undefined}
       >
         <Donut
@@ -365,8 +371,8 @@ export default function AnalystCharts({
         icon={Wallet}
         title="Daya Beli"
         subtitle="Kemampuan belanja pelanggan per cluster"
-        height={330}
-        className="lg:col-span-2"
+        height={252}
+        className="lg:col-span-12"
         footer={dayaBeli[0] ? `Mayoritas cluster berada pada daya beli ${dayaBeli[0].name}.` : undefined}
       >
         <Donut

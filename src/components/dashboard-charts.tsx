@@ -160,14 +160,15 @@ export default function DashboardCharts({
   }));
 
   return (
-    <div className="grid gap-5 lg:grid-cols-2">
+    <div className="analytics-grid lg:grid-cols-12">
       {/* HC TREND */}
       <ChartCard
         icon={Activity}
         title="HC Trend"
         subtitle={`Pergerakan HC hingga ${curLabel}`}
         badge={last ? <DeltaBadge value={last.growth} label=" vs bulan lalu" /> : undefined}
-        height={300}
+        height={248}
+        className="lg:col-span-8"
         footer={peak ? `HC tertinggi terjadi pada ${peak.month} (${fmtFull(peak.hc)}).` : undefined}
       >
         <ResponsiveContainer width="100%" height="100%">
@@ -200,7 +201,8 @@ export default function DashboardCharts({
         icon={BarChart3}
         title="Top 10 Cluster by HC"
         subtitle={`Cluster dengan HC terbesar bulan ${curLabel}`}
-        height={340}
+        height={248}
+        className="lg:col-span-4"
         footer={topHc[0] ? `${topHc[0].cluster} memimpin dengan ${fmtFull(topHc[0].juni)} HC.` : undefined}
       >
         <ResponsiveContainer width="100%" height="100%">
@@ -216,20 +218,14 @@ export default function DashboardCharts({
               type="category"
               dataKey="cluster"
               {...axisProps}
-              width={132}
-              tickFormatter={(v) => truncateLabel(v, 18)}
+              width={104}
+              tickFormatter={(v) => truncateLabel(v, 14)}
             />
             <Tooltip content={HcTip} cursor={hoverCursor} />
             <Bar dataKey="juni" radius={[0, 6, 6, 0]} barSize={16} isAnimationActive={false}>
               {topHc.map((d) => (
                 <Cell key={d.cluster} fill={d.rank <= 3 ? C.primary : C.primaryLight} />
               ))}
-              <LabelList
-                dataKey="juni"
-                position="right"
-                formatter={(v: number) => fmtFull(v)}
-                style={{ fontSize: 11, fontWeight: 600, fill: "var(--color-foreground)" }}
-              />
             </Bar>
           </BarChart>
         </ResponsiveContainer>
@@ -240,7 +236,8 @@ export default function DashboardCharts({
         icon={TrendingUp}
         title={`HC Growth (Delta ${prevLabel}–${curLabel})`}
         subtitle="Perubahan HC terbesar antar dua bulan terakhir"
-        height={340}
+        height={260}
+        className="lg:col-span-6"
         footer={`${posCount} dari ${growth.length} cluster mencatat pertumbuhan positif.`}
       >
         <ResponsiveContainer width="100%" height="100%">
@@ -256,8 +253,8 @@ export default function DashboardCharts({
               type="category"
               dataKey="cluster"
               {...axisProps}
-              width={132}
-              tickFormatter={(v) => truncateLabel(v, 18)}
+              width={112}
+              tickFormatter={(v) => truncateLabel(v, 15)}
             />
             <Tooltip content={GrowthTip} cursor={hoverCursor} />
             <Bar dataKey="deltaMeiJuni" radius={4} barSize={14} isAnimationActive={false}>
@@ -283,7 +280,8 @@ export default function DashboardCharts({
         icon={Ticket}
         title="Top Cluster by Ticket"
         subtitle="Volume gangguan tertinggi — indikasi kualitas layanan"
-        height={340}
+        height={260}
+        className="lg:col-span-6"
         footer={
           topTicket[0]
             ? `${topTicket[0].cluster} tertinggi dengan ${fmtFull(topTicket[0].ticket)} ticket (${topTicket[0].perHc.toFixed(2)} ticket/HC).`
@@ -303,8 +301,8 @@ export default function DashboardCharts({
               type="category"
               dataKey="cluster"
               {...axisProps}
-              width={132}
-              tickFormatter={(v) => truncateLabel(v, 18)}
+              width={112}
+              tickFormatter={(v) => truncateLabel(v, 15)}
             />
             <Tooltip content={TicketTip} cursor={hoverCursor} />
             <Bar dataKey="ticket" radius={[0, 6, 6, 0]} barSize={16} isAnimationActive={false}>
@@ -327,8 +325,8 @@ export default function DashboardCharts({
         icon={MapPin}
         title="Distribusi HC per Provinsi"
         subtitle="Kontribusi HC tiap provinsi"
-        height={300}
-        className="lg:col-span-2"
+        height={250}
+        className="lg:col-span-12"
         footer={provAnalysis}
       >
         <ArcDistribution
