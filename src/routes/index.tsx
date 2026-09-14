@@ -30,9 +30,9 @@ const DashboardCharts = lazy(() => import("@/components/dashboard-charts"));
 
 function ChartFallback() {
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
+    <div className="analytics-grid lg:grid-cols-12">
       {Array.from({ length: 4 }).map((_, i) => (
-        <div key={i} className="glass-card h-64 animate-pulse rounded-2xl" />
+        <div key={i} className={`analytics-card h-64 animate-pulse rounded-lg ${i === 0 ? "lg:col-span-8" : i === 1 ? "lg:col-span-4" : "lg:col-span-6"}`} />
       ))}
     </div>
   );
@@ -81,8 +81,8 @@ const KpiCard = memo(function KpiCard({
   return (
     <Comp
       onClick={onClick}
-      className={`glass-card rounded-2xl p-4 animate-in fade-in slide-in-from-bottom-1 duration-300 text-left w-full ${
-        onClick ? "cursor-pointer transition-all hover:scale-[1.02] hover:shadow-lg hover:border-primary/40" : ""
+      className={`analytics-card rounded-lg p-4 animate-in fade-in slide-in-from-bottom-1 duration-300 text-left w-full ${
+        onClick ? "cursor-pointer transition-colors hover:border-primary/40 hover:bg-accent/20" : ""
       }`}
     >
       <div className="flex items-start justify-between gap-3">
@@ -104,8 +104,8 @@ const KpiCard = memo(function KpiCard({
             </div>
           )}
         </div>
-        <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br ${tintMap[tint]}`}>
-          <Icon className="h-5 w-5" />
+        <div className={`grid h-8 w-8 shrink-0 place-items-center rounded-md bg-gradient-to-br ${tintMap[tint]}`}>
+          <Icon className="h-4 w-4" />
         </div>
       </div>
     </Comp>
@@ -393,7 +393,7 @@ function Dashboard() {
   return (
     <>
       <AppHeader title="Dashboard" subtitle={`Executive Overview — data s/d ${period.curLabel}`} />
-      <div className="space-y-8 p-4 sm:p-6">
+      <div className="space-y-6 p-4 sm:p-6">
         <GlobalFilterBar />
 
         {/* Bagian 1 — Angka utama */}

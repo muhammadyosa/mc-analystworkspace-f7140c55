@@ -20,9 +20,9 @@ export const Route = createFileRoute("/analyst")({
 
 function ChartFallback() {
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
+    <div className="analytics-grid lg:grid-cols-12">
       {Array.from({ length: 4 }).map((_, i) => (
-        <div key={i} className="glass-card h-72 animate-pulse rounded-2xl" />
+        <div key={i} className={`analytics-card h-64 animate-pulse rounded-lg ${i < 2 ? (i === 0 ? "lg:col-span-8" : "lg:col-span-4") : "lg:col-span-6"}`} />
       ))}
     </div>
   );
@@ -56,7 +56,7 @@ function KpiCard({
   const t = TONE[tone];
   const Comp = onClick ? "button" : "div";
   return (
-    <Card className={`glass-card border-0 ring-1 ${t.ring} ${onClick ? "cursor-pointer transition-all hover:scale-[1.02] hover:shadow-lg" : ""}`}>
+    <Card className={`analytics-card rounded-lg ring-1 ${t.ring} ${onClick ? "cursor-pointer transition-colors hover:border-primary/40 hover:bg-accent/20" : ""}`}>
       <Comp onClick={onClick} className="block w-full text-left">
         <CardContent className="p-4">
           <div className="flex items-start justify-between gap-2">
@@ -65,7 +65,7 @@ function KpiCard({
               <div className={`mt-1 font-display text-2xl font-bold tabular-nums ${t.text}`}>{value}</div>
               {hint && <div className="mt-0.5 text-[10px] text-muted-foreground">{hint}</div>}
             </div>
-            <div className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br ${t.grad} shadow-md`}>
+            <div className={`grid h-8 w-8 shrink-0 place-items-center rounded-md bg-gradient-to-br ${t.grad}`}>
               <Icon className="h-4 w-4 text-white" />
             </div>
           </div>
@@ -309,7 +309,7 @@ function AnalystPage() {
   return (
     <>
       <AppHeader title="Analyst Market" subtitle="Executive dashboard profiling & kompetitor" />
-      <div className="space-y-6 p-4 sm:p-6">
+      <div className="space-y-5 p-4 sm:p-6">
         {/* FILTER BAR */}
         <Card className="glass-card border-0">
           <CardContent className="p-3">
