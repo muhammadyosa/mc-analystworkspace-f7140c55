@@ -358,11 +358,20 @@ export async function parseClusterFile(
   const headers = raw.length ? Object.keys(raw[0]) : [];
 
   // Template baru: "HC AKTIF <BULAN>", "NEW HC <BULAN>", "Ticket <BULAN>".
-  // Template lama: kolom bulan polos ("JANUARI", "JUNI", …).
-  let hcCols = monthColumnMap(headers, "hcaktif");
-  if (!Object.keys(hcCols).length) hcCols = monthColumnMap(headers, "");
+  // Template lama / campuran: kolom bulan polos ("JANUARI", "Sep", "2026-09").
+  // Keduanya digabung supaya bulan baru yang ditulis polos tetap terbaca.
+  const hcCols: Record<string, string> = {
+    ...monthColumnMap(headers, "", true),
+    ...monthColumnMap(headers, "hcaktif"),
+  };
   const newHcCols = monthColumnMap(headers, "newhc");
   const ticketCols = monthColumnMap(headers, "ticket");
+
+  // Bulan terbaru yang muncul di file (dari kolom HC / NEW HC / TICKET).
+  // Kalau bulan itu belum punya kolom HC sendiri, pakai snapshot "HC Aktif".
+  const tracked = MONTH_KEYS.filter((m) => hcCols[m] || newHcCols[m] || ticketCols[m]);
+  const latestTracked = tracked[tracked.length - 1];
+  const snapshotMonth = latestTracked && !hcCols[latestTracked] ? latestTracked : null;
 
   let mapped = 0;
   const rows = raw
