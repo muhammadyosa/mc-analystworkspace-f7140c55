@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useDataStore, computePriority, recommendStrategy } from "@/lib/store";
 import { ChartCard, C, axisProps, gridProps, makeTooltip, fmtFull } from "@/components/chart-kit";
+import { MONTH_KEYS, MONTH_LABELS } from "@/lib/prefs";
 
 export const Route = createFileRoute("/cluster/$name")({
   head: () => ({ meta: [{ title: "Cluster Detail — MCA Workspace" }] }),
