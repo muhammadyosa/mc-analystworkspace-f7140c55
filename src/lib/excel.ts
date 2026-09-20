@@ -261,26 +261,68 @@ const MONTH_KEYS = [
   "januari", "februari", "maret", "april", "mei", "juni",
   "juli", "agustus", "september", "oktober", "november", "desember",
 ] as const;
+type MonthName = (typeof MONTH_KEYS)[number];
+
+const monthFromNumber = (n: number): MonthName | null =>
+  Number.isInteger(n) && n >= 1 && n <= 12 ? MONTH_KEYS[n - 1] : null;
 
 /**
- * Cari kolom bulan pada header. `prefix` contoh: "hcaktif", "newhc", "ticket".
+ * Deteksi bulan dari satu potongan header, fleksibel terhadap banyak format:
+ * "Sep", "SEPT", "September", "Sep 2026", "2026-09", "09/2026", "9".
+ * Dipakai bersama oleh kolom HC, NEW HC, dan TICKET/TIKET sehingga bulan baru
+ * pada file Excel langsung terbaca tanpa perubahan kode.
+ */
+export function monthFromToken(token: string): MonthName | null {
+  const t = token.toLowerCase().replace(/[^a-z0-9]/g, "");
+  if (!t) return null;
+
+  if (/^\d+$/.test(t)) {
+    if (t.length <= 2) return monthFromNumber(Number(t));
+    if (t.length === 6) {
+      if (/^20\d{4}$/.test(t)) return monthFromNumber(Number(t.slice(4)));
+      if (/^\d{2}20\d{2}$/.test(t)) return monthFromNumber(Number(t.slice(0, 2)));
+    }
+    return null;
+  }
+
+  const letters = t.replace(/[0-9]/g, "");
+  if (!letters) return null;
+  for (const key of MONTH_KEYS) {
+    const aliases = BULAN_ALIASES[key.toUpperCase()] ?? [];
+    if (aliases.some((a) => letters === a || letters.startsWith(a) || letters.endsWith(a))) return key;
+  }
+  return null;
+}
+
+/** Sinonim awalan kolom pada berbagai versi template. */
+const COL_PREFIXES: Record<string, string[]> = {
+  hcaktif: ["hcaktif", "hcactive", "hc"],
+  newhc: ["newhc", "hcbaru"],
+  ticket: ["ticket", "tiket", "tkt"],
+};
+
+/**
+ * Cari kolom bulan pada header untuk kelompok kolom tertentu
+ * ("hcaktif" | "newhc" | "ticket"), atau "" untuk kolom bulan polos.
  * Kolom total/grand/delta diabaikan, dan hanya kolom pertama tiap bulan dipakai
  * (menghindari kolom duplikat hasil dedupe: "HC AKTIF JUNI_2").
  */
-function monthColumnMap(headers: string[], prefix: string): Record<string, string> {
+function monthColumnMap(headers: string[], group: string): Record<string, string> {
   const out: Record<string, string> = {};
+  const prefixes = group ? (COL_PREFIXES[group] ?? [group]) : [""];
   for (const h of headers) {
     const n = norm(h);
     if (!n || n.includes("total") || n.includes("grand") || n.includes("delta")) continue;
-    if (prefix && !n.startsWith(prefix)) continue;
-    const rest = prefix ? n.slice(prefix.length) : n;
-    if (!rest) continue;
-    for (const key of MONTH_KEYS) {
-      const aliases = BULAN_ALIASES[key.toUpperCase()] ?? [];
-      if (aliases.some((a) => rest === a)) {
-        if (!out[key]) out[key] = h;
-      }
+    // Jangan sampai kolom NEW HC / TICKET terbaca sebagai HC aktif.
+    if (group === "hcaktif" && /^(newhc|hcbaru|ticket|tiket|tkt)/.test(n)) continue;
+    let rest: string | null = null;
+    for (const p of prefixes) {
+      if (!p) { rest = n; break; }
+      if (n.startsWith(p)) { rest = n.slice(p.length); break; }
     }
+    if (rest === null || (group && !rest)) continue;
+    const key = monthFromToken(rest);
+    if (key && !out[key]) out[key] = h;
   }
   return out;
 }
@@ -423,12 +465,10 @@ function monthOfHeader(h: string): string | null {
   const n = norm(h);
   if (!n) return null;
   if (n.includes("total") || n.includes("grand") || n.includes("blank") || n.includes("cluster")) return null;
-  const stripped = n.replace(/ticket|tiket|jumlah|count|bulan|20\d\d/g, "");
+  const stripped = n.replace(/ticket|tiket|jumlah|count|bulan/g, "");
   if (!stripped) return null;
-  for (const [bulan, aliases] of Object.entries(BULAN_ALIASES)) {
-    if (aliases.some((a) => stripped === a || stripped.startsWith(a) || stripped.endsWith(a))) return bulan;
-  }
-  return null;
+  const key = monthFromToken(stripped) ?? monthFromToken(stripped.replace(/20\d\d/g, ""));
+  return key ? key.toUpperCase() : null;
 }
 
 

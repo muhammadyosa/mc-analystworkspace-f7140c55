@@ -29,6 +29,7 @@ import { useDataStore } from "@/lib/store";
 import { useGlobalClusters } from "@/hooks/use-global-filters";
 import { GlobalFilterBar } from "@/components/global-filter";
 import type { AnalystRow, ClusterRow, CompetitorRow, PromoCategory, TicketRow } from "@/lib/excel";
+import { monthFromToken } from "@/lib/excel";
 
 // Parse various profiling date formats to a Date (or null)
 function parseProfilingDate(value: unknown): Date | null {
@@ -835,10 +836,13 @@ const hcOf = (c: ClusterRow, key: MonthKey): number =>
 
 // Bulan yang benar-benar punya data (HC cluster atau ticket) — supaya range
 // mengikuti bulan terakhir pada file yang diupload, bukan dipatok sampai Juni.
+/** Samakan label bulan apa pun ("SEP", "Sept", "September 2026", "2026-09") ke key kanonik. */
+const monthKeyOf = (raw?: string): string | null => (raw ? monthFromToken(raw) : null);
+
 function ticketByMonthMap(tickets: TicketRow[]): Map<string, number> {
   const m = new Map<string, number>();
   for (const t of tickets) {
-    const k = (t.bulan || "").toLowerCase();
+    const k = monthKeyOf(t.bulan) ?? (t.bulan || "").toLowerCase();
     if (!k) continue;
     m.set(k, (m.get(k) ?? 0) + (t.ticket || 0));
   }
@@ -850,7 +854,7 @@ function ticketByClusterMap(tickets: TicketRow[]): Map<string, Map<string, numbe
   const m = new Map<string, Map<string, number>>();
   for (const t of tickets) {
     const c = (t.cluster || "").trim().toUpperCase();
-    const k = (t.bulan || "").toLowerCase();
+    const k = monthKeyOf(t.bulan) ?? (t.bulan || "").toLowerCase();
     if (!c || !k) continue;
     const inner = m.get(c) ?? new Map<string, number>();
     inner.set(k, (inner.get(k) ?? 0) + (t.ticket || 0));
@@ -862,10 +866,15 @@ function ticketByClusterMap(tickets: TicketRow[]): Map<string, Map<string, numbe
 function availableMonths(clusters: ClusterRow[], ticketMap: Map<string, number>): number[] {
   const idx = MONTHS.map((m, i) => {
     const hc = clusters.reduce((a, c) => a + (Number((c as unknown as Record<string, unknown>)[m.key]) || 0), 0);
-    const tk = ticketMap.get(m.key) ?? 0;
+    const tkByMonth = clusters.reduce(
+      (a, c) => a + (Number((c as unknown as { ticketByMonth?: Record<string, number> }).ticketByMonth?.[m.key]) || 0),
+      0,
+    );
+    const tk = (ticketMap.get(m.key) ?? 0) + tkByMonth;
     return hc > 0 || tk > 0 ? i : -1;
   }).filter((i) => i >= 0);
-  return idx.length ? idx : [0, 1, 2, 3, 4, 5];
+  // Tanpa data sama sekali: tampilkan hanya bulan pertama, jangan dipatok Jan–Jun.
+  return idx.length ? idx : [0];
 }
 
 

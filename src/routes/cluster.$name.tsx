@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useDataStore, computePriority, recommendStrategy } from "@/lib/store";
 import { ChartCard, C, axisProps, gridProps, makeTooltip, fmtFull } from "@/components/chart-kit";
+import { MONTH_KEYS, MONTH_LABELS } from "@/lib/prefs";
 
 export const Route = createFileRoute("/cluster/$name")({
   head: () => ({ meta: [{ title: "Cluster Detail — MCA Workspace" }] }),
@@ -36,16 +37,20 @@ function DetailPage() {
       </>
     );
 
-  const trend = [
-    { month: "Jan", hc: cluster.januari },
-    { month: "Feb", hc: cluster.februari },
-    { month: "Mar", hc: cluster.maret },
-    { month: "Apr", hc: cluster.april },
-    { month: "Mei", hc: cluster.mei },
-    { month: "Jun", hc: cluster.juni },
-  ];
+  // Bulan mengikuti data yang tersedia pada file — bulan baru otomatis muncul.
+  const monthSeries = MONTH_KEYS.map((k) => ({
+    key: k,
+    month: MONTH_LABELS[k],
+    hc: Number((cluster as unknown as Record<string, unknown>)[k]) || 0,
+  }));
+  const filledIdx = monthSeries.map((m, i) => (m.hc > 0 ? i : -1)).filter((i) => i >= 0);
+  const trend = filledIdx.length ? monthSeries.slice(0, filledIdx[filledIdx.length - 1] + 1) : monthSeries.slice(0, 1);
+  const curM = trend[trend.length - 1];
+  const prevM = trend.length > 1 ? trend[trend.length - 2] : undefined;
+  const hcCur = curM?.hc ?? 0;
+  const hcPrev = prevM?.hc ?? 0;
 
-  const hcChangePct = cluster.mei > 0 ? ((cluster.juni - cluster.mei) / cluster.mei) * 100 : 0;
+  const hcChangePct = hcPrev > 0 ? ((hcCur - hcPrev) / hcPrev) * 100 : 0;
   const pr = computePriority(cluster, maxTicket);
   const strategy = recommendStrategy(cluster);
   const TrendTip = makeTooltip<(typeof trend)[number]>((d) => ({
@@ -53,12 +58,13 @@ function DetailPage() {
     rows: [{ label: "HC Aktif", value: fmtFull(d.hc), color: C.primary, strong: true }],
   }));
 
+  const periodLabel = prevM ? `${prevM.month} ke ${curM.month}` : curM?.month ?? "-";
   const insights: string[] = [];
-  if (hcChangePct < 0) insights.push(`HC turun ${Math.abs(hcChangePct).toFixed(1)}% dari Mei ke Juni.`);
-  else if (hcChangePct > 0) insights.push(`HC tumbuh ${hcChangePct.toFixed(1)}% dari Mei ke Juni.`);
+  if (hcChangePct < 0) insights.push(`HC turun ${Math.abs(hcChangePct).toFixed(1)}% dari ${periodLabel}.`);
+  else if (hcChangePct > 0) insights.push(`HC tumbuh ${hcChangePct.toFixed(1)}% dari ${periodLabel}.`);
   if (cluster.ticket > 5) insights.push(`Ticket cukup tinggi: ${cluster.ticket} kasus.`);
-  if (cluster.totalHC2026 > 0 && cluster.juni / cluster.totalHC2026 < 0.5)
-    insights.push(`Realisasi HC ${((cluster.juni / cluster.totalHC2026) * 100).toFixed(0)}% dari target 2026 — potensi masih besar.`);
+  if (cluster.totalHC2026 > 0 && hcCur / cluster.totalHC2026 < 0.5)
+    insights.push(`Realisasi HC ${((hcCur / cluster.totalHC2026) * 100).toFixed(0)}% dari target 2026 — potensi masih besar.`);
 
   const causes = ["Kompetitor", "Gangguan jaringan", "Kurangnya aktivitas AE"];
 
@@ -77,7 +83,7 @@ function DetailPage() {
               { icon: MapPin, label: "Kabupaten", value: cluster.kabupaten || "—" },
               { icon: Building2, label: "Provinsi", value: cluster.provinsi || "—" },
               { icon: User, label: "PIC", value: cluster.pic || "—" },
-              { icon: Users, label: "HC Juni", value: cluster.juni.toLocaleString("id-ID") },
+              { icon: Users, label: `HC ${curM?.month ?? "-"}`, value: hcCur.toLocaleString("id-ID") },
               { icon: Ticket, label: "Ticket", value: cluster.ticket },
               { icon: TrendingUp, label: "Total HC 2026", value: cluster.totalHC2026.toLocaleString("id-ID") },
             ].map((it, i) => (
@@ -140,7 +146,7 @@ function DetailPage() {
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Realisasi 2026</span>
                   <span>
-                    {cluster.totalHC2026 > 0 ? `${((cluster.juni / cluster.totalHC2026) * 100).toFixed(0)}%` : "N/A"}
+                    {cluster.totalHC2026 > 0 ? `${((hcCur / cluster.totalHC2026) * 100).toFixed(0)}%` : "N/A"}
                   </span>
                 </div>
               </div>
