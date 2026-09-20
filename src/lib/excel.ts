@@ -307,9 +307,10 @@ const COL_PREFIXES: Record<string, string[]> = {
  * Kolom total/grand/delta diabaikan, dan hanya kolom pertama tiap bulan dipakai
  * (menghindari kolom duplikat hasil dedupe: "HC AKTIF JUNI_2").
  */
-function monthColumnMap(headers: string[], group: string): Record<string, string> {
+function monthColumnMap(headers: string[], group: string, strict = false): Record<string, string> {
   const out: Record<string, string> = {};
   const prefixes = group ? (COL_PREFIXES[group] ?? [group]) : [""];
+  const resolve = strict ? monthFromTokenStrict : monthFromToken;
   for (const h of headers) {
     const n = norm(h);
     if (!n || n.includes("total") || n.includes("grand") || n.includes("delta")) continue;
@@ -321,10 +322,27 @@ function monthColumnMap(headers: string[], group: string): Record<string, string
       if (n.startsWith(p)) { rest = n.slice(p.length); break; }
     }
     if (rest === null || (group && !rest)) continue;
-    const key = monthFromToken(rest);
+    const key = resolve(rest);
     if (key && !out[key]) out[key] = h;
   }
   return out;
+}
+
+/**
+ * Versi ketat: nama bulan harus persis salah satu alias (setelah tahun dibuang),
+ * dipakai untuk kolom bulan polos ("Sep", "AGUSTUS", "2026-09") agar kolom lain
+ * seperti "PROVINSI" tidak salah dikenali sebagai bulan.
+ */
+function monthFromTokenStrict(token: string): MonthName | null {
+  const t = token.toLowerCase().replace(/[^a-z0-9]/g, "");
+  if (!t) return null;
+  if (/^\d+$/.test(t)) return monthFromToken(t);
+  const letters = t.replace(/20\d\d/g, "").replace(/[0-9]/g, "");
+  if (!letters) return null;
+  for (const key of MONTH_KEYS) {
+    if ((BULAN_ALIASES[key.toUpperCase()] ?? []).includes(letters)) return key;
+  }
+  return null;
 }
 
 const emptyMonths = (): Record<string, number> =>
