@@ -307,9 +307,10 @@ const COL_PREFIXES: Record<string, string[]> = {
  * Kolom total/grand/delta diabaikan, dan hanya kolom pertama tiap bulan dipakai
  * (menghindari kolom duplikat hasil dedupe: "HC AKTIF JUNI_2").
  */
-function monthColumnMap(headers: string[], group: string): Record<string, string> {
+function monthColumnMap(headers: string[], group: string, strict = false): Record<string, string> {
   const out: Record<string, string> = {};
   const prefixes = group ? (COL_PREFIXES[group] ?? [group]) : [""];
+  const resolve = strict ? monthFromTokenStrict : monthFromToken;
   for (const h of headers) {
     const n = norm(h);
     if (!n || n.includes("total") || n.includes("grand") || n.includes("delta")) continue;
@@ -321,10 +322,27 @@ function monthColumnMap(headers: string[], group: string): Record<string, string
       if (n.startsWith(p)) { rest = n.slice(p.length); break; }
     }
     if (rest === null || (group && !rest)) continue;
-    const key = monthFromToken(rest);
+    const key = resolve(rest);
     if (key && !out[key]) out[key] = h;
   }
   return out;
+}
+
+/**
+ * Versi ketat: nama bulan harus persis salah satu alias (setelah tahun dibuang),
+ * dipakai untuk kolom bulan polos ("Sep", "AGUSTUS", "2026-09") agar kolom lain
+ * seperti "PROVINSI" tidak salah dikenali sebagai bulan.
+ */
+function monthFromTokenStrict(token: string): MonthName | null {
+  const t = token.toLowerCase().replace(/[^a-z0-9]/g, "");
+  if (!t) return null;
+  if (/^\d+$/.test(t)) return monthFromToken(t);
+  const letters = t.replace(/20\d\d/g, "").replace(/[0-9]/g, "");
+  if (!letters) return null;
+  for (const key of MONTH_KEYS) {
+    if ((BULAN_ALIASES[key.toUpperCase()] ?? []).includes(letters)) return key;
+  }
+  return null;
 }
 
 const emptyMonths = (): Record<string, number> =>
@@ -340,11 +358,20 @@ export async function parseClusterFile(
   const headers = raw.length ? Object.keys(raw[0]) : [];
 
   // Template baru: "HC AKTIF <BULAN>", "NEW HC <BULAN>", "Ticket <BULAN>".
-  // Template lama: kolom bulan polos ("JANUARI", "JUNI", …).
-  let hcCols = monthColumnMap(headers, "hcaktif");
-  if (!Object.keys(hcCols).length) hcCols = monthColumnMap(headers, "");
+  // Template lama / campuran: kolom bulan polos ("JANUARI", "Sep", "2026-09").
+  // Keduanya digabung supaya bulan baru yang ditulis polos tetap terbaca.
+  const hcCols: Record<string, string> = {
+    ...monthColumnMap(headers, "", true),
+    ...monthColumnMap(headers, "hcaktif"),
+  };
   const newHcCols = monthColumnMap(headers, "newhc");
   const ticketCols = monthColumnMap(headers, "ticket");
+
+  // Bulan terbaru yang muncul di file (dari kolom HC / NEW HC / TICKET).
+  // Kalau bulan itu belum punya kolom HC sendiri, pakai snapshot "HC Aktif".
+  const tracked = MONTH_KEYS.filter((m) => hcCols[m] || newHcCols[m] || ticketCols[m]);
+  const latestTracked = tracked[tracked.length - 1];
+  const snapshotMonth = latestTracked && !hcCols[latestTracked] ? latestTracked : null;
 
   let mapped = 0;
   const rows = raw
@@ -365,11 +392,12 @@ export async function parseClusterFile(
 
       const homepass = toNum(pick(r, ["Homepass", "HOMEPASS"]));
       const hcAktif = toNum(pick(r, ["HC Aktif", "HC AKTIF"]));
+      if (snapshotMonth && hcAktif > 0 && !hc[snapshotMonth]) hc[snapshotMonth] = hcAktif;
       const filledMonths = MONTH_KEYS.filter((m) => hc[m] > 0);
       const lastM = filledMonths[filledMonths.length - 1];
       const prevM = filledMonths[filledMonths.length - 2];
       const deltaCol = toNum(pick(r, ["DELTA HC AKTIF", "DELTA MEI - JUNI", "DELTA MEI-JUNI", "DELTA"]));
-      const delta = deltaCol || (lastM && prevM ? hc[lastM] - hc[prevM] : 0);
+      const delta = lastM && prevM ? hc[lastM] - hc[prevM] : deltaCol;
 
       const totalTicket = toNum(pick(r, ["Total Ticket", "TOTAL TICKET", "ticket", "TICKET"]))
         || MONTH_KEYS.reduce((a, m) => a + ticketM[m], 0);
