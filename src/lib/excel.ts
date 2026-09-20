@@ -392,11 +392,12 @@ export async function parseClusterFile(
 
       const homepass = toNum(pick(r, ["Homepass", "HOMEPASS"]));
       const hcAktif = toNum(pick(r, ["HC Aktif", "HC AKTIF"]));
+      if (snapshotMonth && hcAktif > 0 && !hc[snapshotMonth]) hc[snapshotMonth] = hcAktif;
       const filledMonths = MONTH_KEYS.filter((m) => hc[m] > 0);
       const lastM = filledMonths[filledMonths.length - 1];
       const prevM = filledMonths[filledMonths.length - 2];
       const deltaCol = toNum(pick(r, ["DELTA HC AKTIF", "DELTA MEI - JUNI", "DELTA MEI-JUNI", "DELTA"]));
-      const delta = deltaCol || (lastM && prevM ? hc[lastM] - hc[prevM] : 0);
+      const delta = lastM && prevM ? hc[lastM] - hc[prevM] : deltaCol;
 
       const totalTicket = toNum(pick(r, ["Total Ticket", "TOTAL TICKET", "ticket", "TICKET"]))
         || MONTH_KEYS.reduce((a, m) => a + ticketM[m], 0);
