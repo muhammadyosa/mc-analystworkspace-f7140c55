@@ -325,8 +325,9 @@ export default function DashboardCharts({
         icon={MapPin}
         title="Distribusi HC per Provinsi"
         subtitle="Kontribusi HC tiap provinsi"
-        height={250}
+        height={0}
         className="lg:col-span-12"
+        frameClassName="h-[390px] sm:h-[250px]"
         footer={provAnalysis}
       >
         <ArcDistribution

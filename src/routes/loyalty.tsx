@@ -13,7 +13,16 @@ import { GlobalFilterBar } from "@/components/global-filter";
 import { computeActionStatus, type ClusterRow } from "@/lib/excel";
 
 export const Route = createFileRoute("/loyalty")({
-  head: () => ({ meta: [{ title: "Customer Loyalty — Iconnet Workspace" }] }),
+  head: () => ({
+    meta: [
+      { title: "Customer Loyalty — MCA Analyst Workspace" },
+      { name: "description", content: "Pantau risiko penurunan HC, cluster prioritas, dan ticket pelanggan." },
+      { property: "og:title", content: "Customer Loyalty — MCA Analyst Workspace" },
+      { property: "og:description", content: "Pantau risiko penurunan HC, cluster prioritas, dan ticket pelanggan." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: LoyaltyPage,
 });
 
@@ -130,43 +139,48 @@ function LoyaltyPage() {
   };
 
   const Row = ({ title, items, icon: Icon, tone }: { title: string; items: LoyaltyRow[]; icon: React.ComponentType<{ className?: string }>; tone: string }) => (
-    <Card className="glass-card border-0">
-      <CardHeader className="flex-row items-center gap-2 space-y-0">
-        <div className={`grid h-8 w-8 place-items-center rounded-lg ${tone}`}><Icon className="h-4 w-4 text-white" /></div>
-        <CardTitle className="font-display text-base">{title}</CardTitle>
+    <Card className="glass-card min-w-0 border-0">
+      <CardHeader className="flex-row items-center gap-2 space-y-0 px-4 pb-3 pt-4 sm:px-5">
+        <div className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${tone}`}><Icon className="h-4 w-4 text-primary-foreground" /></div>
+        <CardTitle className="min-w-0 font-display text-base leading-tight">{title}</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-3 pb-4 sm:px-5">
         {items.length === 0 ? (
           <p className="py-4 text-center text-xs text-muted-foreground">Tidak ada cluster pada kategori ini untuk rentang {rangeLabel}.</p>
         ) : (
           <div className="space-y-2">
             {items.map((r) => (
-              <div key={r.cluster.id} className="flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-muted/30 p-2.5 text-sm">
+              <div key={r.cluster.id} className="grid min-w-0 grid-cols-[minmax(0,1fr)_2rem] gap-x-2 gap-y-2 rounded-lg border border-border/60 bg-muted/30 p-2.5 text-sm">
                 <Link
                   to="/cluster/$name"
                   params={{ name: r.cluster.cluster }}
-                  className="min-w-0 flex-1 group"
+                  className="group min-w-0 self-center"
+                  title={r.cluster.cluster}
                 >
-                  <p className="truncate font-medium group-hover:text-primary">
+                  <p className="truncate font-medium leading-snug group-hover:text-primary">
                     {r.cluster.cluster} <ChevronRight className="inline h-3 w-3 opacity-0 transition group-hover:opacity-100" />
                   </p>
-                  <p className="truncate text-xs text-muted-foreground">{r.cluster.kabupaten}</p>
+                  <p className="mt-0.5 truncate text-xs text-muted-foreground">{r.cluster.kabupaten}</p>
                 </Link>
-                <div className="text-right text-xs">
-                  <div className={r.delta < 0 ? "text-destructive" : "text-success"}>
-                    {r.delta < 0 ? "Δ HC Aktif Turun " : "Δ HC Aktif "}{r.delta}
-                  </div>
-                  <div className="text-muted-foreground">Ticket {r.ticket}</div>
-                </div>
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="h-7 px-2"
+                  className="h-8 w-8 shrink-0 self-center p-0"
                   onClick={() => addRetention(r)}
                   title="Tambah program Retention ke Action Plan"
+                  aria-label={`Tambah program Retention untuk ${r.cluster.cluster}`}
                 >
                   <Plus className="h-3.5 w-3.5" />
                 </Button>
+                <div className="col-span-2 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-t border-border/50 pt-2 text-xs">
+                  <div className={`min-w-0 font-medium ${r.delta < 0 ? "text-destructive" : "text-success"}`}>
+                    {r.delta < 0 ? "HC Aktif turun" : "Perubahan HC Aktif"}
+                    <span className="ml-1 tabular-nums">{r.delta > 0 ? "+" : ""}{r.delta}</span>
+                  </div>
+                  <div className="shrink-0 text-right text-muted-foreground">
+                    Ticket <span className="font-medium tabular-nums text-foreground">{r.ticket.toLocaleString("id-ID")}</span>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
@@ -186,7 +200,7 @@ function LoyaltyPage() {
               <CalendarRange className="h-4 w-4 text-primary" />
               Rentang Analisis
             </div>
-            <div className="flex flex-1 flex-wrap items-center gap-2">
+            <div className="grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 sm:flex sm:flex-wrap">
               <Select value={from?.key} onValueChange={(v) => setFromKey(v as MonthKey)}>
                 <SelectTrigger className="h-9 w-full sm:w-[150px]"><SelectValue placeholder="Dari bulan" /></SelectTrigger>
                 <SelectContent>
@@ -204,7 +218,7 @@ function LoyaltyPage() {
                   ))}
                 </SelectContent>
               </Select>
-              <Badge variant="secondary" className="text-[11px]">
+              <Badge variant="secondary" className="col-span-3 w-fit max-w-full whitespace-normal text-[11px] leading-snug sm:col-span-1">
                 {rows.filter((r) => r.delta < 0).length} cluster turun · {rangeLabel}
               </Badge>
             </div>

@@ -175,6 +175,7 @@ export function ChartCard({
   footer,
   height = 260,
   className = "",
+  frameClassName = "",
   children,
 }: {
   icon?: React.ComponentType<{ className?: string }>;
@@ -185,6 +186,7 @@ export function ChartCard({
   footer?: ReactNode;
   height?: number;
   className?: string;
+  frameClassName?: string;
   children: ReactNode;
 }) {
   return (
@@ -209,7 +211,12 @@ export function ChartCard({
         </div>
       </CardHeader>
       <CardContent className="space-y-2.5 px-2.5 pb-3 pt-3 sm:px-4">
-        <div className="chart-frame" style={{ height }} aria-label={title} role="img">
+        <div
+          className={`chart-frame ${frameClassName}`}
+          style={height > 0 ? { height } : undefined}
+          aria-label={title}
+          role="img"
+        >
           {children}
         </div>
         {footer && (
@@ -335,9 +342,9 @@ export function ArcDistribution({
   };
 
   return (
-    <div className={`grid h-full grid-cols-1 items-center gap-4 sm:grid-cols-[minmax(0,1fr)_auto] ${className}`}>
-      <div className="min-w-0">
-        <svg viewBox={`0 0 ${W} ${H}`} className="h-full max-h-[190px] w-full" role="img" aria-label="Distribusi">
+    <div className={`grid h-full min-h-0 grid-cols-1 content-start gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(260px,0.85fr)] sm:items-center sm:gap-5 ${className}`}>
+      <div className="min-h-0 min-w-0">
+        <svg viewBox={`0 0 ${W} ${H}`} className="mx-auto h-auto max-h-[170px] w-full max-w-[360px]" role="img" aria-label="Distribusi">
           {items.map((it, i) => {
             const r = (W / 2 - stroke) - i * (stroke + gap - 5);
             const frac = total ? it.value / total : 0;
@@ -350,22 +357,22 @@ export function ArcDistribution({
           })}
         </svg>
       </div>
-      <ul className="max-h-[220px] space-y-2 overflow-y-auto pr-1">
+      <ul className="min-h-0 space-y-1 overflow-y-auto pr-1 sm:max-h-[220px]">
         {items.map((it) => (
           <li key={it.name}>
             <button
               type="button"
               disabled={!onSelect}
               onClick={() => onSelect?.(it)}
-              className={`grid w-full grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-2 rounded-md px-1.5 py-1 text-left text-xs ${
+              className={`grid w-full grid-cols-[minmax(4.5rem,auto)_auto_minmax(0,1fr)_auto] items-center gap-2 rounded-md px-1.5 py-1.5 text-left text-xs ${
                 onSelect ? "cursor-pointer transition-colors hover:bg-muted/60" : ""
               }`}
             >
-              <span className="w-10 text-right font-display text-sm font-bold tabular-nums" style={{ color: it.color }}>
+              <span className="text-right font-display text-sm font-bold tabular-nums" style={{ color: it.color }}>
                 {fmtFull(it.value)}
               </span>
               <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: it.color }} />
-              <span className="truncate font-medium" style={{ color: it.color }}>
+              <span className="min-w-0 break-words font-medium leading-tight" style={{ color: it.color }}>
                 {it.icon ? `${it.icon} ` : ""}
                 {it.name}
               </span>
