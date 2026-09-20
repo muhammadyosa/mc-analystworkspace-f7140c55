@@ -71,11 +71,20 @@ function LoyaltyPage() {
   const rows: LoyaltyRow[] = useMemo(
     () =>
       clusters.map((c) => {
-        // HC awal = bulan pertama dalam range yang terisi, HC akhir = bulan terakhir yang terisi
+        // HC awal = bulan pertama dalam range yang terisi, HC akhir = bulan terakhir yang terisi.
         const filled = rangeMonths.filter((m) => hcOf(c, m.key) > 0);
-        const hcStart = filled.length ? hcOf(c, filled[0].key) : c.hcAktif || 0;
         const hcEnd = filled.length ? hcOf(c, filled[filled.length - 1].key) : c.hcAktif || 0;
-        const delta = filled.length >= 2 ? hcEnd - hcStart : 0;
+        // Bila hanya satu bulan terisi di dalam range, pakai bulan terisi terakhir
+        // sebelum range sebagai pembanding agar penurunan tetap terdeteksi.
+        const firstIdx = rangeMonths.length ? MONTHS.findIndex((m) => m.key === rangeMonths[0].key) : 0;
+        const earlier = MONTHS.slice(0, Math.max(0, firstIdx)).filter((m) => hcOf(c, m.key) > 0);
+        const hcStart =
+          filled.length >= 2
+            ? hcOf(c, filled[0].key)
+            : earlier.length
+              ? hcOf(c, earlier[earlier.length - 1].key)
+              : hcEnd;
+        const delta = hcEnd - hcStart;
         const ticket = rangeMonths.reduce((a, m) => a + ticketOf(c, m.key), 0);
         return { cluster: c, delta, ticket, hcStart, hcEnd };
       }),
@@ -84,7 +93,13 @@ function LoyaltyPage() {
 
   const insights = useMemo(() => {
     const decline = rows.filter((r) => r.delta < 0).sort((a, b) => a.delta - b.delta).slice(0, 10);
-    const highRisk = rows.filter((r) => r.delta < 0 && r.ticket > 3).slice(0, 10);
+    // Ambang risiko mengikuti data yang ada: turun HC + ticket di atas median cluster yang turun.
+    const declineTickets = rows.filter((r) => r.delta < 0).map((r) => r.ticket).sort((a, b) => a - b);
+    const median = declineTickets.length ? declineTickets[Math.floor(declineTickets.length / 2)] : 0;
+    const highRisk = rows
+      .filter((r) => r.delta < 0 && r.ticket >= Math.max(1, median))
+      .sort((a, b) => b.ticket - a.ticket || a.delta - b.delta)
+      .slice(0, 10);
     const topTicket = [...rows].sort((a, b) => b.ticket - a.ticket).slice(0, 10);
     return { decline, highRisk, topTicket };
   }, [rows]);
