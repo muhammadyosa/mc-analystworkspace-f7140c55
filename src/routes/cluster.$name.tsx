@@ -83,7 +83,7 @@ function DetailPage() {
               { icon: MapPin, label: "Kabupaten", value: cluster.kabupaten || "—" },
               { icon: Building2, label: "Provinsi", value: cluster.provinsi || "—" },
               { icon: User, label: "PIC", value: cluster.pic || "—" },
-              { icon: Users, label: "HC Juni", value: cluster.juni.toLocaleString("id-ID") },
+              { icon: Users, label: `HC ${curM?.month ?? "-"}`, value: hcCur.toLocaleString("id-ID") },
               { icon: Ticket, label: "Ticket", value: cluster.ticket },
               { icon: TrendingUp, label: "Total HC 2026", value: cluster.totalHC2026.toLocaleString("id-ID") },
             ].map((it, i) => (
