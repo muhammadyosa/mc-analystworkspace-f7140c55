@@ -146,7 +146,7 @@ function DetailPage() {
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Realisasi 2026</span>
                   <span>
-                    {cluster.totalHC2026 > 0 ? `${((cluster.juni / cluster.totalHC2026) * 100).toFixed(0)}%` : "N/A"}
+                    {cluster.totalHC2026 > 0 ? `${((hcCur / cluster.totalHC2026) * 100).toFixed(0)}%` : "N/A"}
                   </span>
                 </div>
               </div>
