@@ -465,12 +465,10 @@ function monthOfHeader(h: string): string | null {
   const n = norm(h);
   if (!n) return null;
   if (n.includes("total") || n.includes("grand") || n.includes("blank") || n.includes("cluster")) return null;
-  const stripped = n.replace(/ticket|tiket|jumlah|count|bulan|20\d\d/g, "");
+  const stripped = n.replace(/ticket|tiket|jumlah|count|bulan/g, "");
   if (!stripped) return null;
-  for (const [bulan, aliases] of Object.entries(BULAN_ALIASES)) {
-    if (aliases.some((a) => stripped === a || stripped.startsWith(a) || stripped.endsWith(a))) return bulan;
-  }
-  return null;
+  const key = monthFromToken(stripped) ?? monthFromToken(stripped.replace(/20\d\d/g, ""));
+  return key ? key.toUpperCase() : null;
 }
 
 
