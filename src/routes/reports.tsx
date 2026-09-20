@@ -29,6 +29,7 @@ import { useDataStore } from "@/lib/store";
 import { useGlobalClusters } from "@/hooks/use-global-filters";
 import { GlobalFilterBar } from "@/components/global-filter";
 import type { AnalystRow, ClusterRow, CompetitorRow, PromoCategory, TicketRow } from "@/lib/excel";
+import { monthFromToken } from "@/lib/excel";
 
 // Parse various profiling date formats to a Date (or null)
 function parseProfilingDate(value: unknown): Date | null {
