@@ -272,7 +272,7 @@ const monthFromNumber = (n: number): MonthName | null =>
  * Dipakai bersama oleh kolom HC, NEW HC, dan TICKET/TIKET sehingga bulan baru
  * pada file Excel langsung terbaca tanpa perubahan kode.
  */
-function monthFromToken(token: string): MonthName | null {
+export function monthFromToken(token: string): MonthName | null {
   const t = token.toLowerCase().replace(/[^a-z0-9]/g, "");
   if (!t) return null;
 
