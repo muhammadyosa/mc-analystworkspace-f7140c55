@@ -10,7 +10,14 @@ import { GlobalFilterBar } from "@/components/global-filter";
 import { AnalystInsights } from "@/components/analyst-insights";
 
 export const Route = createFileRoute("/priority")({
-  head: () => ({ meta: [{ title: "Priority Engine — MCA Workspace" }] }),
+  head: () => ({ meta: [
+    { title: "Priority Engine — MCA Analyst Workspace" },
+    { name: "description", content: "Skor prioritas cluster dan rekomendasi strategi berbasis data." },
+    { property: "og:title", content: "Priority Engine — MCA Analyst Workspace" },
+    { property: "og:description", content: "Skor prioritas cluster dan rekomendasi strategi berbasis data." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: PriorityPage,
 });
 

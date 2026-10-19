@@ -801,16 +801,14 @@ function WeeklyDailyAnalysis({ analyst, from, to, onFrom, onTo }: { analyst: Ana
 }
 
 export const Route = createFileRoute("/reports")({
-  head: () => ({
-    meta: [
-      { title: "Reports — MCA Workspace" },
-      { name: "description", content: "Laporan mingguan, bulanan, profiling, ticket, HC, dan intelligence kompetitor." },
-      { property: "og:title", content: "Reports — MCA Workspace" },
-      { property: "og:description", content: "Laporan mingguan, bulanan, profiling, ticket, HC, dan intelligence kompetitor." },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
-    ],
-  }),
+  head: () => ({ meta: [
+    { title: "Reports — MCA Analyst Workspace" },
+    { name: "description", content: "Laporan mingguan, bulanan, profiling, ticket, HC, dan intelligence kompetitor." },
+    { property: "og:title", content: "Reports — MCA Analyst Workspace" },
+    { property: "og:description", content: "Laporan mingguan, bulanan, profiling, ticket, HC, dan intelligence kompetitor." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: ReportsPage,
 });
 

@@ -46,9 +46,14 @@ import {
 } from "@/components/chart-kit";
 
 export const Route = createFileRoute("/competitor-intel")({
-  head: () => ({
-    meta: [{ title: "Competitor Intelligence — MCA Workspace" }],
-  }),
+  head: () => ({ meta: [
+    { title: "Competitor Intelligence — MCA Analyst Workspace" },
+    { name: "description", content: "Analisis kompetitor, harga, promo, dan tingkat ancaman per cluster." },
+    { property: "og:title", content: "Competitor Intelligence — MCA Analyst Workspace" },
+    { property: "og:description", content: "Analisis kompetitor, harga, promo, dan tingkat ancaman per cluster." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: CompetitorIntelPage,
 });
 
