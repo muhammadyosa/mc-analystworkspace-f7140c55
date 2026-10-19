@@ -9,12 +9,20 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EmptyState } from "@/components/empty-state";
 import { useDataStore } from "@/lib/store";
+import { latestClusterAssessments, potentialCategory, summarizePotential } from "@/lib/cluster-potential";
 import { DrilldownDialog, type DrilldownState } from "@/components/drilldown-dialog";
 
 const AnalystCharts = lazy(() => import("@/components/analyst-charts"));
 
 export const Route = createFileRoute("/analyst")({
-  head: () => ({ meta: [{ title: "Analyst Market — Iconnet Workspace" }] }),
+  head: () => ({ meta: [
+    { title: "Analyst Market — MCA Analyst Workspace" },
+    { name: "description", content: "Analisis profiling, potensi cluster aktual, dan kompetitor MCA Analyst Workspace." },
+    { property: "og:title", content: "Analyst Market — MCA Analyst Workspace" },
+    { property: "og:description", content: "Analisis profiling, potensi cluster aktual, dan kompetitor MCA Analyst Workspace." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: AnalystPage,
 });
 
@@ -113,16 +121,8 @@ function AnalystPage() {
     analyst.forEach((a) => a.competitor.split(/[,;/]/).map((s) => s.trim()).filter(Boolean).forEach((c) => m.set(c, (m.get(c) ?? 0) + 1)));
     return Array.from(m.entries()).map(([value, count]) => ({ value, count })).sort((a, b) => b.count - a.count);
   }, [analyst]);
-  const potensiCounts = useMemo(() => {
-    const c = { tinggi: 0, sedang: 0, rendah: 0 };
-    analyst.forEach((a) => {
-      const p = (a.potential || "").toLowerCase();
-      if (p.includes("tinggi") || p.includes("potensial")) c.tinggi++;
-      else if (p.includes("sedang")) c.sedang++;
-      else if (p) c.rendah++;
-    });
-    return c;
-  }, [analyst]);
+  const assessments = useMemo(() => latestClusterAssessments(analyst), [analyst]);
+  const potensiCounts = useMemo(() => summarizePotential(assessments), [assessments]);
 
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
@@ -130,12 +130,7 @@ function AnalystPage() {
       const meta = clusterMeta.get(a.cluster.toLowerCase());
       if (fAE && a.aeName !== fAE) return false;
       if (fPic && meta?.pic !== fPic) return false;
-      if (fPotensi) {
-        const p = a.potential.toLowerCase();
-        if (fPotensi === "tinggi" && !(p.includes("tinggi") || p.includes("potensial"))) return false;
-        if (fPotensi === "sedang" && !p.includes("sedang")) return false;
-        if (fPotensi === "rendah" && (!p || p.includes("tinggi") || p.includes("potensial") || p.includes("sedang"))) return false;
-      }
+      if (fPotensi && potentialCategory(a.potential) !== fPotensi) return false;
       if (fSegment && a.customerSegment !== fSegment) return false;
       if (fProv && meta?.provinsi !== fProv) return false;
       if (!s) return true;
@@ -149,6 +144,11 @@ function AnalystPage() {
     });
   }, [analyst, clusterMeta, q, fAE, fPic, fPotensi, fSegment, fProv]);
 
+  const potentialRows = useMemo(() => {
+    const included = new Set(filtered);
+    return assessments.filter((row) => included.has(row));
+  }, [assessments, filtered]);
+
   const hasFilter = q || fAE || fPic || fPotensi || fSegment || fProv;
   const resetFilters = () => { setQ(""); setFAE(""); setFPic(""); setFPotensi(""); setFSegment(""); setFProv(""); };
 
@@ -158,17 +158,7 @@ function AnalystPage() {
     const profCluster = new Set(filtered.map((a) => a.cluster).filter(Boolean));
     const closeWon = filtered.reduce((s, a) => s + a.closewonToday, 0);
     const sfmi = filtered.reduce((s, a) => s + a.sfToday, 0);
-    const potensi = filtered.reduce(
-      (acc, a) => {
-        const p = a.potential.toLowerCase();
-        if (p.includes("tinggi") || p.includes("potensial")) acc.tinggi++;
-        else if (p.includes("sedang")) acc.sedang++;
-        else if (p) acc.rendah++;
-        else acc.unknown++;
-        return acc;
-      },
-      { tinggi: 0, sedang: 0, rendah: 0, unknown: 0 },
-    );
+    const potensi = summarizePotential(potentialRows);
     const fatRelocation = filtered.filter((a) => /ya|perlu|butuh/i.test(a.fatRelocation)).length;
     const toolkitNeed = filtered.filter((a) => /ya|butuh/i.test(a.toolkitRequest)).length;
 
@@ -218,7 +208,7 @@ function AnalystPage() {
       potensi, fatRelocation, toolkitNeed,
       topCompetitors, promos, segments, strategies, dayaBeli,
     };
-  }, [filtered]);
+  }, [filtered, potentialRows]);
 
   // Pembagian wilayah per PIC (dari master cluster)
   const regionByPic = useMemo(() => {
@@ -295,12 +285,7 @@ function AnalystPage() {
   };
 
   const openPot = (kind: "tinggi" | "sedang" | "rendah") => {
-    const rows = filtered.filter((a) => {
-      const p = a.potential.toLowerCase();
-      if (kind === "tinggi") return p.includes("tinggi") || p.includes("potensial");
-      if (kind === "sedang") return p.includes("sedang");
-      return !!p && !p.includes("tinggi") && !p.includes("potensial") && !p.includes("sedang");
-    });
+    const rows = potentialRows.filter((a) => potentialCategory(a.potential) === kind);
     openAll(`Potensi ${kind[0].toUpperCase()}${kind.slice(1)}`, rows);
   };
 
@@ -356,7 +341,7 @@ function AnalystPage() {
           <KpiCard tone="success" label="Potensi Tinggi" value={s.potensi.tinggi} icon={Target} onClick={() => openPot("tinggi")} />
           <KpiCard tone="warning" label="Potensi Sedang" value={s.potensi.sedang} icon={Target} onClick={() => openPot("sedang")} />
           <KpiCard tone="danger" label="Potensi Rendah" value={s.potensi.rendah} icon={Target} onClick={() => openPot("rendah")} />
-          <KpiCard tone="info" label="Potensi Belum Terisi" value={s.potensi.unknown} icon={AlertTriangle} hint="perlu dilengkapi AE" onClick={() => openAll("Potensi Belum Terisi", filtered.filter((a) => !a.potential.trim()))} />
+          <KpiCard tone="info" label="Potensi Belum Terisi" value={s.potensi.unknown} icon={AlertTriangle} hint="perlu dilengkapi AE" onClick={() => openAll("Potensi Belum Terisi", potentialRows.filter((a) => !potentialCategory(a.potential)))} />
 
           <KpiCard tone="danger" label="FAT Perlu Relokasi" value={s.fatRelocation} icon={AlertTriangle} onClick={() => openAll("FAT Perlu Relokasi", filtered.filter((a) => /ya|perlu|butuh/i.test(a.fatRelocation)))} />
           <KpiCard tone="warning" label="Butuh Toolkit" value={s.toolkitNeed} icon={AlertTriangle} onClick={() => openAll("Butuh Toolkit", filtered.filter((a) => /ya|butuh/i.test(a.toolkitRequest)))} />
@@ -441,12 +426,7 @@ function AnalystPage() {
                     if (detailPic && (clusterMeta.get(a.cluster.toLowerCase())?.pic || "") !== detailPic) return false;
                     if (detailSeg && a.customerSegment !== detailSeg) return false;
                     if (detailComp && !a.competitor.toLowerCase().includes(detailComp.toLowerCase())) return false;
-                    if (detailPotensi) {
-                      const p = a.potential.toLowerCase();
-                      if (detailPotensi === "tinggi" && !(p.includes("tinggi") || p.includes("potensial"))) return false;
-                      if (detailPotensi === "sedang" && !p.includes("sedang")) return false;
-                      if (detailPotensi === "rendah" && (!p || p.includes("tinggi") || p.includes("potensial") || p.includes("sedang"))) return false;
-                    }
+                    if (detailPotensi && potentialCategory(a.potential) !== detailPotensi) return false;
                     return true;
                   }).sort((x, y) => {
                     if (detailSort === "ae") return (x.aeName || "").localeCompare(y.aeName || "");
@@ -459,10 +439,10 @@ function AnalystPage() {
                       <div className="mb-2 text-xs text-muted-foreground">{list.length} profiling</div>
                       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                         {list.map((a) => {
-                          const p = a.potential.toLowerCase();
-                          const potColor = p.includes("tinggi") || p.includes("potensial") ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
-                            : p.includes("sedang") ? "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400"
-                            : "border-rose-500/40 bg-rose-500/10 text-rose-700 dark:text-rose-400";
+                          const category = potentialCategory(a.potential);
+                          const potColor = category === "tinggi" ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+                            : category === "sedang" ? "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                            : category === "rendah" ? "border-rose-500/40 bg-rose-500/10 text-rose-700 dark:text-rose-400" : "border-border bg-muted text-muted-foreground";
                           return (
                             <div key={a.id} className="rounded-xl border border-border/60 bg-muted/20 p-3 text-xs transition hover:shadow-md">
                               <div className="flex items-center justify-between">
