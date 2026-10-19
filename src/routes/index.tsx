@@ -39,12 +39,14 @@ function ChartFallback() {
 }
 
 export const Route = createFileRoute("/")({
-  head: () => ({
-    meta: [
-      { title: "MCA Workspace" },
-      { name: "description", content: "Dashboard executive: HC, ticket, growth, dan prioritas cluster." },
-    ],
-  }),
+  head: () => ({ meta: [
+    { title: "Dashboard — MCA Analyst Workspace" },
+    { name: "description", content: "Pantau HC, ticket, pertumbuhan, dan prioritas cluster dalam satu dashboard." },
+    { property: "og:title", content: "Dashboard — MCA Analyst Workspace" },
+    { property: "og:description", content: "Pantau HC, ticket, pertumbuhan, dan prioritas cluster dalam satu dashboard." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: Dashboard,
 });
 

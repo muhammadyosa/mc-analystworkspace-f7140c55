@@ -10,12 +10,14 @@ import plnLogo from "@/assets/pln-iconplus.png.asset.json";
 import iconnetLogo from "@/assets/iconnet-logo.png.asset.json";
 
 export const Route = createFileRoute("/auth")({
-  head: () => ({
-    meta: [
-      { title: "Masuk — MCA Workspace" },
-      { name: "description", content: "Masuk ke Market & Consumer Analyst Workspace dengan akun Google." },
-    ],
-  }),
+  head: () => ({ meta: [
+    { title: "Masuk — MCA Analyst Workspace" },
+    { name: "description", content: "Masuk ke Market & Consumer Analyst Workspace dengan akun Google." },
+    { property: "og:title", content: "Masuk — MCA Analyst Workspace" },
+    { property: "og:description", content: "Masuk ke Market & Consumer Analyst Workspace dengan akun Google." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: AuthPage,
 });
 

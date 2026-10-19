@@ -12,6 +12,7 @@ import {
   YAxis,
 } from "recharts";
 import { Building2, Gauge, Megaphone, Target, Users, Wallet } from "lucide-react";
+import { potentialPercent } from "@/lib/cluster-potential";
 import {
   C,
   CATEGORICAL,
@@ -29,7 +30,7 @@ import {
 
 type Stats = {
   topCompetitors: { name: string; count: number; avgPrice: number }[];
-  potensi: { tinggi: number; sedang: number; rendah: number };
+  potensi: { tinggi: number; sedang: number; rendah: number; unknown: number };
   promos: { name: string; value: number }[];
   segments: { name: string; value: number }[];
   strategies: { name: string; value: number }[];
@@ -110,26 +111,28 @@ function Donut({
   centerValue: string;
   centerLabel: string;
 }) {
-  const total = data.reduce((a, b) => a + b.value, 0) || 1;
+  const total = data.reduce((a, b) => a + b.value, 0);
+  const slices = data.filter((d) => Number.isFinite(d.value) && d.value > 0);
   return (
-    <div className="grid h-full grid-cols-1 items-center gap-3 sm:grid-cols-[minmax(0,1fr)_190px]">
-      <div className="relative h-full min-h-[190px]">
+    <div className="@container h-full">
+    <div className="grid h-full grid-cols-1 grid-rows-[160px_minmax(0,1fr)] items-center gap-2 @min-[420px]:grid-cols-[minmax(0,1fr)_190px] @min-[420px]:grid-rows-1 @min-[420px]:gap-3">
+      <div className="relative h-full min-w-0">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
-              data={data}
+               data={slices}
               dataKey="value"
               nameKey="name"
               innerRadius="62%"
               outerRadius="88%"
-              paddingAngle={2}
+               paddingAngle={slices.length > 1 ? 2 : 0}
               stroke="none"
               isAnimationActive={false}
               onClick={onClick}
               {...cursor}
             >
-              {data.map((d, i) => (
-                <Cell key={i} fill={colorFor(d, i)} />
+               {slices.map((d) => (
+                 <Cell key={d.name} fill={colorFor(d, data.indexOf(d))} />
               ))}
             </Pie>
             <Tooltip content={tooltip} />
@@ -149,11 +152,12 @@ function Donut({
             <span className="truncate text-muted-foreground">{d.name}</span>
             <span className="shrink-0 font-semibold tabular-nums">
               {fmtFull(d.value)}{" "}
-              <span className="font-normal text-muted-foreground">({((d.value / total) * 100).toFixed(0)}%)</span>
+               <span className="font-normal text-muted-foreground">({fmtPct(potentialPercent(d.value, total))})</span>
             </span>
           </li>
         ))}
       </ul>
+    </div>
     </div>
   );
 }
@@ -226,7 +230,7 @@ export default function AnalystCharts({
       title: d.name,
       rows: [
         { label: "Jumlah", value: fmtFull(d.value), strong: true },
-        { label: "Porsi", value: fmtPct(total ? (d.value / total) * 100 : 0) },
+         { label: "Porsi", value: fmtPct(potentialPercent(d.value, total)) },
       ],
     }));
 
@@ -272,8 +276,8 @@ export default function AnalystCharts({
         className="lg:col-span-4"
         footer={
           potensiTotal
-            ? `${fmtPct((s.potensi.tinggi / potensiTotal) * 100)} cluster berpotensi tinggi dan layak diprioritaskan.`
-            : undefined
+            ? `${fmtPct(potentialPercent(s.potensi.tinggi, potensiTotal))} dari ${fmtFull(potensiTotal)} cluster dengan penilaian valid berpotensi tinggi.${s.potensi.unknown ? ` ${fmtFull(s.potensi.unknown)} cluster belum memiliki penilaian valid.` : ""}`
+            : "Belum ada cluster dengan penilaian potensi valid pada filter ini."
         }
       >
         <Donut

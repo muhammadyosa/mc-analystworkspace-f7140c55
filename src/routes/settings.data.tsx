@@ -52,7 +52,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DataHealthPanel } from "@/components/data-health-panel";
 
 export const Route = createFileRoute("/settings/data")({
-  head: () => ({ meta: [{ title: "Data Management — MCA Workspace" }] }),
+  head: () => ({ meta: [
+    { title: "Data Management — MCA Analyst Workspace" },
+    { name: "description", content: "Unggah, validasi, dan sinkronkan data Excel workspace." },
+    { property: "og:title", content: "Data Management — MCA Analyst Workspace" },
+    { property: "og:description", content: "Unggah, validasi, dan sinkronkan data Excel workspace." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: UploadPage,
 });
 

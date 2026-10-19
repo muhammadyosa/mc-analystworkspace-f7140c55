@@ -16,7 +16,14 @@ import { GlobalFilterBar } from "@/components/global-filter";
 import { usePrefsStore } from "@/lib/prefs";
 
 export const Route = createFileRoute("/master")({
-  head: () => ({ meta: [{ title: "Master Cluster — MCA Workspace" }] }),
+  head: () => ({ meta: [
+    { title: "Master Cluster — MCA Analyst Workspace" },
+    { name: "description", content: "Telusuri data cluster, HC bulanan, ticket, dan prioritas wilayah." },
+    { property: "og:title", content: "Master Cluster — MCA Analyst Workspace" },
+    { property: "og:description", content: "Telusuri data cluster, HC bulanan, ticket, dan prioritas wilayah." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: MasterPage,
 });
 

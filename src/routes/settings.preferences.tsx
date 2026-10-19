@@ -10,7 +10,14 @@ import { DASHBOARD_WIDGETS, defaultWidgets, filterSummary, usePrefsStore } from 
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/settings/preferences")({
-  head: () => ({ meta: [{ title: "Preferensi — MCA Workspace" }] }),
+  head: () => ({ meta: [
+    { title: "Preferensi — MCA Analyst Workspace" },
+    { name: "description", content: "Atur tampilan, notifikasi, dan tampilan tersimpan workspace." },
+    { property: "og:title", content: "Preferensi — MCA Analyst Workspace" },
+    { property: "og:description", content: "Atur tampilan, notifikasi, dan tampilan tersimpan workspace." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: PreferencesPage,
 });
 

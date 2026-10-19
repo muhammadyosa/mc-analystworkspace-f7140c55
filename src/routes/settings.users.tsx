@@ -37,7 +37,14 @@ import {
 } from "@/components/ui/select";
 
 export const Route = createFileRoute("/settings/users")({
-  head: () => ({ meta: [{ title: "User Management — MCA Workspace" }] }),
+  head: () => ({ meta: [
+    { title: "User Management — MCA Analyst Workspace" },
+    { name: "description", content: "Kelola persetujuan, peran, dan aktivitas pengguna workspace." },
+    { property: "og:title", content: "User Management — MCA Analyst Workspace" },
+    { property: "og:description", content: "Kelola persetujuan, peran, dan aktivitas pengguna workspace." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: UserManagementPage,
 });
 

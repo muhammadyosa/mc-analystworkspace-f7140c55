@@ -8,6 +8,7 @@ import {
   useNavigate,
   HeadContent,
   Scripts,
+  type ErrorComponentProps,
 } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
 
@@ -44,7 +45,7 @@ function NotFoundComponent() {
   );
 }
 
-function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
+function ErrorComponent({ error, reset }: ErrorComponentProps) {
   console.error(error);
   const router = useRouter();
   useEffect(() => {
@@ -109,8 +110,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "MCA Workspace" },
       { name: "twitter:description", content: "Dashboard executive: HC, ticket, growth, dan prioritas cluster." },
-      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/661191a1-5dd1-4314-83c1-287baf66b1a1" },
-      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/661191a1-5dd1-4314-83c1-287baf66b1a1" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },

@@ -12,7 +12,14 @@ import { ChartCard, C, axisProps, gridProps, makeTooltip, fmtFull } from "@/comp
 import { MONTH_KEYS, MONTH_LABELS } from "@/lib/prefs";
 
 export const Route = createFileRoute("/cluster/$name")({
-  head: () => ({ meta: [{ title: "Cluster Detail — MCA Workspace" }] }),
+  head: () => ({ meta: [
+    { title: "Cluster Detail — MCA Analyst Workspace" },
+    { name: "description", content: "Lihat tren HC, ticket, prioritas, dan rekomendasi cluster." },
+    { property: "og:title", content: "Cluster Detail — MCA Analyst Workspace" },
+    { property: "og:description", content: "Lihat tren HC, ticket, prioritas, dan rekomendasi cluster." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: DetailPage,
 });
 

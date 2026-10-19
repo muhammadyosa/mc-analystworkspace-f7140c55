@@ -6,7 +6,14 @@ import { useRole } from "@/hooks/use-role";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/settings")({
-  head: () => ({ meta: [{ title: "Settings — MCA Workspace" }] }),
+  head: () => ({ meta: [
+    { title: "Settings — MCA Analyst Workspace" },
+    { name: "description", content: "Kelola data, pengguna, dan preferensi MCA Analyst Workspace." },
+    { property: "og:title", content: "Settings — MCA Analyst Workspace" },
+    { property: "og:description", content: "Kelola data, pengguna, dan preferensi MCA Analyst Workspace." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: SettingsLayout,
 });
 

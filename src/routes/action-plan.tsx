@@ -50,7 +50,14 @@ import { useDataStore } from "@/lib/store";
 import { computeActionStatus, type ActionPlanRow, type ActionPlanStatus } from "@/lib/excel";
 
 export const Route = createFileRoute("/action-plan")({
-  head: () => ({ meta: [{ title: "Action Plan — Iconnet Workspace" }] }),
+  head: () => ({ meta: [
+    { title: "Action Plan — MCA Analyst Workspace" },
+    { name: "description", content: "Kelola program, status, dan efektivitas action plan cluster." },
+    { property: "og:title", content: "Action Plan — MCA Analyst Workspace" },
+    { property: "og:description", content: "Kelola program, status, dan efektivitas action plan cluster." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: ActionPlanPage,
 });
 
