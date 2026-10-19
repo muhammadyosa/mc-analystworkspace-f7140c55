@@ -1,8 +1,7 @@
 import { describe, expect, test } from "bun:test";
-import type { AnalystRow } from "./excel";
 import { latestClusterAssessments, potentialCategory, potentialPercent, summarizePotential } from "./cluster-potential";
 
-const row = (cluster: string, potential: string, timestamp = "2026-09-01"): AnalystRow => ({ cluster, potential, timestamp } as AnalystRow);
+const row = (cluster, potential, timestamp = "2026-09-01") => ({ cluster, potential, timestamp });
 
 describe("actual cluster potential", () => {
   test("existing high assessment labels stay high", () => {
