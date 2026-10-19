@@ -114,8 +114,9 @@ function Donut({
   const total = data.reduce((a, b) => a + b.value, 0);
   const slices = data.filter((d) => Number.isFinite(d.value) && d.value > 0);
   return (
-    <div className="grid h-full grid-cols-1 items-center gap-3 sm:grid-cols-[minmax(0,1fr)_190px]">
-      <div className="relative h-full min-h-[190px]">
+    <div className="@container h-full">
+    <div className="grid h-full grid-cols-1 grid-rows-[160px_minmax(0,1fr)] items-center gap-2 @min-[420px]:grid-cols-[minmax(0,1fr)_190px] @min-[420px]:grid-rows-1 @min-[420px]:gap-3">
+      <div className="relative h-full min-w-0">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
@@ -156,6 +157,7 @@ function Donut({
           </li>
         ))}
       </ul>
+    </div>
     </div>
   );
 }
