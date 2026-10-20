@@ -1,4 +1,4 @@
-import { classifyFile, smartImport, parseClusterFile, parseTicketFile, parseAnalystFile, parseCompetitorFile, parseActionPlanFile } from "../lib/excel";
+import { classifyFile, smartImport, parseClusterFile, parseTicketFile, parseAnalystFile, parseCompetitorFile, parseActionPlanFile } from "../lib/excel-core";
 const methods = { classifyFile, smartImport, parseClusterFile, parseTicketFile, parseAnalystFile, parseCompetitorFile, parseActionPlanFile };
 self.onmessage = async ({ data }: MessageEvent<{ method: keyof typeof methods; file: File }>) => {
   try {

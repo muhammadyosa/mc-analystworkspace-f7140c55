@@ -1,5 +1,4 @@
 import * as XLSX from "xlsx";
-import { canUseExcelWorker, runExcelWorker } from "./excel-worker-client";
 
 const workbookReads = new WeakMap<File, Promise<XLSX.WorkBook>>();
 function readWorkbook(file: File) {
@@ -363,7 +362,6 @@ const emptyMonths = (): Record<string, number> =>
 export async function parseClusterFile(
   file: File,
 ): Promise<{ rows: ClusterRow[]; meta: UploadMeta }> {
-  if (canUseExcelWorker()) return runExcelWorker("parseClusterFile", file);
   const wb = await readWorkbook(file);
   const { name: sheetName, ws } = pickSheet(wb, ["RAW DATA CLUSTER", "DATA CLUSTER", "CLUSTER", "PEMBAGIAN"]);
   const raw = sheetToCleanJson(ws);
@@ -580,7 +578,6 @@ function pickTicketSheet(
 export async function parseTicketFile(
   file: File,
 ): Promise<{ rows: TicketRow[]; meta: UploadMeta }> {
-  if (canUseExcelWorker()) return runExcelWorker("parseTicketFile", file);
   const wb = await readWorkbook(file);
   const { name: sheetName, aoa, layout } = pickTicketSheet(wb);
 
@@ -650,7 +647,6 @@ export async function parseTicketFile(
 export async function parseAnalystFile(
   file: File,
 ): Promise<{ rows: AnalystRow[]; meta: UploadMeta }> {
-  if (canUseExcelWorker()) return runExcelWorker("parseAnalystFile", file);
   const wb = await readWorkbook(file);
   const { name: sheetName, ws } = pickSheet(wb, ["HASIL PROFILING", "PROFILING", "ANALYST"]);
   const raw = sheetToCleanJson(ws);
@@ -789,7 +785,6 @@ export function categorizePromo(raw: string): PromoCategory {
 export async function parseCompetitorFile(
   file: File,
 ): Promise<{ rows: CompetitorRow[]; meta: UploadMeta }> {
-  if (canUseExcelWorker()) return runExcelWorker("parseCompetitorFile", file);
   const wb = await readWorkbook(file);
   const { name: sheetName, ws } = pickSheet(wb, ["KOMPETITOR", "COMPETITOR", "DATA"]);
   const raw = sheetToCleanJson(ws);
@@ -865,7 +860,6 @@ export async function parseCompetitorFile(
 export async function parseActionPlanFile(
   file: File,
 ): Promise<{ rows: ActionPlanRow[]; meta: UploadMeta }> {
-  if (canUseExcelWorker()) return runExcelWorker("parseActionPlanFile", file);
   const wb = await readWorkbook(file);
   const { name: sheetName, ws } = pickSheet(wb, ["ACTION PLAN", "ACTIONPLAN", "PROGRAM", "DATA"]);
   const raw = sheetToCleanJson(ws);
@@ -998,7 +992,6 @@ export function detectKind(wb: XLSX.WorkBook, fileName: string): ImportKind {
 }
 
 export async function smartImport(file: File): Promise<SmartResult> {
-  if (canUseExcelWorker()) return runExcelWorker("smartImport", file);
   const wb = await readWorkbook(file);
   const kind = detectKind(wb, file.name);
   if (kind === "cluster") { const r = await parseClusterFile(file); return { kind, ...r }; }
@@ -1012,7 +1005,6 @@ export async function smartImport(file: File): Promise<SmartResult> {
 export async function classifyFile(
   file: File,
 ): Promise<{ kind: ImportKind; fileName: string; sheetName: string; sheetCount: number; size: number }> {
-  if (canUseExcelWorker()) return runExcelWorker("classifyFile", file);
   const wb = await readWorkbook(file);
   const kind = detectKind(wb, file.name);
   const preferred =

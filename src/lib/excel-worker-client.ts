@@ -1,4 +1,4 @@
-import type { ImportKind, SmartResult } from "./excel";
+import type { ImportKind, SmartResult } from "./excel-core";
 
 type ClassifiedFile = { kind: ImportKind; fileName: string; sheetName: string; sheetCount: number; size: number };
 type WorkerResults = {
