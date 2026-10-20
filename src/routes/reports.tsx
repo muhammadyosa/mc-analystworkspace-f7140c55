@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
-import * as XLSX from "xlsx";
 import { Printer, FileText, Calendar as CalendarIcon, Radar as RadarIcon, Lightbulb, Sparkles, ClipboardPlus } from "lucide-react";
 import { toast } from "sonner";
 import { ReportExportMenu } from "@/components/report-export";
@@ -252,7 +251,8 @@ function daysBetween(from: string, to: string): number {
 }
 
 
-function exportProfilingExcel(rows: AnalystRow[], label: string) {
+async function exportProfilingExcel(rows: AnalystRow[], label: string) {
+  const XLSX = await import("xlsx");
   const data = rows.map((r) => ({
     AE: r.aeName, Cluster: r.cluster, Tanggal: formatDateID(profilingDateKey(r)),
     Kompetitor: r.competitor, "Harga Kompetitor": r.competitorPrice, Promo: r.competitorPromo,

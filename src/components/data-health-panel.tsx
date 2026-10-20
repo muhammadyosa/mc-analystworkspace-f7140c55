@@ -1,3 +1,4 @@
+import { useShallow } from "zustand/react/shallow";
 import { useMemo } from "react";
 import { Activity, CheckCircle2, AlertTriangle, XCircle, Clock, Database, Columns3 } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -19,7 +20,7 @@ type Dataset = {
 
 /** Ringkasan kualitas, kesegaran, dan validitas data workspace. */
 export function DataHealthPanel() {
-  const store = useDataStore();
+  const store = useDataStore(useShallow((s) => ({ clusters: s.clusters, tickets: s.tickets, analyst: s.analyst, competitorData: s.competitorData, actionPlans: s.actionPlans, lastUpdated: s.lastUpdated, history: s.history })));
 
   const datasets = useMemo<Dataset[]>(
     () => [

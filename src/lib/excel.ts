@@ -1,4 +1,16 @@
 import * as XLSX from "xlsx";
+import { canUseExcelWorker, runExcelWorker } from "./excel-worker-client";
+
+const workbookReads = new WeakMap<File, Promise<XLSX.WorkBook>>();
+function readWorkbook(file: File) {
+  let read = workbookReads.get(file);
+  if (!read) {
+    read = file.arrayBuffer().then((buffer) => XLSX.read(buffer, { type: "array" }));
+    workbookReads.set(file, read);
+    read.catch(() => workbookReads.delete(file));
+  }
+  return read;
+}
 
 export type ClusterRow = {
   id: string;
@@ -351,8 +363,8 @@ const emptyMonths = (): Record<string, number> =>
 export async function parseClusterFile(
   file: File,
 ): Promise<{ rows: ClusterRow[]; meta: UploadMeta }> {
-  const buf = await file.arrayBuffer();
-  const wb = XLSX.read(buf, { type: "array" });
+  if (canUseExcelWorker()) return runExcelWorker("parseClusterFile", file);
+  const wb = await readWorkbook(file);
   const { name: sheetName, ws } = pickSheet(wb, ["RAW DATA CLUSTER", "DATA CLUSTER", "CLUSTER", "PEMBAGIAN"]);
   const raw = sheetToCleanJson(ws);
   const headers = raw.length ? Object.keys(raw[0]) : [];
@@ -568,8 +580,8 @@ function pickTicketSheet(
 export async function parseTicketFile(
   file: File,
 ): Promise<{ rows: TicketRow[]; meta: UploadMeta }> {
-  const buf = await file.arrayBuffer();
-  const wb = XLSX.read(buf, { type: "array" });
+  if (canUseExcelWorker()) return runExcelWorker("parseTicketFile", file);
+  const wb = await readWorkbook(file);
   const { name: sheetName, aoa, layout } = pickTicketSheet(wb);
 
   const rows: TicketRow[] = [];
@@ -638,8 +650,8 @@ export async function parseTicketFile(
 export async function parseAnalystFile(
   file: File,
 ): Promise<{ rows: AnalystRow[]; meta: UploadMeta }> {
-  const buf = await file.arrayBuffer();
-  const wb = XLSX.read(buf, { type: "array" });
+  if (canUseExcelWorker()) return runExcelWorker("parseAnalystFile", file);
+  const wb = await readWorkbook(file);
   const { name: sheetName, ws } = pickSheet(wb, ["HASIL PROFILING", "PROFILING", "ANALYST"]);
   const raw = sheetToCleanJson(ws);
   let mapped = 0;
@@ -777,8 +789,8 @@ export function categorizePromo(raw: string): PromoCategory {
 export async function parseCompetitorFile(
   file: File,
 ): Promise<{ rows: CompetitorRow[]; meta: UploadMeta }> {
-  const buf = await file.arrayBuffer();
-  const wb = XLSX.read(buf, { type: "array" });
+  if (canUseExcelWorker()) return runExcelWorker("parseCompetitorFile", file);
+  const wb = await readWorkbook(file);
   const { name: sheetName, ws } = pickSheet(wb, ["KOMPETITOR", "COMPETITOR", "DATA"]);
   const raw = sheetToCleanJson(ws);
   const rows: CompetitorRow[] = [];
@@ -853,8 +865,8 @@ export async function parseCompetitorFile(
 export async function parseActionPlanFile(
   file: File,
 ): Promise<{ rows: ActionPlanRow[]; meta: UploadMeta }> {
-  const buf = await file.arrayBuffer();
-  const wb = XLSX.read(buf, { type: "array" });
+  if (canUseExcelWorker()) return runExcelWorker("parseActionPlanFile", file);
+  const wb = await readWorkbook(file);
   const { name: sheetName, ws } = pickSheet(wb, ["ACTION PLAN", "ACTIONPLAN", "PROGRAM", "DATA"]);
   const raw = sheetToCleanJson(ws);
   let mapped = 0;
@@ -986,8 +998,8 @@ export function detectKind(wb: XLSX.WorkBook, fileName: string): ImportKind {
 }
 
 export async function smartImport(file: File): Promise<SmartResult> {
-  const buf = await file.arrayBuffer();
-  const wb = XLSX.read(buf, { type: "array" });
+  if (canUseExcelWorker()) return runExcelWorker("smartImport", file);
+  const wb = await readWorkbook(file);
   const kind = detectKind(wb, file.name);
   if (kind === "cluster") { const r = await parseClusterFile(file); return { kind, ...r }; }
   if (kind === "analyst") { const r = await parseAnalystFile(file); return { kind, ...r }; }
@@ -1000,8 +1012,8 @@ export async function smartImport(file: File): Promise<SmartResult> {
 export async function classifyFile(
   file: File,
 ): Promise<{ kind: ImportKind; fileName: string; sheetName: string; sheetCount: number; size: number }> {
-  const buf = await file.arrayBuffer();
-  const wb = XLSX.read(buf, { type: "array" });
+  if (canUseExcelWorker()) return runExcelWorker("classifyFile", file);
+  const wb = await readWorkbook(file);
   const kind = detectKind(wb, file.name);
   const preferred =
     kind === "cluster" ? ["DATA CLUSTER", "CLUSTER", "PEMBAGIAN"]

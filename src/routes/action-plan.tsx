@@ -1,3 +1,4 @@
+import { useShallow } from "zustand/react/shallow";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import {
@@ -28,7 +29,6 @@ import {
   type DragEndEvent,
 } from "@dnd-kit/core";
 import { motion } from "framer-motion";
-import * as XLSX from "xlsx";
 import { AppHeader } from "@/components/app-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -443,7 +443,7 @@ function CalendarView({ rows }: { rows: ActionPlanRow[] }) {
 }
 
 function ActionPlanPage() {
-  const { actionPlans, clusters, tickets, analyst, competitorData, overrideActionPlanStatus, addActionPlans, updateActionPlan, removeActionPlan } = useDataStore();
+  const { actionPlans, clusters, tickets, analyst, competitorData, overrideActionPlanStatus, addActionPlans, updateActionPlan, removeActionPlan } = useDataStore(useShallow((s) => ({ actionPlans: s.actionPlans, clusters: s.clusters, tickets: s.tickets, analyst: s.analyst, competitorData: s.competitorData, overrideActionPlanStatus: s.overrideActionPlanStatus, addActionPlans: s.addActionPlans, updateActionPlan: s.updateActionPlan, removeActionPlan: s.removeActionPlan })));
   const [search, setSearch] = useState("");
   const [filterPic, setFilterPic] = useState("");
   const [filterCluster, setFilterCluster] = useState("");
@@ -932,7 +932,8 @@ function ActionPlanPage() {
   );
 }
 
-function exportCalendarExcel(rows: ActionPlanRow[]) {
+async function exportCalendarExcel(rows: ActionPlanRow[]) {
+  const XLSX = await import("xlsx");
   const data = rows
     .filter((r) => r.startDate)
     .sort((a, b) => a.startDate.localeCompare(b.startDate))

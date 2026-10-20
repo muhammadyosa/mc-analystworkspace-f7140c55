@@ -18,7 +18,7 @@ export function runExcelWorker<K extends keyof WorkerResults>(method: K, file: F
   const job = tail.catch(() => undefined).then(() => new Promise<WorkerResults[K]>((resolve, reject) => {
     const worker = new Worker(new URL("../workers/excel.worker.ts", import.meta.url), { type: "module" });
     const cleanup = () => { clearTimeout(timeout); worker.terminate(); };
-    const timeout = setTimeout(() => { cleanup(); reject(new Error("Le fichier prend trop de temps à lire. Coba unggah kembali.")); }, 120_000);
+    const timeout = setTimeout(() => { cleanup(); reject(new Error("Pembacaan file terlalu lama. Coba unggah kembali.")); }, 120_000);
     worker.onmessage = ({ data }) => { cleanup(); data.error ? reject(new Error(data.error)) : resolve(data.result); };
     worker.onerror = (event) => { cleanup(); reject(new Error(event.message || "Gagal membaca file Excel")); };
     worker.postMessage({ method, file });

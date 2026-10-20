@@ -1,4 +1,3 @@
-import * as XLSX from "xlsx";
 
 /** Baris laporan generik: kunci = judul kolom. */
 export type ExportRow = Record<string, string | number>;
@@ -8,14 +7,16 @@ const stamp = () => new Date().toISOString().slice(0, 10);
 const safe = (s: string) => s.replace(/[^\w.-]+/g, "-").replace(/-+/g, "-").toLowerCase();
 
 /** Unduh laporan sebagai file Excel (.xlsx). */
-export function exportExcel(rows: ExportRow[], sheetName: string, fileLabel: string) {
+export async function exportExcel(rows: ExportRow[], sheetName: string, fileLabel: string) {
+  const XLSX = await import("xlsx");
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), sheetName.slice(0, 31) || "Report");
   XLSX.writeFile(wb, `${safe(fileLabel)}-${stamp()}.xlsx`);
 }
 
 /** Unduh laporan sebagai CSV (bisa dibuka di Excel / Google Sheets). */
-export function exportCSV(rows: ExportRow[], fileLabel: string) {
+export async function exportCSV(rows: ExportRow[], fileLabel: string) {
+  const XLSX = await import("xlsx");
   const csv = XLSX.utils.sheet_to_csv(XLSX.utils.json_to_sheet(rows));
   triggerDownload(new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" }), `${safe(fileLabel)}-${stamp()}.csv`);
 }
