@@ -1,6 +1,5 @@
 import { RefreshCw, LogOut, ShieldCheck, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { SidebarTrigger, useHasSidebar } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -55,15 +54,9 @@ export function AppHeader({ title, subtitle }: { title: string; subtitle?: strin
   }
 
   const initials = (user?.name ?? user?.email ?? "U").slice(0, 2).toUpperCase();
-  const hasSidebar = useHasSidebar();
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-border/60 bg-background/95 px-3 pt-[env(safe-area-inset-top)] sm:gap-3 sm:px-4">
-      {hasSidebar && (
-        <div className="hidden">
-          <SidebarTrigger />
-        </div>
-      )}
+    <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-border/60 bg-background/95 px-3 sm:gap-3 sm:px-4">
       <img
         src={theme === "dark" ? danantaraDark.url : danantaraLight.url}
         alt="Danantara Indonesia"
