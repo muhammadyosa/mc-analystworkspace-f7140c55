@@ -242,7 +242,7 @@ function KanbanColumn({
   return (
     <div
       ref={setNodeRef}
-      className={`flex min-h-[320px] flex-col gap-2 rounded-2xl border border-border/60 bg-muted/30 p-3 transition ${
+      className={`flex min-w-0 min-h-[320px] flex-col gap-2 rounded-2xl border border-border/60 bg-muted/30 p-3 transition ${
         isOver ? "border-primary/60 bg-primary/5" : ""
       }`}
     >
@@ -727,7 +727,7 @@ function ActionPlanPage() {
 
           <TabsContent value="kanban">
             <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={onDragEnd}>
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <div className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
                 {COLUMNS.map((c) => (
                   <KanbanColumn
                     key={c}
