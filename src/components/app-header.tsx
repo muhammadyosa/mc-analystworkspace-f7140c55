@@ -58,9 +58,9 @@ export function AppHeader({ title, subtitle }: { title: string; subtitle?: strin
   const hasSidebar = useHasSidebar();
 
   return (
-    <header className="sticky top-0 z-30 grid h-14 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 border-b border-border/60 bg-background/95 px-3 sm:flex sm:gap-3 sm:px-4">
+    <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-border/60 bg-background/95 px-3 pt-[env(safe-area-inset-top)] sm:gap-3 sm:px-4">
       {hasSidebar && (
-        <div className="md:hidden">
+        <div className="hidden">
           <SidebarTrigger />
         </div>
       )}
