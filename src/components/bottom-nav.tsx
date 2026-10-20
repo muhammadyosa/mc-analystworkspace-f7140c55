@@ -93,7 +93,10 @@ export function BottomNav() {
             className={cn(itemCls, accountOpen ? "text-primary" : "text-muted-foreground")}
           >
             <ActiveDot on={accountOpen} />
-            <UserRound className="h-5 w-5 shrink-0" />
+            <Avatar className={cn("h-6 w-6 shrink-0 ring-1", accountOpen ? "ring-primary/70" : "ring-border/60")}>
+              {avatar && <AvatarImage src={avatar} alt={name ?? "User"} />}
+              <AvatarFallback className="text-[9px]">{initials}</AvatarFallback>
+            </Avatar>
             <span>Akun</span>
           </button>
         </li>

@@ -83,6 +83,7 @@ export function AppHeader({ title, subtitle }: { title: string; subtitle?: strin
       <InstallApp className="hidden md:inline-flex" />
       <WhatsNew />
       {user && (
+        <div className="hidden md:block">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
@@ -132,6 +133,7 @@ export function AppHeader({ title, subtitle }: { title: string; subtitle?: strin
             </button>
           </DropdownMenuContent>
         </DropdownMenu>
+        </div>
       )}
       </div>
     </header>
