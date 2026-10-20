@@ -37,6 +37,10 @@ const debouncedLocalStorage: StateStorage = {
     );
   },
   removeItem: (name) => {
+    const timer = writeTimers.get(name);
+    if (timer) clearTimeout(timer);
+    writeTimers.delete(name);
+    pending.delete(name);
     try {
       window.localStorage.removeItem(name);
     } catch {
