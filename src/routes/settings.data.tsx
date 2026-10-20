@@ -1,3 +1,4 @@
+import { useShallow } from "zustand/react/shallow";
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -431,13 +432,13 @@ function TemplateFormats() {
           validasi. Kolom bertanda <span className="text-destructive">wajib</span> harus ada. Setelah
           file diupload, kolom yang cocok akan diberi tanda centang hijau.
         </p>
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-2">
           {TEMPLATE_SPECS.map((spec) => {
             const checks = evaluateTemplateFormat(spec.kind, rowsByKind[spec.kind] ?? []);
             const okCount = checks?.filter((c) => c.ok).length ?? 0;
             const missingRequired = checks?.filter((c) => c.required && !c.ok) ?? [];
             return (
-              <div key={spec.kind} className="rounded-xl border border-border/60 bg-muted/15 p-4">
+              <div key={spec.kind} className="min-w-0 rounded-xl border border-border/60 bg-muted/15 p-4">
                 <div className="mb-1 flex flex-wrap items-center gap-2">
                   <span aria-hidden="true">{spec.icon}</span>
                   <span className="text-sm font-semibold">{spec.label}</span>
@@ -537,7 +538,7 @@ function UploadPage() {
     setActionPlans,
     pushHistory,
     clearAll,
-  } = useDataStore();
+  } = useDataStore(useShallow((s) => ({ clusters: s.clusters, tickets: s.tickets, analyst: s.analyst, competitorData: s.competitorData, actionPlans: s.actionPlans, history: s.history, setClusters: s.setClusters, setTickets: s.setTickets, setAnalyst: s.setAnalyst, setCompetitorData: s.setCompetitorData, setActionPlans: s.setActionPlans, pushHistory: s.pushHistory, clearAll: s.clearAll })));
 
   const [queue, setQueue] = useState<Classified[]>([]);
   const [classifying, setClassifying] = useState(false);
@@ -598,7 +599,7 @@ function UploadPage() {
         setQueue((q) => {
           const seen = new Set(q.map((x) => x.checksum));
           const merged = [...q];
-          for (const r of ok) if (!seen.has(r.checksum)) merged.push(r);
+          for (const r of ok) if (!seen.has(r.checksum)) { seen.add(r.checksum); merged.push(r); }
           return merged;
         });
         if (ok.length) toast.success(`${ok.length} file terdeteksi otomatis`);
@@ -627,7 +628,7 @@ function UploadPage() {
     const advance = async (s: StageKey, pct: number) => {
       setStage(s);
       setOverall(pct);
-      await new Promise((r) => setTimeout(r, 180));
+      await new Promise((r) => setTimeout(r, 0));
     };
 
     try {

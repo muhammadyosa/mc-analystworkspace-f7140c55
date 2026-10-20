@@ -1,5 +1,4 @@
 import { RefreshCw, LogOut, ShieldCheck, UserRound } from "lucide-react";
-import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger, useHasSidebar } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -19,7 +18,8 @@ import { useDataStore } from "@/lib/store";
 import { formatDistanceToNow } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "@tanstack/react-router";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { workspaceUserOptions } from "@/lib/workspace-user";
 import { toast } from "sonner";
 import plnLogo from "@/assets/pln-iconplus.png.asset.json";
 import danantaraLight from "@/assets/danantara-light.png.asset.json";
@@ -37,30 +37,14 @@ export function AppHeader({ title, subtitle }: { title: string; subtitle?: strin
   const lastUpdated = useDataStore((s) => s.lastUpdated);
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const [user, setUser] = useState<UserInfo | null>(null);
-
-  useEffect(() => {
-    (async () => {
-      const { data } = await supabase.auth.getUser();
-      const u = data.user;
-      if (!u) return setUser(null);
-      const md = (u.user_metadata ?? {}) as Record<string, string | undefined>;
-      const { data: roles } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", u.id);
-      const roleList = (roles ?? []).map((r) => r.role as string);
-      const role = (["admin", "manager", "analyst", "viewer"] as const).find((r) =>
-        roleList.includes(r),
-      );
-      setUser({
-        email: u.email ?? null,
-        name: md.full_name ?? md.name ?? u.email ?? null,
-        avatar: md.avatar_url ?? md.picture ?? null,
-        role: role ?? "viewer",
-      });
-    })();
-  }, []);
+  const { data: identity } = useQuery(workspaceUserOptions);
+  const md = identity?.user.user_metadata ?? {};
+  const user: UserInfo | null = identity ? {
+    email: identity.user.email ?? null,
+    name: md.full_name ?? md.name ?? identity.user.email ?? null,
+    avatar: md.avatar_url ?? md.picture ?? null,
+    role: identity.role,
+  } : null;
 
   async function handleSignOut() {
     await qc.cancelQueries();
@@ -74,7 +58,7 @@ export function AppHeader({ title, subtitle }: { title: string; subtitle?: strin
   const hasSidebar = useHasSidebar();
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border/60 bg-background/70 px-4 backdrop-blur-xl">
+    <header className="sticky top-0 z-30 grid h-14 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 border-b border-border/60 bg-background/95 px-3 sm:flex sm:gap-3 sm:px-4">
       {hasSidebar && (
         <div className="md:hidden">
           <SidebarTrigger />
@@ -100,6 +84,7 @@ export function AppHeader({ title, subtitle }: { title: string; subtitle?: strin
           Updated {formatDistanceToNow(lastUpdated, { addSuffix: true })}
         </div>
       )}
+      <div className="flex shrink-0 items-center gap-1 sm:gap-2">
       <CommandCenter />
       <NotificationCenter />
       <InstallApp className="hidden md:inline-flex" />
@@ -155,6 +140,7 @@ export function AppHeader({ title, subtitle }: { title: string; subtitle?: strin
           </DropdownMenuContent>
         </DropdownMenu>
       )}
+      </div>
     </header>
   );
 }

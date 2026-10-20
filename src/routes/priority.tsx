@@ -77,15 +77,15 @@ function PriorityPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
+                <div className="grid min-w-0 grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-3">
                   {groups[lvl].slice(0, 15).map((c) => (
                     <Link
                       key={c.id}
                       to="/cluster/$name"
                       params={{ name: encodeURIComponent(c.cluster) }}
-                      className="group rounded-xl border border-border/60 bg-muted/30 p-3 transition hover:border-primary/60 hover:bg-muted/50"
+                      className="group min-w-0 rounded-xl border border-border/60 bg-muted/30 p-3 transition hover:border-primary/60 hover:bg-muted/50"
                     >
-                      <div className="flex items-start justify-between gap-2">
+                      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2">
                         <div className="min-w-0">
                           <p className="truncate font-semibold text-sm">{c.cluster}</p>
                           <p className="truncate text-xs text-muted-foreground">{c.kabupaten}</p>

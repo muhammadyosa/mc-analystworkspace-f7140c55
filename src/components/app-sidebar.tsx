@@ -59,7 +59,7 @@ const colorThemes: { id: ColorTheme; label: string; swatch: string }[] = [
 export function AppSidebar() {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const { theme, colorTheme, toggle, setColorTheme } = useTheme();
-  const { state, toggleSidebar } = useSidebar();
+  const { state, toggleSidebar, setOpenMobile } = useSidebar();
   const { isAdmin } = useRole();
   const items = nav.filter((item) => item.url !== "/settings" || isAdmin);
   const isActive = (p: string) => (p === "/" ? pathname === "/" : pathname.startsWith(p));
@@ -120,7 +120,7 @@ export function AppSidebar() {
                     tooltip={item.title}
                     className="justify-start group-data-[collapsible=icon]:justify-center"
                   >
-                    <Link to={item.url} className="flex items-center gap-3">
+                    <Link to={item.url} onClick={() => setOpenMobile(false)} className="flex items-center gap-3">
                       <item.icon className="h-[18px] w-[18px] shrink-0" />
                       <span className="group-data-[collapsible=icon]:hidden">{item.title}</span>
                     </Link>

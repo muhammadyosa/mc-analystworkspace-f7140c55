@@ -1,16 +1,6 @@
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-
-export type WorkspaceRole = "admin" | "manager" | "analyst" | "viewer";
-
-const PRIORITY: WorkspaceRole[] = ["admin", "manager", "analyst", "viewer"];
-
-let cachedRole: WorkspaceRole | null = null;
-
-function pickRole(roles: string[]): WorkspaceRole {
-  for (const r of PRIORITY) if (roles.includes(r)) return r;
-  return "viewer";
-}
+import { useQuery } from "@tanstack/react-query";
+import { workspaceUserOptions } from "@/lib/workspace-user";
+export type { WorkspaceRole } from "@/lib/workspace-user";
 
 /**
  * Role workspace:
@@ -20,42 +10,8 @@ function pickRole(roles: string[]): WorkspaceRole {
  * - viewer  : hanya melihat
  */
 export function useRole() {
-  const [role, setRole] = useState<WorkspaceRole | null>(cachedRole);
-  const [loading, setLoading] = useState(cachedRole === null);
-
-  useEffect(() => {
-    let mounted = true;
-    async function load() {
-      const { data: u } = await supabase.auth.getUser();
-      if (!u.user) {
-        if (mounted) {
-          setRole("viewer");
-          setLoading(false);
-        }
-        return;
-      }
-      const { data } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", u.user.id);
-      cachedRole = pickRole((data ?? []).map((r) => r.role as string));
-      if (mounted) {
-        setRole(cachedRole);
-        setLoading(false);
-      }
-    }
-    void load();
-    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
-        cachedRole = null;
-        void load();
-      }
-    });
-    return () => {
-      mounted = false;
-      sub.subscription.unsubscribe();
-    };
-  }, []);
+  const { data, isPending: loading } = useQuery(workspaceUserOptions);
+  const role = data?.role ?? null;
 
   return {
     role,
