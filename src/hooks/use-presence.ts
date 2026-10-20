@@ -12,29 +12,33 @@ export function usePresenceHeartbeat() {
     let timer: ReturnType<typeof setInterval> | null = null;
     let userId: string | null = null;
     let cancelled = false;
+    let beating = false;
 
     async function beat() {
-      if (!userId || document.visibilityState === "hidden") return;
-      await supabase
+      if (cancelled || beating || !userId || document.visibilityState === "hidden") return;
+      beating = true;
+      try { await supabase
         .from("profiles")
         .update({ last_seen_at: new Date().toISOString() })
         .eq("id", userId)
-        .then(() => undefined);
+        .then(() => undefined); } finally { beating = false; }
     }
 
     async function start(uid: string) {
+      if (cancelled) return;
+      if (timer) clearInterval(timer);
       userId = uid;
-      await beat();
+      void beat();
       timer = setInterval(beat, HEARTBEAT_MS);
     }
 
-    supabase.auth.getUser().then(({ data }) => {
-      if (!cancelled && data.user) void start(data.user.id);
-    });
-
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
       if (session?.user && session.user.id !== userId) void start(session.user.id);
-      if (!session?.user) userId = null;
+      if (!session?.user) {
+        userId = null;
+        if (timer) clearInterval(timer);
+        timer = null;
+      }
     });
 
     return () => {

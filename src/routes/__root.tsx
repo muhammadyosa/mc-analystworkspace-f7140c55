@@ -22,6 +22,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { usePresenceHeartbeat } from "@/hooks/use-presence";
 import { useCloudData } from "@/hooks/use-cloud-data";
 import { usePrefsStore } from "@/lib/prefs";
+import { initializeAppWorker } from "@/lib/pwa";
 
 function NotFoundComponent() {
   return (
@@ -156,13 +157,21 @@ function AuthGate({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const navigate = useNavigate();
   const [status, setStatus] = useState<"loading" | "in" | "pending" | "out">("loading");
+  const { queryClient } = Route.useRouteContext();
 
-  async function resolve(session: unknown) {
+  useEffect(() => {
+    let mounted = true;
+    let generation = 0;
+    let deferred: ReturnType<typeof setTimeout> | undefined;
+    async function resolve(session: unknown) {
+    const request = ++generation;
     if (!session) {
-      setStatus("out");
+      if (mounted) setStatus("out");
       return;
     }
+    try {
     const { data: u } = await supabase.auth.getUser();
+    if (!mounted || request !== generation) return;
     if (!u.user) {
       setStatus("out");
       return;
@@ -172,15 +181,11 @@ function AuthGate({ children }: { children: ReactNode }) {
       .select("approved")
       .eq("id", u.user.id)
       .maybeSingle();
-    setStatus(profile?.approved ? "in" : "pending");
+    if (mounted && request === generation) setStatus(profile?.approved ? "in" : "pending");
+    } catch {
+      if (mounted && request === generation) setStatus("out");
+    }
   }
-
-  useEffect(() => {
-    let mounted = true;
-    supabase.auth.getSession().then(({ data }) => {
-      if (!mounted) return;
-      resolve(data.session);
-    });
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       if (
         event === "SIGNED_IN" ||
@@ -188,14 +193,22 @@ function AuthGate({ children }: { children: ReactNode }) {
         event === "USER_UPDATED" ||
         event === "INITIAL_SESSION"
       ) {
-        resolve(session);
+        // Leave the auth callback before calling auth APIs (avoids its session lock).
+        generation++;
+        clearTimeout(deferred);
+        if (event !== "INITIAL_SESSION") {
+          queryClient.removeQueries({ queryKey: ["workspace-user"] });
+        }
+        deferred = setTimeout(() => { if (mounted) void resolve(session); }, 0);
       }
     });
     return () => {
       mounted = false;
+      generation++;
+      clearTimeout(deferred);
       sub.subscription.unsubscribe();
     };
-  }, []);
+  }, [queryClient]);
 
   useEffect(() => {
     if ((status === "out" || status === "pending") && pathname !== "/auth") {
@@ -289,6 +302,7 @@ function useAutoUpdate() {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   useAutoUpdate();
+  useEffect(() => { void initializeAppWorker().catch(() => undefined); }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
