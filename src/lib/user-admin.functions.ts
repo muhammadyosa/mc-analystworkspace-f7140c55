@@ -63,6 +63,12 @@ export const deleteWorkspaceUser = createServerFn({ method: "POST" })
     }
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.auth.admin.deleteUser(data.userId);
-    if (error) throw new Error(error.message);
+    if (error) {
+      const detail = [error.message, (error as { status?: number }).status, JSON.stringify(error)]
+        .filter(Boolean)
+        .join(" | ");
+      console.error("[deleteWorkspaceUser]", detail);
+      throw new Error(`Brisanje korisnika nije uspelo: ${detail}`);
+    }
     return { ok: true as const };
   });
