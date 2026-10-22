@@ -9,5 +9,5 @@ export function useClusterActions(cluster: string) {
     const timer = setInterval(() => setDay((d) => d + 1), 60_000);
     return () => clearInterval(timer);
   }, []);
-  return useMemo(() => summarizeActions(plans, cluster), [plans, cluster, day]);
+  return useMemo(() => summarizeActions(plans, cluster, new Date(Date.now() + day * 0)), [plans, cluster, day]);
 }
