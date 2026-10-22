@@ -13,6 +13,14 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2.10.1",
+    date: "2026-10-22",
+    title: "Ikon Menu Lebih Menarik",
+    items: [
+      { kind: "tampilan", text: "Menu utama memakai emoji sesuai kategori di sidebar dan drawer ponsel, dengan fungsi serta akses tetap sama." },
+    ],
+  },
+  {
     version: "2.10.0",
     date: "2026-10-22",
     title: "Profiling Terhubung Kanban",

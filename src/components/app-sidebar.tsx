@@ -1,20 +1,10 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
-  Activity,
   Check,
   ChevronLeft,
-  LayoutDashboard,
-  Database,
   Moon,
   Palette,
   Sun,
-  Target,
-  ListTodo,
-  Users,
-  FileText,
-  UserSearch,
-  Settings,
-  Radar,
 } from "lucide-react";
 import iconnetLogo from "@/assets/iconnet-logo.png.asset.json";
 import {
@@ -37,15 +27,15 @@ import { useRole } from "@/hooks/use-role";
 import { cn } from "@/lib/utils";
 
 const nav = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard },
-  { title: "Master Cluster", url: "/master", icon: Database },
-  { title: "Analyst Market", url: "/analyst", icon: UserSearch },
-  { title: "Priority Engine", url: "/priority", icon: Target },
-  { title: "Action Plan", url: "/action-plan", icon: ListTodo },
-  { title: "Customer Loyalty", url: "/loyalty", icon: Users },
-  { title: "Competitor Intelligence", url: "/competitor-intel", icon: Radar },
-  { title: "Reports", url: "/reports", icon: FileText },
-  { title: "Settings", url: "/settings", icon: Settings },
+  { title: "Dashboard", url: "/", emoji: "🖥️" },
+  { title: "Master Cluster", url: "/master", emoji: "🗃️" },
+  { title: "Analyst Market", url: "/analyst", emoji: "📊" },
+  { title: "Priority Engine", url: "/priority", emoji: "📟" },
+  { title: "Action Plan", url: "/action-plan", emoji: "📑" },
+  { title: "Customer Loyalty", url: "/loyalty", emoji: "👥" },
+  { title: "Competitor Intelligence", url: "/competitor-intel", emoji: "🛰️" },
+  { title: "Reports", url: "/reports", emoji: "📝" },
+  { title: "Settings", url: "/settings", emoji: "⚙️" },
 ];
 
 const colorThemes: { id: ColorTheme; label: string; swatch: string }[] = [
@@ -121,7 +111,7 @@ export function AppSidebar() {
                     className="justify-start group-data-[collapsible=icon]:justify-center"
                   >
                     <Link to={item.url} onClick={() => setOpenMobile(false)} className="flex items-center gap-3">
-                      <item.icon className="h-[18px] w-[18px] shrink-0" />
+                      <span aria-hidden="true" className="flex h-5 w-5 shrink-0 items-center justify-center text-lg leading-none">{item.emoji}</span>
                       <span className="group-data-[collapsible=icon]:hidden">{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
