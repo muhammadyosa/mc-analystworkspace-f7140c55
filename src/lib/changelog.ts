@@ -22,8 +22,6 @@ export const CHANGELOG: ChangelogEntry[] = [
   },
   {
     version: "2.10.4",
-  {
-    version: "2.10.4",
     date: "2026-10-22",
     title: "Tombol Menu Lebih Ramping",
     items: [
