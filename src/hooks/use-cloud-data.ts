@@ -40,9 +40,12 @@ export function useCloudData() {
           if (s.kind === "competitor") patch.competitorData = s.rows as CompetitorRow[];
           if (s.kind === "actionplan" && !planStale) patch.actionPlans = s.rows as ActionPlanRow[];
         }
-        applyCloud(patch);
+        if (Object.keys(patch).length > 0) applyCloud(patch);
         sets.forEach((s) => {
-          if (s.kind === "actionplan" && planStale) queued = true;
+          if (s.kind === "actionplan" && planStale) {
+            clearTimeout(debounce);
+            debounce = setTimeout(() => void sync(), 600);
+          }
           else versions.set(s.kind, s.updatedAt);
         });
       } catch {
