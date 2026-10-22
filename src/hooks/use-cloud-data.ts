@@ -3,7 +3,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { fetchDatasets, fetchDatasetStatus } from "@/lib/cloud-sync";
 import { actionPlanSyncState } from "@/lib/action-plan-sync";
 import { useDataStore } from "@/lib/store";
-import type { ActionPlanRow, AnalystRow, ClusterRow, CompetitorRow, TicketRow, ImportKind } from "@/lib/excel";
+import type {
+  ActionPlanRow,
+  AnalystRow,
+  ClusterRow,
+  CompetitorRow,
+  TicketRow,
+  ImportKind,
+} from "@/lib/excel";
 
 /**
  * Menarik data workspace dari cloud saat aplikasi dibuka dan setiap kali
@@ -21,13 +28,18 @@ export function useCloudData() {
     const versions = new Map<string, string>();
 
     async function sync() {
-      if (busy) { queued = true; return; }
+      if (busy) {
+        queued = true;
+        return;
+      }
       busy = true;
       try {
         const startEpoch = actionPlanSyncState().epoch;
         const statuses = await fetchDatasetStatus(controller.signal);
         if (!mounted) return;
-        const changed = statuses.filter((s) => versions.get(s.kind) !== s.updated_at).map((s) => s.kind as ImportKind);
+        const changed = statuses
+          .filter((s) => versions.get(s.kind) !== s.updated_at)
+          .map((s) => s.kind as ImportKind);
         const sets = await fetchDatasets(changed, controller.signal);
         if (!mounted || sets.length === 0) return;
         // A Kanban edit started while this read was in flight: its RPC result is newer.
@@ -45,14 +57,16 @@ export function useCloudData() {
           if (s.kind === "actionplan" && planStale) {
             clearTimeout(debounce);
             debounce = setTimeout(() => void sync(), 600);
-          }
-          else versions.set(s.kind, s.updatedAt);
+          } else versions.set(s.kind, s.updatedAt);
         });
       } catch {
         /* offline / belum ada akses — pakai data lokal */
       } finally {
         busy = false;
-        if (mounted && queued) { queued = false; void sync(); }
+        if (mounted && queued) {
+          queued = false;
+          void sync();
+        }
       }
     }
 

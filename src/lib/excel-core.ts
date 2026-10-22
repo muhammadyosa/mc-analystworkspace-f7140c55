@@ -50,7 +50,6 @@ export type ClusterRow = {
   ticketByMonth: Record<string, number>;
 };
 
-
 export type TicketRow = {
   cluster: string;
   bulan: string;
@@ -145,7 +144,9 @@ export type UploadMeta = {
 const toNum = (v: unknown): number => {
   if (v === null || v === undefined || v === "") return 0;
   if (typeof v === "number") return isFinite(v) ? v : 0;
-  const s = String(v).replace(/[,\s]/g, "").replace(/[^\d.\-]/g, "");
+  const s = String(v)
+    .replace(/[,\s]/g, "")
+    .replace(/[^\d.\-]/g, "");
   const n = parseFloat(s);
   return isFinite(n) ? n : 0;
 };
@@ -159,7 +160,9 @@ function toISODate(v: unknown): string {
       if (parsed) {
         return `${parsed.y}-${String(parsed.m).padStart(2, "0")}-${String(parsed.d).padStart(2, "0")}`;
       }
-    } catch { /* fall through */ }
+    } catch {
+      /* fall through */
+    }
   }
   const s = String(v).trim();
   if (!s) return "";
@@ -237,7 +240,11 @@ function pickSheet(wb: XLSX.WorkBook, preferred: string[]): { name: string; ws: 
 
 // Auto-clean: trim strings, drop empty rows/cols, normalize duplicate headers (MEI, MEI_2)
 function sheetToCleanJson(ws: XLSX.WorkSheet): Record<string, unknown>[] {
-  const aoa: unknown[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "", blankrows: false });
+  const aoa: unknown[][] = XLSX.utils.sheet_to_json(ws, {
+    header: 1,
+    defval: "",
+    blankrows: false,
+  });
   if (!aoa.length) return [];
   // find first non-empty row = header
   let headerIdx = 0;
@@ -271,8 +278,18 @@ function sheetToCleanJson(ws: XLSX.WorkSheet): Record<string, unknown>[] {
 }
 
 const MONTH_KEYS = [
-  "januari", "februari", "maret", "april", "mei", "juni",
-  "juli", "agustus", "september", "oktober", "november", "desember",
+  "januari",
+  "februari",
+  "maret",
+  "april",
+  "mei",
+  "juni",
+  "juli",
+  "agustus",
+  "september",
+  "oktober",
+  "november",
+  "desember",
 ] as const;
 type MonthName = (typeof MONTH_KEYS)[number];
 
@@ -302,7 +319,8 @@ export function monthFromToken(token: string): MonthName | null {
   if (!letters) return null;
   for (const key of MONTH_KEYS) {
     const aliases = BULAN_ALIASES[key.toUpperCase()] ?? [];
-    if (aliases.some((a) => letters === a || letters.startsWith(a) || letters.endsWith(a))) return key;
+    if (aliases.some((a) => letters === a || letters.startsWith(a) || letters.endsWith(a)))
+      return key;
   }
   return null;
 }
@@ -331,8 +349,14 @@ function monthColumnMap(headers: string[], group: string, strict = false): Recor
     if (group === "hcaktif" && /^(newhc|hcbaru|ticket|tiket|tkt)/.test(n)) continue;
     let rest: string | null = null;
     for (const p of prefixes) {
-      if (!p) { rest = n; break; }
-      if (n.startsWith(p)) { rest = n.slice(p.length); break; }
+      if (!p) {
+        rest = n;
+        break;
+      }
+      if (n.startsWith(p)) {
+        rest = n.slice(p.length);
+        break;
+      }
     }
     if (rest === null || (group && !rest)) continue;
     const key = resolve(rest);
@@ -365,7 +389,12 @@ export async function parseClusterFile(
   file: File,
 ): Promise<{ rows: ClusterRow[]; meta: UploadMeta }> {
   const wb = await readWorkbook(file);
-  const { name: sheetName, ws } = pickSheet(wb, ["RAW DATA CLUSTER", "DATA CLUSTER", "CLUSTER", "PEMBAGIAN"]);
+  const { name: sheetName, ws } = pickSheet(wb, [
+    "RAW DATA CLUSTER",
+    "DATA CLUSTER",
+    "CLUSTER",
+    "PEMBAGIAN",
+  ]);
   const raw = sheetToCleanJson(ws);
   const headers = raw.length ? Object.keys(raw[0]) : [];
 
@@ -408,11 +437,14 @@ export async function parseClusterFile(
       const filledMonths = MONTH_KEYS.filter((m) => hc[m] > 0);
       const lastM = filledMonths[filledMonths.length - 1];
       const prevM = filledMonths[filledMonths.length - 2];
-      const deltaCol = toNum(pick(r, ["DELTA HC AKTIF", "DELTA MEI - JUNI", "DELTA MEI-JUNI", "DELTA"]));
+      const deltaCol = toNum(
+        pick(r, ["DELTA HC AKTIF", "DELTA MEI - JUNI", "DELTA MEI-JUNI", "DELTA"]),
+      );
       const delta = lastM && prevM ? hc[lastM] - hc[prevM] : deltaCol;
 
-      const totalTicket = toNum(pick(r, ["Total Ticket", "TOTAL TICKET", "ticket", "TICKET"]))
-        || MONTH_KEYS.reduce((a, m) => a + ticketM[m], 0);
+      const totalTicket =
+        toNum(pick(r, ["Total Ticket", "TOTAL TICKET", "ticket", "TICKET"])) ||
+        MONTH_KEYS.reduce((a, m) => a + ticketM[m], 0);
       const target = toNum(pick(r, ["TOTAL HC 2026"])) || homepass || toNum(pick(r, ["TOTAL HC"]));
 
       return {
@@ -461,7 +493,9 @@ export async function parseClusterFile(
 
   const kab = new Set(rows.map((r) => r.kabupaten).filter(Boolean));
   const prov = new Set(rows.map((r) => r.provinsi).filter(Boolean));
-  const monthsFound = MONTH_KEYS.filter((m) => rows.some((r) => (r as unknown as Record<string, number>)[m] > 0));
+  const monthsFound = MONTH_KEYS.filter((m) =>
+    rows.some((r) => (r as unknown as Record<string, number>)[m] > 0),
+  );
   const meta: UploadMeta = {
     fileName: file.name,
     sheetCount: wb.SheetNames.length,
@@ -479,9 +513,6 @@ export async function parseClusterFile(
   };
   return { rows, meta };
 }
-
-
-
 
 // Aliases per bulan (normalized, tanpa spasi/tanda baca). Header seperti
 // "Ticket Jan", "TICKET AGST", "Juni 2026" tetap terdeteksi.
@@ -504,13 +535,13 @@ const BULAN_ALIASES: Record<string, string[]> = {
 function monthOfHeader(h: string): string | null {
   const n = norm(h);
   if (!n) return null;
-  if (n.includes("total") || n.includes("grand") || n.includes("blank") || n.includes("cluster")) return null;
+  if (n.includes("total") || n.includes("grand") || n.includes("blank") || n.includes("cluster"))
+    return null;
   const stripped = n.replace(/ticket|tiket|jumlah|count|bulan/g, "");
   if (!stripped) return null;
   const key = monthFromToken(stripped) ?? monthFromToken(stripped.replace(/20\d\d/g, ""));
   return key ? key.toUpperCase() : null;
 }
-
 
 type TicketLayout = {
   headerIdx: number;
@@ -541,7 +572,10 @@ function detectTicketLayout(aoa: unknown[][]): TicketLayout | null {
     const firstMonthCol = months[0].col;
     let labelCol = 0;
     for (let ci = 0; ci < firstMonthCol; ci++) {
-      if (toStr(row[ci]) !== "") { labelCol = ci; break; }
+      if (toStr(row[ci]) !== "") {
+        labelCol = ci;
+        break;
+      }
     }
     const dataRows = aoa.length - i - 1;
     if (!best || months.length > best.months.length) {
@@ -554,14 +588,21 @@ function detectTicketLayout(aoa: unknown[][]): TicketLayout | null {
 const isClusterLabel = (s: string) => /olt|fh\.|ma5|odc|rit[\s.\-]/i.test(s);
 
 /** Pilih sheet ticket terbaik: paling banyak kolom bulan, lalu paling banyak baris. */
-function pickTicketSheet(
-  wb: XLSX.WorkBook,
-): { name: string; aoa: unknown[][]; layout: TicketLayout | null } {
-  let best: { name: string; aoa: unknown[][]; layout: TicketLayout | null; score: number } | null = null;
+function pickTicketSheet(wb: XLSX.WorkBook): {
+  name: string;
+  aoa: unknown[][];
+  layout: TicketLayout | null;
+} {
+  let best: { name: string; aoa: unknown[][]; layout: TicketLayout | null; score: number } | null =
+    null;
   for (const name of wb.SheetNames) {
     const ws = wb.Sheets[name];
     if (!ws) continue;
-    const aoa: unknown[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "", blankrows: false });
+    const aoa: unknown[][] = XLSX.utils.sheet_to_json(ws, {
+      header: 1,
+      defval: "",
+      blankrows: false,
+    });
     if (!aoa.length) continue;
     const layout = detectTicketLayout(aoa);
     if (!layout) continue;
@@ -573,7 +614,11 @@ function pickTicketSheet(
   }
   if (best) return { name: best.name, aoa: best.aoa, layout: best.layout };
   const { name, ws } = pickSheet(wb, ["TICKET", "DATA", "PIVOT"]);
-  const aoa: unknown[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "", blankrows: false });
+  const aoa: unknown[][] = XLSX.utils.sheet_to_json(ws, {
+    header: 1,
+    defval: "",
+    blankrows: false,
+  });
   return { name, aoa, layout: null };
 }
 
@@ -610,7 +655,9 @@ export async function parseTicketFile(
     // Tabel biasa (bukan pivot)
     const raw = sheetToCleanJson(wb.Sheets[sheetName]);
     for (const r of raw) {
-      const cluster = toStr(pick(r, ["cluster", "idolt", "olt", "wilayah", "kabupaten", "area", "PROV/KAB/CLUSTER"]));
+      const cluster = toStr(
+        pick(r, ["cluster", "idolt", "olt", "wilayah", "kabupaten", "area", "PROV/KAB/CLUSTER"]),
+      );
       if (!cluster) continue;
       if (/^(grand\s*)?total$/i.test(cluster)) continue;
       const ticket = toNum(pick(r, ["ticket", "jumlah", "count", "total"]));
@@ -666,7 +713,9 @@ export async function parseAnalystFile(
         profilingDate: toStr(pick(r, ["TANGGAL CANVASING & PROFILING", "TANGGAL"])),
         cluster,
         competitor: toStr(pick(r, ["SEBUTKAN KOMPETITOR YANG ADA DI SANA", "KOMPETITOR"])),
-        competitorPrice: toNum(pick(r, ["SEBUTKAN BERAPA HARGA RATA-RATA KOMPETITOR", "HARGA RATA-RATA KOMPETITOR"])),
+        competitorPrice: toNum(
+          pick(r, ["SEBUTKAN BERAPA HARGA RATA-RATA KOMPETITOR", "HARGA RATA-RATA KOMPETITOR"]),
+        ),
         competitorPromo: toStr(pick(r, ["PROMO KOMPETITOR"])),
         ageSegment: toStr(pick(r, ["RATA-RATA USIA", "USIA"])),
         occupation: toStr(pick(r, ["RATA-RATA PEKERJAAN", "PEKERJAAN"])),
@@ -768,16 +817,32 @@ export function splitCompetitors(raw: string): string[] {
 }
 
 const PROMO_RULES: { cat: PromoCategory; kws: string[] }[] = [
-  { cat: "Gratis Instalasi", kws: ["gratis instal", "free instal", "instalasi gratis", "bebas instal"] },
-  { cat: "Diskon Instalasi", kws: ["diskon instal", "diskon biaya instal", "disc instal", "potongan instal"] },
-  { cat: "Upgrade Kecepatan", kws: ["upgrade kecepatan", "upgrade speed", "tambah kecepatan", "double speed"] },
+  {
+    cat: "Gratis Instalasi",
+    kws: ["gratis instal", "free instal", "instalasi gratis", "bebas instal"],
+  },
+  {
+    cat: "Diskon Instalasi",
+    kws: ["diskon instal", "diskon biaya instal", "disc instal", "potongan instal"],
+  },
+  {
+    cat: "Upgrade Kecepatan",
+    kws: ["upgrade kecepatan", "upgrade speed", "tambah kecepatan", "double speed"],
+  },
   { cat: "Cashback", kws: ["cashback", "cash back"] },
   { cat: "Bundling", kws: ["bundling", "bundle", "paket"] },
 ];
 
 export function categorizePromo(raw: string): PromoCategory {
   const s = raw.trim().toLowerCase();
-  if (!s || s === "-" || s === "tidak ada" || s.includes("tidak ada promo") || s === "none" || s === "no") {
+  if (
+    !s ||
+    s === "-" ||
+    s === "tidak ada" ||
+    s.includes("tidak ada promo") ||
+    s === "none" ||
+    s === "no"
+  ) {
     return "Tidak Ada Promo";
   }
   for (const r of PROMO_RULES) if (r.kws.some((k) => s.includes(k))) return r.cat;
@@ -801,12 +866,7 @@ export async function parseCompetitorFile(
     if (!cluster && !namaRaw) continue;
     mapped++;
     const price = toNum(
-      pick(r, [
-        "HARGA KOMPETITOR TERMURAH",
-        "HARGA KOMPETITOR",
-        "HARGA TERMURAH",
-        "HARGA",
-      ]),
+      pick(r, ["HARGA KOMPETITOR TERMURAH", "HARGA KOMPETITOR", "HARGA TERMURAH", "HARGA"]),
     );
     const promoRaw = toStr(pick(r, ["PROMO COMPETITOR", "PROMO KOMPETITOR", "PROMO"]));
     const kab = toStr(pick(r, ["KABUPATEN", "KABUPATEN/KOTA", "KABUPATEN/KOTA YG BENAR"]));
@@ -883,7 +943,11 @@ export async function parseActionPlanFile(
     mapped++;
     const durationDays =
       startDate && endDate
-        ? Math.max(1, Math.round((new Date(endDate).getTime() - new Date(startDate).getTime()) / 86400000) + 1)
+        ? Math.max(
+            1,
+            Math.round((new Date(endDate).getTime() - new Date(startDate).getTime()) / 86400000) +
+              1,
+          )
         : 0;
     rows.push({
       id: `${idx}-${cluster}-${program}`.slice(0, 120),
@@ -933,7 +997,11 @@ function collectHeaders(wb: XLSX.WorkBook): string[] {
   const out: string[] = [];
   for (const n of wb.SheetNames) {
     const ws = wb.Sheets[n];
-    const aoa: unknown[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "", blankrows: false });
+    const aoa: unknown[][] = XLSX.utils.sheet_to_json(ws, {
+      header: 1,
+      defval: "",
+      blankrows: false,
+    });
     for (let i = 0; i < Math.min(aoa.length, 5); i++) {
       for (const c of aoa[i] ?? []) out.push(norm(toStr(c)));
     }
@@ -970,17 +1038,26 @@ export function detectKind(wb: XLSX.WorkBook, fileName: string): ImportKind {
 
   // Analyst
   if (sheets.some((s) => s.includes("hasilprofiling") || s.includes("profiling"))) return "analyst";
-  if (has("namaae") || has("insightae") || has("relokasifat") || has("tingkatpotensicluster")) return "analyst";
+  if (has("namaae") || has("insightae") || has("relokasifat") || has("tingkatpotensicluster"))
+    return "analyst";
 
   // Cluster
   if (sheets.some((s) => s.includes("datacluster"))) return "cluster";
   if (has("provkabcluster") && (has("pic") || has("statusketersediaan"))) return "cluster";
-  if (has("totalhc2026") || has("statusketersediaantimserpo") || has("statusketersediaantimikr")) return "cluster";
-  if (has("hcterpasang") || has("homepass") || has("totalnewhc2026") || has("grandtotalhcaktif")) return "cluster";
+  if (has("totalhc2026") || has("statusketersediaantimserpo") || has("statusketersediaantimikr"))
+    return "cluster";
+  if (has("hcterpasang") || has("homepass") || has("totalnewhc2026") || has("grandtotalhcaktif"))
+    return "cluster";
 
   // Ticket
-  if (sheets.some((s) => s.includes("listticketing") || s.includes("ticket") || s.includes("pivot"))) return "ticket";
-  if ((has("cluster") || has("wilayah") || has("kabupaten")) && (has("januari") || has("februari") || has("bulan"))) {
+  if (
+    sheets.some((s) => s.includes("listticketing") || s.includes("ticket") || s.includes("pivot"))
+  )
+    return "ticket";
+  if (
+    (has("cluster") || has("wilayah") || has("kabupaten")) &&
+    (has("januari") || has("februari") || has("bulan"))
+  ) {
     return "ticket";
   }
 
@@ -996,27 +1073,55 @@ export function detectKind(wb: XLSX.WorkBook, fileName: string): ImportKind {
 export async function smartImport(file: File): Promise<SmartResult> {
   const wb = await readWorkbook(file);
   const kind = detectKind(wb, file.name);
-  if (kind === "cluster") { const r = await parseClusterFile(file); return { kind, ...r }; }
-  if (kind === "analyst") { const r = await parseAnalystFile(file); return { kind, ...r }; }
-  if (kind === "competitor") { const r = await parseCompetitorFile(file); return { kind, ...r }; }
-  if (kind === "actionplan") { const r = await parseActionPlanFile(file); return { kind, ...r }; }
+  if (kind === "cluster") {
+    const r = await parseClusterFile(file);
+    return { kind, ...r };
+  }
+  if (kind === "analyst") {
+    const r = await parseAnalystFile(file);
+    return { kind, ...r };
+  }
+  if (kind === "competitor") {
+    const r = await parseCompetitorFile(file);
+    return { kind, ...r };
+  }
+  if (kind === "actionplan") {
+    const r = await parseActionPlanFile(file);
+    return { kind, ...r };
+  }
   const r = await parseTicketFile(file);
   return { kind: "ticket", ...r };
 }
 
 export async function classifyFile(
   file: File,
-): Promise<{ kind: ImportKind; fileName: string; sheetName: string; sheetCount: number; size: number }> {
+): Promise<{
+  kind: ImportKind;
+  fileName: string;
+  sheetName: string;
+  sheetCount: number;
+  size: number;
+}> {
   const wb = await readWorkbook(file);
   const kind = detectKind(wb, file.name);
   const preferred =
-    kind === "cluster" ? ["DATA CLUSTER", "CLUSTER", "PEMBAGIAN"]
-      : kind === "analyst" ? ["HASIL PROFILING", "PROFILING", "ANALYST"]
-        : kind === "competitor" ? ["KOMPETITOR", "COMPETITOR", "DATA"]
-          : kind === "actionplan" ? ["ACTION PLAN", "ACTIONPLAN", "PROGRAM", "DATA"]
+    kind === "cluster"
+      ? ["DATA CLUSTER", "CLUSTER", "PEMBAGIAN"]
+      : kind === "analyst"
+        ? ["HASIL PROFILING", "PROFILING", "ANALYST"]
+        : kind === "competitor"
+          ? ["KOMPETITOR", "COMPETITOR", "DATA"]
+          : kind === "actionplan"
+            ? ["ACTION PLAN", "ACTIONPLAN", "PROGRAM", "DATA"]
             : ["TICKET", "DATA", "PIVOT"];
   const { name } = pickSheet(wb, preferred);
-  return { kind, fileName: file.name, sheetName: name, sheetCount: wb.SheetNames.length, size: file.size };
+  return {
+    kind,
+    fileName: file.name,
+    sheetName: name,
+    sheetCount: wb.SheetNames.length,
+    size: file.size,
+  };
 }
 
 export async function fileChecksum(file: File): Promise<string> {
@@ -1037,34 +1142,104 @@ export function exportToExcel<T extends Record<string, unknown>>(rows: T[], file
 export function downloadTemplate(kind: ImportKind) {
   const templates: Record<ImportKind, string[]> = {
     cluster: [
-      "CLUSTER", "Homepass", "HC Terpasang", "HC Aktif", "Available", "TUR HC", "TUR HC Aktif",
-      "PIC", "Churn",
-      "NEW HC JANUARI", "NEW HC FEBRUARI", "NEW HC MARET", "NEW HC APRIL", "NEW HC MEI",
-      "NEW HC JUNI", "NEW HC JULI", "NEW HC AGST", "Total New HC 2026",
-      "HC AKTIF JANUARI", "HC AKTIF FEBRUARI", "HC AKTIF MARET", "HC AKTIF APRIL",
-      "HC AKTIF MEI", "HC AKTIF JUNI", "HC AKTIF JULI", "HC AKTIF AGST", "Grand Total HC Aktif",
-      "Ticket Jan", "Ticket Feb", "Ticket Maret", "Ticket April", "Ticket Mei", "Ticket Juni",
-      "Ticket Juli", "TICKET AGST", "Total Ticket",
-      "Kabupaten/Kota", "IKR", "SERPO", "PROVINSI",
+      "CLUSTER",
+      "Homepass",
+      "HC Terpasang",
+      "HC Aktif",
+      "Available",
+      "TUR HC",
+      "TUR HC Aktif",
+      "PIC",
+      "Churn",
+      "NEW HC JANUARI",
+      "NEW HC FEBRUARI",
+      "NEW HC MARET",
+      "NEW HC APRIL",
+      "NEW HC MEI",
+      "NEW HC JUNI",
+      "NEW HC JULI",
+      "NEW HC AGST",
+      "Total New HC 2026",
+      "HC AKTIF JANUARI",
+      "HC AKTIF FEBRUARI",
+      "HC AKTIF MARET",
+      "HC AKTIF APRIL",
+      "HC AKTIF MEI",
+      "HC AKTIF JUNI",
+      "HC AKTIF JULI",
+      "HC AKTIF AGST",
+      "Grand Total HC Aktif",
+      "Ticket Jan",
+      "Ticket Feb",
+      "Ticket Maret",
+      "Ticket April",
+      "Ticket Mei",
+      "Ticket Juni",
+      "Ticket Juli",
+      "TICKET AGST",
+      "Total Ticket",
+      "Kabupaten/Kota",
+      "IKR",
+      "SERPO",
+      "PROVINSI",
     ],
 
     ticket: [
-      "CLUSTER", "Jan", "Feb", "Mar", "Apr", "Mei", "Jun",
-      "Jul", "Agt", "Sep", "Okt", "Nov", "Des", "Grand Total",
+      "CLUSTER",
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "Mei",
+      "Jun",
+      "Jul",
+      "Agt",
+      "Sep",
+      "Okt",
+      "Nov",
+      "Des",
+      "Grand Total",
     ],
     analyst: [
-      "Timestamp", "Nama AE", "TANGGAL CANVASING & PROFILING", "CLUSTER",
-      "SEBUTKAN KOMPETITOR YANG ADA DI SANA", "SEBUTKAN BERAPA HARGA RATA-RATA KOMPETITOR",
-      "PROMO KOMPETITOR", "RATA-RATA USIA", "RATA-RATA PEKERJAAN", "KETERANGAN CLUSTER",
-      "TINGKAT POTENSI CLUSTER", "ALASAN PENILAIAN POTENSI", "Status Tool Kits",
-      "BUTUH PENAMBAHAN TOOLKITS", "STRATEGI PRODUK", "PRIORITAS BULAN DEPAN", "ALASAN",
-      "RELOKASI FAT", "ALASAN RELOKASI", "KELUHAN", "SF/MI HARI INI", "CLOSE WON HARI INI",
-      "TOTAL SF/MI", "MITRA BARU", "NAMA MITRA", "POTENSI MITRA", "STRATEGI PEMASARAN",
-      "SEGMEN PELANGGAN", "DAYA BELI", "INSIGHT AE", "EVIDENCE",
+      "Timestamp",
+      "Nama AE",
+      "TANGGAL CANVASING & PROFILING",
+      "CLUSTER",
+      "SEBUTKAN KOMPETITOR YANG ADA DI SANA",
+      "SEBUTKAN BERAPA HARGA RATA-RATA KOMPETITOR",
+      "PROMO KOMPETITOR",
+      "RATA-RATA USIA",
+      "RATA-RATA PEKERJAAN",
+      "KETERANGAN CLUSTER",
+      "TINGKAT POTENSI CLUSTER",
+      "ALASAN PENILAIAN POTENSI",
+      "Status Tool Kits",
+      "BUTUH PENAMBAHAN TOOLKITS",
+      "STRATEGI PRODUK",
+      "PRIORITAS BULAN DEPAN",
+      "ALASAN",
+      "RELOKASI FAT",
+      "ALASAN RELOKASI",
+      "KELUHAN",
+      "SF/MI HARI INI",
+      "CLOSE WON HARI INI",
+      "TOTAL SF/MI",
+      "MITRA BARU",
+      "NAMA MITRA",
+      "POTENSI MITRA",
+      "STRATEGI PEMASARAN",
+      "SEGMEN PELANGGAN",
+      "DAYA BELI",
+      "INSIGHT AE",
+      "EVIDENCE",
     ],
     competitor: [
-      "CLUSTER", "KABUPATEN", "PROVINSI", "NAMA KOMPETITOR",
-      "HARGA KOMPETITOR TERMURAH", "PROMO COMPETITOR",
+      "CLUSTER",
+      "KABUPATEN",
+      "PROVINSI",
+      "NAMA KOMPETITOR",
+      "HARGA KOMPETITOR TERMURAH",
+      "PROMO COMPETITOR",
     ],
     actionplan: ["NAMA", "CLUSTER", "PROGRAM", "START DATE", "END DATE", "KETERANGAN", "Hasil"],
   };
@@ -1072,12 +1247,15 @@ export function downloadTemplate(kind: ImportKind) {
   const ws = XLSX.utils.aoa_to_sheet([headers]);
   const wb = XLSX.utils.book_new();
   const sheetName =
-    kind === "cluster" ? "DATA CLUSTER"
-      : kind === "analyst" ? "HASIL PROFILING"
-      : kind === "competitor" ? "KOMPETITOR"
-      : kind === "actionplan" ? "ACTION PLAN"
-      : "TICKET";
+    kind === "cluster"
+      ? "DATA CLUSTER"
+      : kind === "analyst"
+        ? "HASIL PROFILING"
+        : kind === "competitor"
+          ? "KOMPETITOR"
+          : kind === "actionplan"
+            ? "ACTION PLAN"
+            : "TICKET";
   XLSX.utils.book_append_sheet(wb, ws, sheetName);
   XLSX.writeFile(wb, `template-${kind}.xlsx`);
 }
-

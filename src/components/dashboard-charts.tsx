@@ -75,17 +75,27 @@ export default function DashboardCharts({
     () =>
       s.trend.map((t, i) => {
         const prev = i > 0 ? s.trend[i - 1].hc : 0;
-        return { ...t, growth: prev > 0 ? ((t.hc - prev) / prev) * 100 : 0, prevMonth: i > 0 ? s.trend[i - 1].month : "-" };
+        return {
+          ...t,
+          growth: prev > 0 ? ((t.hc - prev) / prev) * 100 : 0,
+          prevMonth: i > 0 ? s.trend[i - 1].month : "-",
+        };
       }),
     [s.trend],
   );
   const last = trend[trend.length - 1];
   const peak = useMemo(() => [...s.trend].sort((a, b) => b.hc - a.hc)[0], [s.trend]);
 
-  const topHc = useMemo(() => [...s.topHc].sort((a, b) => b.juni - a.juni).map((c, i) => ({ ...c, rank: i + 1 })), [s.topHc]);
+  const topHc = useMemo(
+    () => [...s.topHc].sort((a, b) => b.juni - a.juni).map((c, i) => ({ ...c, rank: i + 1 })),
+    [s.topHc],
+  );
   const maxHc = topHc[0]?.juni ?? 1;
 
-  const growth = useMemo(() => [...s.growth].sort((a, b) => b.deltaMeiJuni - a.deltaMeiJuni), [s.growth]);
+  const growth = useMemo(
+    () => [...s.growth].sort((a, b) => b.deltaMeiJuni - a.deltaMeiJuni),
+    [s.growth],
+  );
   const posCount = growth.filter((g) => g.deltaMeiJuni > 0).length;
 
   const topTicket = useMemo(
@@ -101,7 +111,12 @@ export default function DashboardCharts({
   const provDist = useMemo(() => [...s.provDist].sort((a, b) => b.value - a.value), [s.provDist]);
   const topProv = provDist[0];
   const provItems = useMemo(
-    () => provDist.map((p, i) => ({ name: p.name, value: p.value, color: CATEGORICAL[i % CATEGORICAL.length] })),
+    () =>
+      provDist.map((p, i) => ({
+        name: p.name,
+        value: p.value,
+        color: CATEGORICAL[i % CATEGORICAL.length],
+      })),
     [provDist],
   );
   const provAnalysis = useMemo(() => {
@@ -172,7 +187,12 @@ export default function DashboardCharts({
         footer={peak ? `HC tertinggi terjadi pada ${peak.month} (${fmtFull(peak.hc)}).` : undefined}
       >
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={trend} margin={{ top: 8, right: 12, left: 0, bottom: 0 }} onClick={handleBar("month")} {...cursor}>
+          <ComposedChart
+            data={trend}
+            margin={{ top: 8, right: 12, left: 0, bottom: 0 }}
+            onClick={handleBar("month")}
+            {...cursor}
+          >
             <defs>
               <linearGradient id="hcFill" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor={C.primary} stopOpacity={0.28} />
@@ -182,7 +202,13 @@ export default function DashboardCharts({
             <XAxis dataKey="month" {...axisProps} />
             <YAxis {...axisProps} width={46} tickFormatter={(v) => fmtNum(v as number)} />
             <Tooltip content={TrendTip} cursor={{ stroke: C.primary, strokeOpacity: 0.35 }} />
-            <Area type="monotone" dataKey="hc" stroke="none" fill="url(#hcFill)" isAnimationActive={false} />
+            <Area
+              type="monotone"
+              dataKey="hc"
+              stroke="none"
+              fill="url(#hcFill)"
+              isAnimationActive={false}
+            />
             <Line
               type="monotone"
               dataKey="hc"
@@ -203,7 +229,9 @@ export default function DashboardCharts({
         subtitle={`Cluster dengan HC terbesar bulan ${curLabel}`}
         height={248}
         className="lg:col-span-4"
-        footer={topHc[0] ? `${topHc[0].cluster} memimpin dengan ${fmtFull(topHc[0].juni)} HC.` : undefined}
+        footer={
+          topHc[0] ? `${topHc[0].cluster} memimpin dengan ${fmtFull(topHc[0].juni)} HC.` : undefined
+        }
       >
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
@@ -261,7 +289,9 @@ export default function DashboardCharts({
               {growth.map((g, i) => (
                 <Cell
                   key={i}
-                  fill={g.deltaMeiJuni > 0 ? C.positive : g.deltaMeiJuni < 0 ? C.negative : C.neutral}
+                  fill={
+                    g.deltaMeiJuni > 0 ? C.positive : g.deltaMeiJuni < 0 ? C.negative : C.neutral
+                  }
                 />
               ))}
               <LabelList
@@ -307,7 +337,11 @@ export default function DashboardCharts({
             <Tooltip content={TicketTip} cursor={hoverCursor} />
             <Bar dataKey="ticket" radius={[0, 6, 6, 0]} barSize={16} isAnimationActive={false}>
               {topTicket.map((d, i) => (
-                <Cell key={i} fill={C.negative} fillOpacity={0.45 + 0.55 * (d.ticket / maxTicket)} />
+                <Cell
+                  key={i}
+                  fill={C.negative}
+                  fillOpacity={0.45 + 0.55 * (d.ticket / maxTicket)}
+                />
               ))}
               <LabelList
                 dataKey="ticket"
@@ -332,7 +366,9 @@ export default function DashboardCharts({
       >
         <ArcDistribution
           items={provItems}
-          onSelect={onSelect ? (it) => handlePie("province")({ name: it.name, value: it.value }) : undefined}
+          onSelect={
+            onSelect ? (it) => handlePie("province")({ name: it.name, value: it.value }) : undefined
+          }
         />
       </ChartCard>
     </div>

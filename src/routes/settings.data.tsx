@@ -53,14 +53,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DataHealthPanel } from "@/components/data-health-panel";
 
 export const Route = createFileRoute("/settings/data")({
-  head: () => ({ meta: [
-    { title: "Data Management — MCA Analyst Workspace" },
-    { name: "description", content: "Unggah, validasi, dan sinkronkan data Excel workspace." },
-    { property: "og:title", content: "Data Management — MCA Analyst Workspace" },
-    { property: "og:description", content: "Unggah, validasi, dan sinkronkan data Excel workspace." },
-    { property: "og:type", content: "website" },
-    { name: "twitter:card", content: "summary" },
-  ] }),
+  head: () => ({
+    meta: [
+      { title: "Data Management — MCA Analyst Workspace" },
+      { name: "description", content: "Unggah, validasi, dan sinkronkan data Excel workspace." },
+      { property: "og:title", content: "Data Management — MCA Analyst Workspace" },
+      {
+        property: "og:description",
+        content: "Unggah, validasi, dan sinkronkan data Excel workspace.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: UploadPage,
 });
 
@@ -99,7 +104,14 @@ type ImportSummary = {
   ticket?: { rows: number; bulan: number };
   analyst?: { rows: number; ae: number };
   competitor?: { rows: number; unique: number; hargaMin: number; hargaMax: number; promo: number };
-  actionplan?: { rows: number; pic: number; cluster: number; aktif: number; selesai: number; mendatang: number };
+  actionplan?: {
+    rows: number;
+    pic: number;
+    cluster: number;
+    aktif: number;
+    selesai: number;
+    mendatang: number;
+  };
 };
 
 function formatBytes(n: number) {
@@ -160,11 +172,7 @@ function BulkImportZone({
             Competitor terdeteksi otomatis (no config)
           </div>
         </div>
-        <Button
-          className="mt-1"
-          disabled={disabled}
-          onClick={() => inputRef.current?.click()}
-        >
+        <Button className="mt-1" disabled={disabled} onClick={() => inputRef.current?.click()}>
           <Upload className="mr-2 h-4 w-4" /> Upload Multiple Files
         </Button>
         <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
@@ -183,7 +191,13 @@ function ClassifiedList({
   onRemove: (idx: number) => void;
 }) {
   const groups = useMemo(() => {
-    const g: Record<ImportKind, Classified[]> = { cluster: [], ticket: [], analyst: [], competitor: [], actionplan: [] };
+    const g: Record<ImportKind, Classified[]> = {
+      cluster: [],
+      ticket: [],
+      analyst: [],
+      competitor: [],
+      actionplan: [],
+    };
     items.forEach((it) => g[it.kind].push(it));
     return g;
   }, [items]);
@@ -367,7 +381,9 @@ function CloudStatus({
           {isAdmin ? "Admin — bisa unggah" : "Viewer — hanya melihat"}
         </Badge>
         <span className="ml-auto text-[11px] text-muted-foreground">
-          {last ? `Diperbarui ${new Date(last).toLocaleString("id-ID")}` : "Belum ada data di cloud"}
+          {last
+            ? `Diperbarui ${new Date(last).toLocaleString("id-ID")}`
+            : "Belum ada data di cloud"}
         </span>
       </div>
       <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-5">
@@ -411,7 +427,9 @@ function TemplateFormats() {
     <Card className="glass-card border-0">
       <CardHeader className="flex-row items-center gap-2 space-y-0">
         <FileSpreadsheet className="h-5 w-5 text-primary" />
-        <CardTitle className="font-display text-base">Format File yang Didukung &amp; Data Health</CardTitle>
+        <CardTitle className="font-display text-base">
+          Format File yang Didukung &amp; Data Health
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="format" className="space-y-4">
@@ -421,101 +439,115 @@ function TemplateFormats() {
           </TabsList>
           <TabsContent value="health" className="mt-0">
             <p className="mb-4 text-xs text-muted-foreground">
-              Kesegaran data, jumlah baris, duplikasi, nilai kosong, dan skor kualitas seluruh dataset
-              workspace.
+              Kesegaran data, jumlah baris, duplikasi, nilai kosong, dan skor kualitas seluruh
+              dataset workspace.
             </p>
             <DataHealthPanel />
           </TabsContent>
           <TabsContent value="format" className="mt-0">
-        <p className="mb-4 text-xs text-muted-foreground">
-          Pastikan nama kolom pada file Excel sesuai daftar berikut agar data terbaca dan lolos
-          validasi. Kolom bertanda <span className="text-destructive">wajib</span> harus ada. Setelah
-          file diupload, kolom yang cocok akan diberi tanda centang hijau.
-        </p>
-        <div className="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-2">
-          {TEMPLATE_SPECS.map((spec) => {
-            const checks = evaluateTemplateFormat(spec.kind, rowsByKind[spec.kind] ?? []);
-            const okCount = checks?.filter((c) => c.ok).length ?? 0;
-            const missingRequired = checks?.filter((c) => c.required && !c.ok) ?? [];
-            return (
-              <div key={spec.kind} className="min-w-0 rounded-xl border border-border/60 bg-muted/15 p-4">
-                <div className="mb-1 flex flex-wrap items-center gap-2">
-                  <span aria-hidden="true">{spec.icon}</span>
-                  <span className="text-sm font-semibold">{spec.label}</span>
-                  <Badge variant="outline" className="text-[10px]">
-                    Sheet: {spec.sheet}
-                  </Badge>
-                  {checks ? (
-                    missingRequired.length === 0 ? (
-                      <Badge className="gap-1 border-0 bg-success/15 text-[10px] text-success">
-                        <CheckCircle2 className="h-3 w-3" /> Format sesuai ({okCount}/{checks.length})
-                      </Badge>
-                    ) : (
-                      <Badge className="gap-1 border-0 bg-warning/15 text-[10px] text-warning">
-                        <AlertCircle className="h-3 w-3" /> {missingRequired.length} kolom wajib belum terbaca
-                      </Badge>
-                    )
-                  ) : (
-                    <Badge variant="secondary" className="text-[10px]">
-                      Belum ada data
-                    </Badge>
-                  )}
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="ml-auto h-7 px-2 text-[11px]"
-                    onClick={() => downloadTemplate(spec.kind)}
+            <p className="mb-4 text-xs text-muted-foreground">
+              Pastikan nama kolom pada file Excel sesuai daftar berikut agar data terbaca dan lolos
+              validasi. Kolom bertanda <span className="text-destructive">wajib</span> harus ada.
+              Setelah file diupload, kolom yang cocok akan diberi tanda centang hijau.
+            </p>
+            <div className="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-2">
+              {TEMPLATE_SPECS.map((spec) => {
+                const checks = evaluateTemplateFormat(spec.kind, rowsByKind[spec.kind] ?? []);
+                const okCount = checks?.filter((c) => c.ok).length ?? 0;
+                const missingRequired = checks?.filter((c) => c.required && !c.ok) ?? [];
+                return (
+                  <div
+                    key={spec.kind}
+                    className="min-w-0 rounded-xl border border-border/60 bg-muted/15 p-4"
                   >
-                    <Download className="mr-1 h-3.5 w-3.5" /> Unduh contoh
-                  </Button>
-                </div>
-                <p className="mb-3 text-[11px] text-muted-foreground">{spec.description}</p>
-                <div className="overflow-x-auto">
-                  <table className="w-full min-w-[380px] text-[11px]">
-                    <thead className="text-left text-muted-foreground">
-                      <tr>
-                        {checks && <th className="w-6 py-1 pr-1 font-medium" aria-label="Status" />}
-                        <th className="py-1 pr-3 font-medium">Kolom</th>
-                        <th className="py-1 pr-3 font-medium">Contoh isi</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {spec.columns.map((c) => {
-                        const check = checks?.find((x) => x.name === c.name);
-                        return (
-                          <tr key={c.name} className="border-t border-border/40 align-top">
+                    <div className="mb-1 flex flex-wrap items-center gap-2">
+                      <span aria-hidden="true">{spec.icon}</span>
+                      <span className="text-sm font-semibold">{spec.label}</span>
+                      <Badge variant="outline" className="text-[10px]">
+                        Sheet: {spec.sheet}
+                      </Badge>
+                      {checks ? (
+                        missingRequired.length === 0 ? (
+                          <Badge className="gap-1 border-0 bg-success/15 text-[10px] text-success">
+                            <CheckCircle2 className="h-3 w-3" /> Format sesuai ({okCount}/
+                            {checks.length})
+                          </Badge>
+                        ) : (
+                          <Badge className="gap-1 border-0 bg-warning/15 text-[10px] text-warning">
+                            <AlertCircle className="h-3 w-3" /> {missingRequired.length} kolom wajib
+                            belum terbaca
+                          </Badge>
+                        )
+                      ) : (
+                        <Badge variant="secondary" className="text-[10px]">
+                          Belum ada data
+                        </Badge>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="ml-auto h-7 px-2 text-[11px]"
+                        onClick={() => downloadTemplate(spec.kind)}
+                      >
+                        <Download className="mr-1 h-3.5 w-3.5" /> Unduh contoh
+                      </Button>
+                    </div>
+                    <p className="mb-3 text-[11px] text-muted-foreground">{spec.description}</p>
+                    <div className="overflow-x-auto">
+                      <table className="w-full min-w-[380px] text-[11px]">
+                        <thead className="text-left text-muted-foreground">
+                          <tr>
                             {checks && (
-                              <td className="py-1 pr-1">
-                                {check?.ok ? (
-                                  <CheckCircle2 className="h-3.5 w-3.5 text-success" aria-label="Kolom terbaca" />
-                                ) : (
-                                  <X
-                                    className={`h-3.5 w-3.5 ${c.required ? "text-destructive" : "text-muted-foreground/50"}`}
-                                    aria-label={c.required ? "Kolom wajib belum terbaca" : "Kolom opsional belum terbaca"}
-                                  />
-                                )}
-                              </td>
+                              <th className="w-6 py-1 pr-1 font-medium" aria-label="Status" />
                             )}
-                            <td className="py-1 pr-3">
-                              <span className="font-medium">{c.name}</span>
-                              {c.required && <span className="ml-1 text-destructive">*</span>}
-                              {c.aliases?.length ? (
-                                <div className="text-[10px] text-muted-foreground">
-                                  alias: {c.aliases.join(" / ")}
-                                </div>
-                              ) : null}
-                            </td>
-                            <td className="py-1 pr-3 text-muted-foreground">{c.example}</td>
+                            <th className="py-1 pr-3 font-medium">Kolom</th>
+                            <th className="py-1 pr-3 font-medium">Contoh isi</th>
                           </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+                        </thead>
+                        <tbody>
+                          {spec.columns.map((c) => {
+                            const check = checks?.find((x) => x.name === c.name);
+                            return (
+                              <tr key={c.name} className="border-t border-border/40 align-top">
+                                {checks && (
+                                  <td className="py-1 pr-1">
+                                    {check?.ok ? (
+                                      <CheckCircle2
+                                        className="h-3.5 w-3.5 text-success"
+                                        aria-label="Kolom terbaca"
+                                      />
+                                    ) : (
+                                      <X
+                                        className={`h-3.5 w-3.5 ${c.required ? "text-destructive" : "text-muted-foreground/50"}`}
+                                        aria-label={
+                                          c.required
+                                            ? "Kolom wajib belum terbaca"
+                                            : "Kolom opsional belum terbaca"
+                                        }
+                                      />
+                                    )}
+                                  </td>
+                                )}
+                                <td className="py-1 pr-3">
+                                  <span className="font-medium">{c.name}</span>
+                                  {c.required && <span className="ml-1 text-destructive">*</span>}
+                                  {c.aliases?.length ? (
+                                    <div className="text-[10px] text-muted-foreground">
+                                      alias: {c.aliases.join(" / ")}
+                                    </div>
+                                  ) : null}
+                                </td>
+                                <td className="py-1 pr-3 text-muted-foreground">{c.example}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </TabsContent>
         </Tabs>
       </CardContent>
@@ -538,7 +570,23 @@ function UploadPage() {
     setActionPlans,
     pushHistory,
     clearAll,
-  } = useDataStore(useShallow((s) => ({ clusters: s.clusters, tickets: s.tickets, analyst: s.analyst, competitorData: s.competitorData, actionPlans: s.actionPlans, history: s.history, setClusters: s.setClusters, setTickets: s.setTickets, setAnalyst: s.setAnalyst, setCompetitorData: s.setCompetitorData, setActionPlans: s.setActionPlans, pushHistory: s.pushHistory, clearAll: s.clearAll })));
+  } = useDataStore(
+    useShallow((s) => ({
+      clusters: s.clusters,
+      tickets: s.tickets,
+      analyst: s.analyst,
+      competitorData: s.competitorData,
+      actionPlans: s.actionPlans,
+      history: s.history,
+      setClusters: s.setClusters,
+      setTickets: s.setTickets,
+      setAnalyst: s.setAnalyst,
+      setCompetitorData: s.setCompetitorData,
+      setActionPlans: s.setActionPlans,
+      pushHistory: s.pushHistory,
+      clearAll: s.clearAll,
+    })),
+  );
 
   const [queue, setQueue] = useState<Classified[]>([]);
   const [classifying, setClassifying] = useState(false);
@@ -566,9 +614,12 @@ function UploadPage() {
     void refreshCloud();
   }, [refreshCloud]);
 
-
   const hasData =
-    clusters.length > 0 || tickets.length > 0 || analyst.length > 0 || competitorData.length > 0 || actionPlans.length > 0;
+    clusters.length > 0 ||
+    tickets.length > 0 ||
+    analyst.length > 0 ||
+    competitorData.length > 0 ||
+    actionPlans.length > 0;
   const knownChecksums = useMemo(
     () => new Set(history.map((h) => h.checksum).filter(Boolean) as string[]),
     [history],
@@ -599,7 +650,11 @@ function UploadPage() {
         setQueue((q) => {
           const seen = new Set(q.map((x) => x.checksum));
           const merged = [...q];
-          for (const r of ok) if (!seen.has(r.checksum)) { seen.add(r.checksum); merged.push(r); }
+          for (const r of ok)
+            if (!seen.has(r.checksum)) {
+              seen.add(r.checksum);
+              merged.push(r);
+            }
           return merged;
         });
         if (ok.length) toast.success(`${ok.length} file terdeteksi otomatis`);
@@ -769,9 +824,12 @@ function UploadPage() {
   };
 
   const exportAll = () => {
-    if (clusters.length) exportToExcel(clusters as unknown as Record<string, unknown>[], "clusters.xlsx");
-    if (tickets.length) exportToExcel(tickets as unknown as Record<string, unknown>[], "tickets.xlsx");
-    if (analyst.length) exportToExcel(analyst as unknown as Record<string, unknown>[], "analyst.xlsx");
+    if (clusters.length)
+      exportToExcel(clusters as unknown as Record<string, unknown>[], "clusters.xlsx");
+    if (tickets.length)
+      exportToExcel(tickets as unknown as Record<string, unknown>[], "tickets.xlsx");
+    if (analyst.length)
+      exportToExcel(analyst as unknown as Record<string, unknown>[], "analyst.xlsx");
     if (competitorData.length)
       exportToExcel(competitorData as unknown as Record<string, unknown>[], "competitor.xlsx");
     if (actionPlans.length)
@@ -790,12 +848,7 @@ function UploadPage() {
                 Smart Bulk Excel Import Engine
               </CardTitle>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={exportAll}
-              disabled={!hasData}
-            >
+            <Button variant="outline" size="sm" onClick={exportAll} disabled={!hasData}>
               <Download className="mr-1 h-4 w-4" /> Export
             </Button>
           </CardHeader>
@@ -813,7 +866,6 @@ function UploadPage() {
                 mengubah data. Hubungi admin bila perlu memperbarui data.
               </div>
             )}
-
 
             {classifying && (
               <div className="rounded-lg bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
@@ -979,7 +1031,8 @@ function UploadPage() {
               (Append) ke dataset yang ada.
               {queue.some((q) => q.cached) && (
                 <div className="mt-2 rounded-md bg-warning/10 p-2 text-warning">
-                  {queue.filter((q) => q.cached).length} file identik pernah diupload (SHA-256 sama).
+                  {queue.filter((q) => q.cached).length} file identik pernah diupload (SHA-256
+                  sama).
                 </div>
               )}
             </DialogDescription>

@@ -20,8 +20,10 @@ async function mutate(
   const stamp = new Date().toISOString();
   const st = useDataStore.getState();
   try {
-    if (operation === "add") st.addActionPlans((args.rows ?? []).map((r) => ({ ...r, updatedAt: stamp })));
-    if (operation === "update" && args.id) st.updateActionPlan(args.id, { ...args.patch, updatedAt: stamp });
+    if (operation === "add")
+      st.addActionPlans((args.rows ?? []).map((r) => ({ ...r, updatedAt: stamp })));
+    if (operation === "update" && args.id)
+      st.updateActionPlan(args.id, { ...args.patch, updatedAt: stamp });
     if (operation === "delete" && args.id) st.removeActionPlan(args.id);
     const { data, error } = await supabase.rpc("mutate_action_plan", {
       operation,
@@ -40,5 +42,6 @@ async function mutate(
 }
 
 export const saveActionPlans = (rows: ActionPlanRow[]) => mutate("add", { rows });
-export const saveActionPlanPatch = (id: string, patch: Partial<ActionPlanRow>) => mutate("update", { id, patch });
+export const saveActionPlanPatch = (id: string, patch: Partial<ActionPlanRow>) =>
+  mutate("update", { id, patch });
 export const deleteSharedActionPlan = (id: string) => mutate("delete", { id });

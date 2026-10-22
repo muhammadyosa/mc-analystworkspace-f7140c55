@@ -148,9 +148,7 @@ export function CommandCenter() {
                 <CommandItem
                   key={name}
                   value={`cluster ${name}`}
-                  onSelect={() =>
-                    go(() => navigate({ to: "/cluster/$name", params: { name } }))
-                  }
+                  onSelect={() => go(() => navigate({ to: "/cluster/$name", params: { name } }))}
                 >
                   <MapPin className="mr-2 h-4 w-4" />
                   {name}

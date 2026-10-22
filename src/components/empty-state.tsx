@@ -10,7 +10,8 @@ export function EmptyState({ title = "Belum ada data", desc }: { title?: string;
       </div>
       <h2 className="mt-4 font-display text-lg font-semibold">{title}</h2>
       <p className="mt-1 text-sm text-muted-foreground">
-        {desc ?? "Upload file Excel PEMBAGIAN CLUSTER SIBT.xlsx dan ticket jan-jun.xlsx untuk memulai analisa."}
+        {desc ??
+          "Upload file Excel PEMBAGIAN CLUSTER SIBT.xlsx dan ticket jan-jun.xlsx untuk memulai analisa."}
       </p>
       <Button asChild className="mt-5">
         <Link to="/settings/data">Buka Halaman Upload</Link>

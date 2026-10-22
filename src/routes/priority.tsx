@@ -10,14 +10,22 @@ import { GlobalFilterBar } from "@/components/global-filter";
 import { AnalystInsights } from "@/components/analyst-insights";
 
 export const Route = createFileRoute("/priority")({
-  head: () => ({ meta: [
-    { title: "Priority Engine — MCA Analyst Workspace" },
-    { name: "description", content: "Skor prioritas cluster dan rekomendasi strategi berbasis data." },
-    { property: "og:title", content: "Priority Engine — MCA Analyst Workspace" },
-    { property: "og:description", content: "Skor prioritas cluster dan rekomendasi strategi berbasis data." },
-    { property: "og:type", content: "website" },
-    { name: "twitter:card", content: "summary" },
-  ] }),
+  head: () => ({
+    meta: [
+      { title: "Priority Engine — MCA Analyst Workspace" },
+      {
+        name: "description",
+        content: "Skor prioritas cluster dan rekomendasi strategi berbasis data.",
+      },
+      { property: "og:title", content: "Priority Engine — MCA Analyst Workspace" },
+      {
+        property: "og:description",
+        content: "Skor prioritas cluster dan rekomendasi strategi berbasis data.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: PriorityPage,
 });
 
@@ -31,7 +39,15 @@ function PriorityPage() {
       .sort((a, b) => b.score - a.score);
   }, [clusters]);
 
-  if (!allClusters.length) return (<><AppHeader title="Priority Engine" /><div className="p-6"><EmptyState /></div></>);
+  if (!allClusters.length)
+    return (
+      <>
+        <AppHeader title="Priority Engine" />
+        <div className="p-6">
+          <EmptyState />
+        </div>
+      </>
+    );
 
   const groups = {
     Tinggi: scored.filter((s) => s.level === "Tinggi"),
@@ -49,15 +65,29 @@ function PriorityPage() {
             Tidak ada cluster yang cocok dengan filter saat ini.
           </div>
         )}
-        <AnalystInsights rows={clusters} curLabel={curLabel} prevLabel={prevLabel} limit={4} title="Analisa Prioritas Otomatis" />
+        <AnalystInsights
+          rows={clusters}
+          curLabel={curLabel}
+          prevLabel={prevLabel}
+          limit={4}
+          title="Analisa Prioritas Otomatis"
+        />
         <div className="grid gap-3 md:grid-cols-3">
           {(["Tinggi", "Sedang", "Rendah"] as const).map((lvl) => (
             <Card key={lvl} className="glass-card border-0">
               <CardContent className="p-4">
-                <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Priority {lvl}</p>
-                <p className={`font-display text-3xl font-bold ${
-                  lvl === "Tinggi" ? "text-destructive" : lvl === "Sedang" ? "text-warning" : "text-success"
-                }`}>
+                <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                  Priority {lvl}
+                </p>
+                <p
+                  className={`font-display text-3xl font-bold ${
+                    lvl === "Tinggi"
+                      ? "text-destructive"
+                      : lvl === "Sedang"
+                        ? "text-warning"
+                        : "text-success"
+                  }`}
+                >
                   {groups[lvl].length}
                 </p>
               </CardContent>
@@ -70,9 +100,15 @@ function PriorityPage() {
             <Card key={lvl} className="glass-card border-0">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 font-display text-base">
-                  <span className={`h-2 w-2 rounded-full ${
-                    lvl === "Tinggi" ? "bg-destructive" : lvl === "Sedang" ? "bg-warning" : "bg-success"
-                  }`} />
+                  <span
+                    className={`h-2 w-2 rounded-full ${
+                      lvl === "Tinggi"
+                        ? "bg-destructive"
+                        : lvl === "Sedang"
+                          ? "bg-warning"
+                          : "bg-success"
+                    }`}
+                  />
                   Priority {lvl}
                 </CardTitle>
               </CardHeader>
@@ -90,12 +126,18 @@ function PriorityPage() {
                           <p className="truncate font-semibold text-sm">{c.cluster}</p>
                           <p className="truncate text-xs text-muted-foreground">{c.kabupaten}</p>
                         </div>
-                        <Badge variant="outline" className="tabular-nums">{c.score}</Badge>
+                        <Badge variant="outline" className="tabular-nums">
+                          {c.score}
+                        </Badge>
                       </div>
                       <div className="mt-2 flex flex-wrap gap-1">
-                        <Badge variant="secondary" className="text-[10px]">{c.strategy.type}</Badge>
+                        <Badge variant="secondary" className="text-[10px]">
+                          {c.strategy.type}
+                        </Badge>
                         {c.strategy.actions.slice(0, 2).map((a) => (
-                          <Badge key={a} variant="outline" className="text-[10px]">{a}</Badge>
+                          <Badge key={a} variant="outline" className="text-[10px]">
+                            {a}
+                          </Badge>
                         ))}
                       </div>
                     </Link>

@@ -1,4 +1,13 @@
-import { Download, FileSpreadsheet, FileJson, FileText, Printer, Presentation, Image as ImageIcon, History } from "lucide-react";
+import {
+  Download,
+  FileSpreadsheet,
+  FileJson,
+  FileText,
+  Printer,
+  Presentation,
+  Image as ImageIcon,
+  History,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,7 +18,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { exportCSV, exportExcel, exportJSON, exportPNG, exportPPTX, printSection, type ExportRow } from "@/lib/report-export";
+import {
+  exportCSV,
+  exportExcel,
+  exportJSON,
+  exportPNG,
+  exportPPTX,
+  printSection,
+  type ExportRow,
+} from "@/lib/report-export";
 import { filterSummary, usePrefsStore } from "@/lib/prefs";
 
 /** Report Center: satu tombol untuk ekspor PDF / Excel / CSV / JSON / PNG / PowerPoint. */
@@ -110,8 +127,14 @@ export function ReportExportMenu({
             </DropdownMenuLabel>
             {recentReports.slice(0, 5).map((r) => (
               <div key={r.id} className="px-2 py-1 text-[11px] text-muted-foreground">
-                <span className="font-medium text-foreground">{r.format}</span> — {r.label} · {r.rows} baris ·{" "}
-                {new Date(r.at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                <span className="font-medium text-foreground">{r.format}</span> — {r.label} ·{" "}
+                {r.rows} baris ·{" "}
+                {new Date(r.at).toLocaleString("id-ID", {
+                  day: "2-digit",
+                  month: "short",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
               </div>
             ))}
           </>

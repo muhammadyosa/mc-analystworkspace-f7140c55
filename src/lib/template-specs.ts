@@ -27,7 +27,12 @@ export const TEMPLATE_SPECS: TemplateSpec[] = [
     icon: "🗂️",
     description: "Master data cluster: homepass, HC aktif per bulan, ticket, dan wilayah.",
     columns: [
-      { name: "CLUSTER", aliases: ["NAMA CLUSTER"], example: "CLUSTER BANDUNG KOTA", required: true },
+      {
+        name: "CLUSTER",
+        aliases: ["NAMA CLUSTER"],
+        example: "CLUSTER BANDUNG KOTA",
+        required: true,
+      },
       { name: "Homepass", example: "512", required: true },
       { name: "HC Terpasang", example: "318" },
       { name: "HC Aktif", aliases: ["Grand Total HC Aktif"], example: "295", required: true },
@@ -138,22 +143,53 @@ const hasStr = (key: string) => (rows: AnyRow[]) => rows.some((r) => str(r[key])
 const hasNum = (key: string) => (rows: AnyRow[]) => rows.some((r) => num(r[key]) > 0);
 
 const MONTH_PREFIX: Record<string, string[]> = {
-  jan: ["jan"], feb: ["feb"], mar: ["mar"], apr: ["apr"], mei: ["mei", "may"],
-  jun: ["jun"], jul: ["jul"], agt: ["agt", "ags", "agu", "aug"], sep: ["sep"],
-  okt: ["okt", "oct"], nov: ["nov"], des: ["des", "dec"],
+  jan: ["jan"],
+  feb: ["feb"],
+  mar: ["mar"],
+  apr: ["apr"],
+  mei: ["mei", "may"],
+  jun: ["jun"],
+  jul: ["jul"],
+  agt: ["agt", "ags", "agu", "aug"],
+  sep: ["sep"],
+  okt: ["okt", "oct"],
+  nov: ["nov"],
+  des: ["des", "dec"],
 };
 
 function ticketMonthCheck(col: TemplateColumn) {
-  const names = [col.name, ...(col.aliases ?? [])].map((n) => n.toLowerCase().replace(/[^a-z]/g, "").slice(0, 3));
+  const names = [col.name, ...(col.aliases ?? [])].map((n) =>
+    n
+      .toLowerCase()
+      .replace(/[^a-z]/g, "")
+      .slice(0, 3),
+  );
   const prefixes = names.flatMap((n) => MONTH_PREFIX[n] ?? []);
   return (rows: AnyRow[]) =>
     rows.some((r) => {
-      const b = str(r["bulan"]).toLowerCase().replace(/[^a-z]/g, "");
-      return prefixes.some((p) => b.startsWith(p)) && num(r["ticket"]) >= 0 && str(r["bulan"]).length > 0;
+      const b = str(r["bulan"])
+        .toLowerCase()
+        .replace(/[^a-z]/g, "");
+      return (
+        prefixes.some((p) => b.startsWith(p)) && num(r["ticket"]) >= 0 && str(r["bulan"]).length > 0
+      );
     });
 }
 
-const CLUSTER_MONTH_KEYS = ["januari","februari","maret","april","mei","juni","juli","agustus","september","oktober","november","desember"];
+const CLUSTER_MONTH_KEYS = [
+  "januari",
+  "februari",
+  "maret",
+  "april",
+  "mei",
+  "juni",
+  "juli",
+  "agustus",
+  "september",
+  "oktober",
+  "november",
+  "desember",
+];
 
 function clusterMonthsOk(key: string | null): (rows: AnyRow[]) => boolean {
   return (rows) =>
@@ -195,14 +231,18 @@ function checkerFor(kind: ImportKind, col: TemplateColumn): (rows: AnyRow[]) => 
     return ticketMonthCheck(col);
   }
   if (kind === "analyst") {
-    if (n.includes("tanggal")) return (rows) => rows.some((r) => str(r["profilingDate"]) || str(r["timestamp"]));
+    if (n.includes("tanggal"))
+      return (rows) => rows.some((r) => str(r["profilingDate"]) || str(r["timestamp"]));
     if (n.includes("harga")) return hasNum("competitorPrice");
     if (n.includes("kompetitor yang ada")) return hasStr("competitor");
     if (n.includes("promo")) return hasStr("competitorPromo");
     if (n.includes("potensi")) return hasStr("potential");
     if (n.includes("tool kits")) return hasStr("toolkitStatus");
-    if (n.startsWith("sf/")) return (rows) => rows.some((r) => num(r["sfToday"]) > 0 || num(r["sfTotal"]) > 0);
-    if (n.includes("close won")) return (rows) => rows.some((r) => num(r["closewonToday"]) >= 0 && str(r["aeName"]).length > 0);
+    if (n.startsWith("sf/"))
+      return (rows) => rows.some((r) => num(r["sfToday"]) > 0 || num(r["sfTotal"]) > 0);
+    if (n.includes("close won"))
+      return (rows) =>
+        rows.some((r) => num(r["closewonToday"]) >= 0 && str(r["aeName"]).length > 0);
     if (n.includes("segmen")) return hasStr("customerSegment");
     if (n.includes("daya beli")) return hasStr("purchasingPower");
     if (n.includes("insight")) return hasStr("aeInsight");

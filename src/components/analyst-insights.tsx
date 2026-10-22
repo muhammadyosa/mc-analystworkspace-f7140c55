@@ -4,13 +4,21 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { buildStructuredInsights, type InsightSeverity, type StructuredInsight } from "@/lib/insight-engine";
+import {
+  buildStructuredInsights,
+  type InsightSeverity,
+  type StructuredInsight,
+} from "@/lib/insight-engine";
 import type { FilteredCluster } from "@/hooks/use-global-filters";
 import { useDataStore } from "@/lib/store";
 import { useRole } from "@/hooks/use-role";
 
 const TONE: Record<InsightSeverity, { badge: string; bar: string; label: string }> = {
-  kritis: { badge: "bg-destructive/15 text-destructive", bar: "border-l-destructive", label: "Kritis" },
+  kritis: {
+    badge: "bg-destructive/15 text-destructive",
+    bar: "border-l-destructive",
+    label: "Kritis",
+  },
   perhatian: { badge: "bg-warning/15 text-warning", bar: "border-l-warning", label: "Perhatian" },
   positif: { badge: "bg-success/15 text-success", bar: "border-l-success", label: "Positif" },
   info: { badge: "bg-info/15 text-info", bar: "border-l-info", label: "Informasi" },
@@ -30,7 +38,10 @@ export function AnalystInsights({
   limit?: number;
   title?: string;
 }) {
-  const insights = useMemo(() => buildStructuredInsights(rows, curLabel, prevLabel, limit), [rows, curLabel, prevLabel, limit]);
+  const insights = useMemo(
+    () => buildStructuredInsights(rows, curLabel, prevLabel, limit),
+    [rows, curLabel, prevLabel, limit],
+  );
   if (!insights.length) return null;
 
   return (
@@ -68,7 +79,10 @@ function InsightItem({ insight }: { insight: StructuredInsight }) {
         id: `ai-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         pic: "Belum ditentukan",
         cluster: insight.cluster,
-        program: insight.recommendation.length > 80 ? insight.recommendation.slice(0, 77) + "…" : insight.recommendation,
+        program:
+          insight.recommendation.length > 80
+            ? insight.recommendation.slice(0, 77) + "…"
+            : insight.recommendation,
         startDate: iso(today),
         endDate: iso(end),
         description: `Temuan: ${insight.finding}\nPenyebab: ${insight.cause}\nDampak: ${insight.impact}`,
@@ -112,12 +126,26 @@ function InsightItem({ insight }: { insight: StructuredInsight }) {
         </div>
       )}
       <div className="mt-2 flex flex-wrap items-center gap-2">
-        <Button size="sm" variant="ghost" className="h-8 px-2 text-xs" onClick={() => setOpen((v) => !v)}>
-          {open ? <ChevronUp className="mr-1 h-3.5 w-3.5" /> : <ChevronDown className="mr-1 h-3.5 w-3.5" />}
+        <Button
+          size="sm"
+          variant="ghost"
+          className="h-8 px-2 text-xs"
+          onClick={() => setOpen((v) => !v)}
+        >
+          {open ? (
+            <ChevronUp className="mr-1 h-3.5 w-3.5" />
+          ) : (
+            <ChevronDown className="mr-1 h-3.5 w-3.5" />
+          )}
           {open ? "Sembunyikan analisa" : "Lihat analisa lengkap"}
         </Button>
         {canPlan && (
-          <Button size="sm" variant="ghost" className="h-8 px-2 text-xs text-success" onClick={createPlan}>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-8 px-2 text-xs text-success"
+            onClick={createPlan}
+          >
             <ClipboardPlus className="mr-1 h-3.5 w-3.5" /> Jadikan Action Plan
           </Button>
         )}

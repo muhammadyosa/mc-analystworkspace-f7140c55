@@ -5,7 +5,12 @@ export type PotentialCategory = "tinggi" | "sedang" | "rendah";
 /** Interpret the existing assessment labels, not a new numerical score. */
 export function potentialCategory(value: unknown): PotentialCategory | null {
   if (typeof value !== "string") return null;
-  const label = value.normalize("NFKC").toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, " ").replace(/\s+/g, " ").trim();
+  const label = value
+    .normalize("NFKC")
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
   // Specific qualifiers must precede the generic "potensial" match.
   if (/\b(rendah|kurang|tidak)\b/.test(label)) return "rendah";
   if (/\b(sedang|cukup)\b/.test(label)) return "sedang";
@@ -48,5 +53,6 @@ export function summarizePotential(rows: AnalystRow[]) {
 
 export function potentialPercent(count: number, total: number): number {
   return Number.isFinite(count) && Number.isFinite(total) && count >= 0 && total > 0
-    ? (count / total) * 100 : 0;
+    ? (count / total) * 100
+    : 0;
 }

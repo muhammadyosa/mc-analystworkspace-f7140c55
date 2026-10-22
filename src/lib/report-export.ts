@@ -1,16 +1,23 @@
-
 /** Baris laporan generik: kunci = judul kolom. */
 export type ExportRow = Record<string, string | number>;
 
 const stamp = () => new Date().toISOString().slice(0, 10);
 
-const safe = (s: string) => s.replace(/[^\w.-]+/g, "-").replace(/-+/g, "-").toLowerCase();
+const safe = (s: string) =>
+  s
+    .replace(/[^\w.-]+/g, "-")
+    .replace(/-+/g, "-")
+    .toLowerCase();
 
 /** Unduh laporan sebagai file Excel (.xlsx). */
 export async function exportExcel(rows: ExportRow[], sheetName: string, fileLabel: string) {
   const XLSX = await import("xlsx");
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), sheetName.slice(0, 31) || "Report");
+  XLSX.utils.book_append_sheet(
+    wb,
+    XLSX.utils.json_to_sheet(rows),
+    sheetName.slice(0, 31) || "Report",
+  );
   XLSX.writeFile(wb, `${safe(fileLabel)}-${stamp()}.xlsx`);
 }
 
@@ -18,7 +25,10 @@ export async function exportExcel(rows: ExportRow[], sheetName: string, fileLabe
 export async function exportCSV(rows: ExportRow[], fileLabel: string) {
   const XLSX = await import("xlsx");
   const csv = XLSX.utils.sheet_to_csv(XLSX.utils.json_to_sheet(rows));
-  triggerDownload(new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" }), `${safe(fileLabel)}-${stamp()}.csv`);
+  triggerDownload(
+    new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" }),
+    `${safe(fileLabel)}-${stamp()}.csv`,
+  );
 }
 
 /** Unduh data mentah laporan sebagai JSON (untuk integrasi lanjutan). */
@@ -103,7 +113,12 @@ export async function exportPPTX(rows: ExportRow[], fileLabel: string, subtitle 
   const cover = pptx.addSlide();
   cover.addText("MCA Workspace", { x: 0.6, y: 1.6, fontSize: 20, color: "5B8DEF" });
   cover.addText(fileLabel, { x: 0.6, y: 2.1, fontSize: 34, bold: true });
-  cover.addText(subtitle || new Date().toLocaleDateString("id-ID"), { x: 0.6, y: 3.1, fontSize: 14, color: "666666" });
+  cover.addText(subtitle || new Date().toLocaleDateString("id-ID"), {
+    x: 0.6,
+    y: 3.1,
+    fontSize: 14,
+    color: "666666",
+  });
 
   const headers = Object.keys(rows[0] ?? {});
   const chunk = 14;
@@ -119,7 +134,13 @@ export async function exportPPTX(rows: ExportRow[], fileLabel: string, subtitle 
       headers.map((h) => ({ text: h, options: { bold: true, fill: { color: "EEF2FF" } } })),
       ...rows.slice(i, i + chunk).map((r) => headers.map((h) => ({ text: String(r[h] ?? "") }))),
     ];
-    slide.addTable(body, { x: 0.4, y: 0.9, w: 12.4, fontSize: 10, border: { pt: 0.5, color: "DDDDDD" } });
+    slide.addTable(body, {
+      x: 0.4,
+      y: 0.9,
+      w: 12.4,
+      fontSize: 10,
+      border: { pt: 0.5, color: "DDDDDD" },
+    });
   }
 
   await pptx.writeFile({ fileName: `${safe(fileLabel)}-${stamp()}.pptx` });
