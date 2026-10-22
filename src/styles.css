@@ -449,23 +449,66 @@
   color: transparent;
 }
 
-/* Melayang lembut saat menu terbuka; menempel diam saat tertutup. */
+/* Float independently of the centered position and hover scale. */
 @keyframes sidebar-toggle-float {
   0%,
   100% {
-    transform: translateY(-50%) translateX(0);
+    transform: translateY(0);
   }
   50% {
-    transform: translateY(calc(-50% - 4px)) translateX(0);
+    transform: translateY(-5px);
   }
 }
 
 .sidebar-toggle-float {
-  animation: sidebar-toggle-float 2.8s ease-in-out infinite;
+  background: var(--sidebar-toggle-bg);
+  color: var(--sidebar-ring);
+  border-color: color-mix(in oklch, var(--sidebar-ring) 55%, var(--sidebar-border));
+  box-shadow: 0 4px 16px -3px var(--sidebar-toggle-glow),
+    0 0 0 3px color-mix(in oklch, var(--sidebar-ring) 10%, transparent);
+  animation: sidebar-toggle-float 3.2s ease-in-out infinite;
+  transition: scale 180ms ease, box-shadow 180ms ease, background 180ms ease;
+  isolation: isolate;
+}
+
+.sidebar-toggle-float::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  border: 1px solid var(--sidebar-ring);
+  opacity: 0.2;
+  pointer-events: none;
+  animation: sidebar-toggle-ripple 3.2s ease-out infinite;
+}
+
+@keyframes sidebar-toggle-ripple {
+  0%, 15% { transform: scale(1); opacity: 0.3; }
+  80%, 100% { transform: scale(1.35); opacity: 0; }
+}
+
+.sidebar-toggle-float:hover,
+.sidebar-toggle-float:focus-visible {
+  animation-play-state: paused;
+  scale: 1.08;
+  background: var(--sidebar-accent);
+  color: var(--sidebar-ring);
+  box-shadow: 0 6px 22px -3px var(--sidebar-toggle-glow),
+    0 0 0 4px color-mix(in oklch, var(--sidebar-ring) 15%, transparent);
+}
+
+.sidebar-toggle-float:active {
+  scale: 0.96;
+}
+
+.reduce-motion .sidebar-toggle-float,
+.reduce-motion .sidebar-toggle-float::before {
+  animation: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .sidebar-toggle-float {
+  .sidebar-toggle-float,
+  .sidebar-toggle-float::before {
     animation: none;
   }
 }

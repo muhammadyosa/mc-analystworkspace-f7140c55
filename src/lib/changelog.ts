@@ -13,6 +13,14 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2.10.2",
+    date: "2026-10-22",
+    title: "Tombol Menu Melayang",
+    items: [
+      { kind: "tampilan", text: "Tombol tutup dan buka menu melayang lembut dengan cahaya serta riak halus; animasi mengikuti preferensi Kurangi animasi." },
+    ],
+  },
+  {
     version: "2.10.1",
     date: "2026-10-22",
     title: "Ikon Menu Lebih Menarik",
