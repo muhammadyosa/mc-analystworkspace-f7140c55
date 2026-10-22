@@ -505,12 +505,12 @@
   scale: 0.96;
 }
 
-.reduce-motion .sidebar-toggle-face::after {
+.reduce-motion .sidebar-toggle-float[aria-expanded="false"] .sidebar-toggle-face::after {
   animation: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .sidebar-toggle-face::after {
+  .sidebar-toggle-float[aria-expanded="false"] .sidebar-toggle-face::after {
     animation: none;
   }
 }
