@@ -58,20 +58,14 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" className="relative">
       <Tooltip>
         <TooltipTrigger asChild>
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon"
             onClick={toggleSidebar}
             aria-label={state === "expanded" ? "Tutup menu" : "Buka menu"}
-            className={cn(
-              "group/toggle absolute -right-3 top-1/2 z-50 hidden h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full md:flex",
-              "border border-[var(--sidebar-border)] bg-[var(--sidebar)] text-[var(--sidebar-foreground)]",
-              "shadow-[0_2px_8px_oklch(0_0_0/0.18)]",
-              "transition-all duration-300 ease-out",
-              "hover:scale-110 hover:border-[var(--sidebar-ring)] hover:text-[var(--sidebar-ring)]",
-              "active:scale-95",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sidebar-ring)]",
-              state === "expanded" && "sidebar-toggle-float",
-            )}
+            aria-expanded={state === "expanded"}
+            className="sidebar-toggle-float absolute -right-5 top-1/2 z-50 hidden size-10 -translate-y-1/2 rounded-full border p-0 md:flex"
           >
             <ChevronLeft
               className={cn(
@@ -79,7 +73,7 @@ export function AppSidebar() {
                 state === "collapsed" && "rotate-180",
               )}
             />
-          </button>
+          </Button>
         </TooltipTrigger>
         <TooltipContent side="right" className="text-xs">
           {state === "expanded" ? "Tutup menu" : "Buka menu"}
