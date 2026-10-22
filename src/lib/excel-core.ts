@@ -128,6 +128,8 @@ export type ActionPlanRow = {
   result: string;
   status: ActionPlanStatus;
   durationDays: number;
+  updatedAt?: string;
+  statusManual?: boolean;
 };
 
 export type UploadMeta = {
