@@ -1,4 +1,9 @@
-import { createFileRoute, retainSearchParams, useNavigate } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  retainSearchParams,
+  stripSearchParams,
+  useNavigate,
+} from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import {
@@ -111,7 +116,10 @@ export const Route = createFileRoute("/settings/users")({
   },
   search: {
     // Pencarian, filter, sorting, dan halaman bertahan saat berpindah tab Settings.
-    middlewares: [retainSearchParams(true)],
+    middlewares: [
+      retainSearchParams(true),
+      stripSearchParams({ q: "", role: "all", status: "all", sort: "joined", dir: "desc", page: 1 }),
+    ],
   },
   head: () => ({
     meta: [
