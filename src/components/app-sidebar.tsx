@@ -65,14 +65,16 @@ export function AppSidebar() {
             onClick={toggleSidebar}
             aria-label={state === "expanded" ? "Tutup menu" : "Buka menu"}
             aria-expanded={state === "expanded"}
-            className="sidebar-toggle-float absolute -right-5 top-1/2 z-50 hidden size-10 -translate-y-1/2 rounded-full border p-0 md:flex"
+            className="sidebar-toggle-float absolute -right-[22px] top-1/2 z-50 hidden size-11 -translate-y-1/2 rounded-full p-0 md:flex"
           >
+            <span className="sidebar-toggle-face flex size-6 items-center justify-center rounded-full" aria-hidden="true">
             <ChevronLeft
               className={cn(
                 "h-4 w-4 shrink-0 transition-transform duration-300 ease-out",
                 state === "collapsed" && "rotate-180",
               )}
             />
+            </span>
           </Button>
         </TooltipTrigger>
         <TooltipContent side="right" className="text-xs">
