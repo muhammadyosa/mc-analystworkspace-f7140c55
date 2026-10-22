@@ -49,10 +49,11 @@ const colorThemes: { id: ColorTheme; label: string; swatch: string }[] = [
 export function AppSidebar() {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const { theme, colorTheme, toggle, setColorTheme } = useTheme();
-  const { state, toggleSidebar, setOpenMobile } = useSidebar();
+  const { state, openMobile, isMobile, toggleSidebar, setOpenMobile } = useSidebar();
   const { isAdmin } = useRole();
   const items = nav.filter((item) => item.url !== "/settings" || isAdmin);
   const isActive = (p: string) => (p === "/" ? pathname === "/" : pathname.startsWith(p));
+  const menuOpen = isMobile ? openMobile : state === "expanded";
 
   return (
     <Sidebar collapsible="icon" className="relative">
@@ -63,22 +64,22 @@ export function AppSidebar() {
             variant="ghost"
             size="icon"
             onClick={toggleSidebar}
-            aria-label={state === "expanded" ? "Tutup menu" : "Buka menu"}
-            aria-expanded={state === "expanded"}
-            className="sidebar-toggle-float absolute -right-[18px] top-1/2 z-50 hidden size-10 -translate-y-1/2 rounded-full p-0 md:flex"
+            aria-label={menuOpen ? "Tutup menu" : "Buka menu"}
+            aria-expanded={menuOpen}
+            className="sidebar-toggle-float absolute -right-[18px] top-1/2 z-50 flex size-10 -translate-y-1/2 rounded-full p-0"
           >
             <span className="sidebar-toggle-face flex size-5 items-center justify-center rounded-full" aria-hidden="true">
             <ChevronLeft
               className={cn(
                 "h-3 w-3 shrink-0 transition-transform duration-300 ease-out",
-                state === "collapsed" && "rotate-180",
+                !menuOpen && "rotate-180",
               )}
             />
             </span>
           </Button>
         </TooltipTrigger>
         <TooltipContent side="right" className="text-xs">
-          {state === "expanded" ? "Tutup menu" : "Buka menu"}
+          {menuOpen ? "Tutup menu" : "Buka menu"}
         </TooltipContent>
       </Tooltip>
       <SidebarHeader>
