@@ -99,6 +99,9 @@
   --sidebar-toggle-bg: oklch(0.99 0 0);
   --sidebar-toggle-ring: oklch(0.52 0.22 265);
   --sidebar-toggle-glow: oklch(0.52 0.22 265 / 0.3);
+  --sidebar-toggle-open-bg: oklch(0.72 0.12 185);
+  --sidebar-toggle-open-fg: oklch(0.2 0.04 185);
+  --sidebar-toggle-closed-ring: oklch(0.75 0.13 230);
 }
 
 .dark {
@@ -449,36 +452,42 @@
   color: transparent;
 }
 
-/* Float independently of the centered position and hover scale. */
-@keyframes sidebar-toggle-float {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-5px);
-  }
-}
-
+/* Stable hit area; only the decorative halo animates. */
 .sidebar-toggle-float {
-  background: var(--sidebar-toggle-bg);
-  color: var(--sidebar-ring);
-  border-color: color-mix(in oklch, var(--sidebar-ring) 55%, var(--sidebar-border));
-  box-shadow: 0 4px 16px -3px var(--sidebar-toggle-glow),
-    0 0 0 3px color-mix(in oklch, var(--sidebar-ring) 10%, transparent);
-  animation: sidebar-toggle-float 3.2s ease-in-out infinite;
-  transition: scale 180ms ease, box-shadow 180ms ease, background 180ms ease;
+  background: transparent;
   isolation: isolate;
 }
 
-.sidebar-toggle-float::before {
+.sidebar-toggle-float:hover,
+.sidebar-toggle-float:active {
+  background: transparent;
+}
+
+.sidebar-toggle-face {
+  position: relative;
+  background: var(--sidebar-toggle-bg);
+  color: var(--sidebar-foreground);
+  border: 1px solid var(--sidebar-border);
+  transition: scale 180ms ease, background 180ms ease, color 180ms ease;
+}
+
+.sidebar-toggle-float[aria-expanded="true"] .sidebar-toggle-face {
+  background: var(--sidebar-toggle-open-bg);
+  color: var(--sidebar-toggle-open-fg);
+  border-color: var(--sidebar-toggle-open-bg);
+}
+
+.sidebar-toggle-float[aria-expanded="false"] .sidebar-toggle-face::before,
+.sidebar-toggle-float[aria-expanded="false"] .sidebar-toggle-face::after {
   content: "";
   position: absolute;
-  inset: -2px;
+  inset: -4px;
   border-radius: inherit;
-  border: 1px solid var(--sidebar-ring);
-  opacity: 0.2;
+  border: 1px solid var(--sidebar-toggle-closed-ring);
   pointer-events: none;
+}
+
+.sidebar-toggle-float[aria-expanded="false"] .sidebar-toggle-face::after {
   animation: sidebar-toggle-ripple 3.2s ease-out infinite;
 }
 
@@ -487,28 +496,21 @@
   80%, 100% { transform: scale(1.35); opacity: 0; }
 }
 
-.sidebar-toggle-float:hover,
-.sidebar-toggle-float:focus-visible {
-  animation-play-state: paused;
+.sidebar-toggle-float:hover .sidebar-toggle-face,
+.sidebar-toggle-float:focus-visible .sidebar-toggle-face {
   scale: 1.08;
-  background: var(--sidebar-accent);
-  color: var(--sidebar-ring);
-  box-shadow: 0 6px 22px -3px var(--sidebar-toggle-glow),
-    0 0 0 4px color-mix(in oklch, var(--sidebar-ring) 15%, transparent);
 }
 
-.sidebar-toggle-float:active {
+.sidebar-toggle-float:active .sidebar-toggle-face {
   scale: 0.96;
 }
 
-.reduce-motion .sidebar-toggle-float,
-.reduce-motion .sidebar-toggle-float::before {
+.reduce-motion .sidebar-toggle-float[aria-expanded="false"] .sidebar-toggle-face::after {
   animation: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .sidebar-toggle-float,
-  .sidebar-toggle-float::before {
+  .sidebar-toggle-float[aria-expanded="false"] .sidebar-toggle-face::after {
     animation: none;
   }
 }
