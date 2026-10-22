@@ -263,7 +263,20 @@ function UserManagementPage() {
   };
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["admin-users"] });
-  const onError = (e: unknown) => toast.error(e instanceof Error ? e.message : "Aksi gagal");
+  const onError = (e: unknown) => {
+    // Serverske poruke (npr. odbijen domen email adrese) prikaži razumljivo na srpskom.
+    const msg = e instanceof Error ? e.message : "";
+    console.error("[user-admin]", msg);
+    if (/email address is not allowed|cannot receive email/i.test(msg)) {
+      toast.error("Email adresa nije dozvoljena. Proverite domen — adrese na test domenima ne mogu da prime poštu.");
+    } else if (/already.*(registered|exists)|duplicate/i.test(msg)) {
+      toast.error("Korisnik sa ovom email adresom već postoji.");
+    } else if (/unauthorized|forbidden|niste admin/i.test(msg)) {
+      toast.error("Nemate dozvolu za ovu akciju.");
+    } else {
+      toast.error("Akcija nije uspela. Pokušajte ponovo.");
+    }
+  };
 
   const toggleMut = useMutation({
     mutationFn: async (row: AdminUserRow) => {
