@@ -13,6 +13,16 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2.10.5",
+    date: "2026-10-22",
+    title: "Tombol Menu di Semua Perangkat",
+    items: [
+      { kind: "tampilan", text: "Tombol toska melayang untuk menutup menu kini juga tampil di ponsel dan tablet saat laci menu terbuka, menggantikan tombol silang; buka kembali tetap lewat tombol Menu di bilah bawah." },
+    ],
+  },
+  {
+    version: "2.10.4",
+  {
     version: "2.10.4",
     date: "2026-10-22",
     title: "Tombol Menu Lebih Ramping",
