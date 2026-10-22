@@ -1,6 +1,6 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useState } from "react";
-import { LayoutDashboard, UserSearch, Menu, FileText, UserRound, LogOut, ShieldCheck, Settings, Download } from "lucide-react";
+import { Menu, UserRound, LogOut, ShieldCheck, Settings, Download } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -11,6 +11,7 @@ import { useInstallPrompt } from "@/components/install-app";
 import { workspaceUserOptions } from "@/lib/workspace-user";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 const itemCls =
   "relative flex min-h-[56px] w-full flex-col items-center justify-center gap-1 px-1 py-2 text-[10px] font-medium transition-colors";
@@ -47,15 +48,16 @@ export function BottomNav() {
     navigate({ to: "/auth", replace: true });
   }
 
-  const link = (to: string, title: string, Icon: typeof Menu) => (
+  const link = (to: string, title: string, emoji: string, accessibleTitle = title) => (
     <li>
       <Link
         to={to}
+        aria-label={accessibleTitle}
         aria-current={isActive(to) ? "page" : undefined}
         className={cn(itemCls, isActive(to) && !openMobile ? "text-primary" : "text-muted-foreground")}
       >
         <ActiveDot on={isActive(to) && !openMobile} />
-        <Icon className="h-5 w-5 shrink-0" />
+        <span aria-hidden="true" className="flex size-6 shrink-0 items-center justify-center text-xl leading-none">{emoji}</span>
         <span className="truncate">{title}</span>
       </Link>
     </li>
@@ -67,30 +69,32 @@ export function BottomNav() {
       className="bottom-nav fixed inset-x-0 bottom-0 z-40 border-t border-border/60 bg-background/90 backdrop-blur-xl md:hidden"
     >
       <ul className="grid grid-cols-5">
-        {link("/", "Dashboard", LayoutDashboard)}
-        {link("/analyst", "Analyst", UserSearch)}
+        {link("/", "Dashboard", "🖥️")}
+        {link("/analyst", "Analyst", "📊", "Analyst Market")}
         <li>
-          <button
+          <Button
+            variant="ghost"
             type="button"
             onClick={() => setOpenMobile(!openMobile)}
             aria-label="Buka menu navigasi"
             aria-expanded={openMobile}
-            className={cn(itemCls, mainActive ? "text-primary" : "text-muted-foreground")}
+            className={cn(itemCls, "h-auto gap-1 rounded-none text-[10px]", mainActive ? "text-primary" : "text-muted-foreground")}
           >
             <ActiveDot on={mainActive} />
-            <span className={cn("grid h-8 w-8 place-items-center rounded-xl", mainActive ? "bg-primary/15" : "bg-muted/50")}>
+            <span className={cn("grid size-6 place-items-center rounded-md", mainActive ? "bg-primary/15" : "bg-muted/50")}>
               <Menu className="h-5 w-5 shrink-0" />
             </span>
             <span>Menu</span>
-          </button>
+          </Button>
         </li>
-        {link("/reports", "Reports", FileText)}
+        {link("/reports", "Reports", "📝")}
         <li>
-          <button
+          <Button
+            variant="ghost"
             type="button"
             onClick={() => setAccountOpen(true)}
             aria-label="Akun"
-            className={cn(itemCls, accountOpen ? "text-primary" : "text-muted-foreground")}
+            className={cn(itemCls, "h-auto gap-1 rounded-none text-[10px]", accountOpen ? "text-primary" : "text-muted-foreground")}
           >
             <ActiveDot on={accountOpen} />
             {identity ? (
@@ -102,7 +106,7 @@ export function BottomNav() {
               <UserRound className="h-5 w-5 shrink-0" />
             )}
             <span>Akun</span>
-          </button>
+          </Button>
         </li>
       </ul>
 

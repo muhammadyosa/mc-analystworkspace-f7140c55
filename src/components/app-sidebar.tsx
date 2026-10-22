@@ -56,7 +56,7 @@ export function AppSidebar() {
   const menuOpen = isMobile ? openMobile : state === "expanded";
 
   return (
-    <Sidebar collapsible="icon" className="relative">
+    <Sidebar collapsible="icon">
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
@@ -66,7 +66,7 @@ export function AppSidebar() {
             onClick={toggleSidebar}
             aria-label={menuOpen ? "Tutup menu" : "Buka menu"}
             aria-expanded={menuOpen}
-            className="sidebar-toggle-float absolute -right-[18px] top-1/2 z-50 flex size-10 -translate-y-1/2 rounded-full p-0"
+            className="sidebar-toggle-float absolute -right-[22px] top-1/2 z-50 flex size-11 -translate-y-1/2 rounded-full p-0"
           >
             <span className="sidebar-toggle-face flex size-5 items-center justify-center rounded-full" aria-hidden="true">
             <ChevronLeft
@@ -105,11 +105,11 @@ export function AppSidebar() {
                     asChild
                     isActive={isActive(item.url)}
                     tooltip={item.title}
-                    className="justify-start group-data-[collapsible=icon]:justify-center"
+                    className="h-11 justify-start gap-3 group-data-[collapsible=icon]:justify-center"
                   >
                     <Link to={item.url} onClick={() => setOpenMobile(false)} className="flex items-center gap-3">
                       <span aria-hidden="true" className="flex h-5 w-5 shrink-0 items-center justify-center text-lg leading-none">{item.emoji}</span>
-                      <span className="group-data-[collapsible=icon]:hidden">{item.title}</span>
+                      <span className="min-w-0 group-data-[collapsible=icon]:hidden">{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

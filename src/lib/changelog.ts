@@ -13,6 +13,15 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2.10.6",
+    date: "2026-10-22",
+    title: "Ikon Seragam dan Navigasi Lebih Rapi",
+    items: [
+      { kind: "tampilan", text: "Dashboard, Analyst, dan Reports di navigasi bawah memakai emoji yang sama dengan menu utama; semua ikon dan label sejajar." },
+      { kind: "perbaikan", text: "Menu diciutkan memiliki ikon terpusat tanpa terpotong, tetap bisa digulir pada layar pendek, dan tombol buka-tutup tetap nyaman ditekan." },
+    ],
+  },
+  {
     version: "2.10.5",
     date: "2026-10-22",
     title: "Tombol Menu di Semua Perangkat",
