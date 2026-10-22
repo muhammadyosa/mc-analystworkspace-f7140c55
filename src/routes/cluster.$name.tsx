@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/button";
 import { useDataStore, computePriority, recommendStrategy } from "@/lib/store";
 import { ChartCard, C, axisProps, gridProps, makeTooltip, fmtFull } from "@/components/chart-kit";
 import { MONTH_KEYS, MONTH_LABELS } from "@/lib/prefs";
+import { useClusterActions } from "@/hooks/use-cluster-actions";
+import { ClusterActionSummary } from "@/components/cluster-action-summary";
 
 export const Route = createFileRoute("/cluster/$name")({
   head: () => ({ meta: [
@@ -27,6 +29,7 @@ function DetailPage() {
   const { name } = Route.useParams();
   const clusters = useDataStore((s) => s.clusters);
   const decoded = decodeURIComponent(name);
+  const actionSummary = useClusterActions(decoded);
   const cluster = clusters.find((c) => c.cluster === decoded);
   const maxTicket = useMemo(() => Math.max(...clusters.map((c) => c.ticket), 1), [clusters]);
 
@@ -72,6 +75,7 @@ function DetailPage() {
   if (cluster.ticket > 5) insights.push(`Ticket cukup tinggi: ${cluster.ticket} kasus.`);
   if (cluster.totalHC2026 > 0 && hcCur / cluster.totalHC2026 < 0.5)
     insights.push(`Realisasi HC ${((hcCur / cluster.totalHC2026) * 100).toFixed(0)}% dari target 2026 — potensi masih besar.`);
+  insights.push(...actionSummary.insights);
 
   const causes = ["Kompetitor", "Gangguan jaringan", "Kurangnya aktivitas AE"];
 
@@ -161,6 +165,10 @@ function DetailPage() {
           </Card>
         </div>
 
+        <div className="border-y border-border py-5">
+          <ClusterActionSummary summary={actionSummary} />
+        </div>
+
         <div className="grid gap-4 lg:grid-cols-2">
           <Card className="glass-card border-0">
             <CardHeader className="flex-row items-center gap-2 space-y-0">
@@ -197,6 +205,9 @@ function DetailPage() {
                   <Badge key={a} variant="secondary" className="text-xs">{a}</Badge>
                 ))}
               </div>
+              <ul className="mt-3 list-disc space-y-1 break-words pl-5 text-sm text-muted-foreground">
+                {actionSummary.advice.map((a) => <li key={a}>{a}</li>)}
+              </ul>
               <Button asChild size="sm" className="mt-4">
                 <Link to="/action-plan">Tambah ke Action Plan</Link>
               </Button>

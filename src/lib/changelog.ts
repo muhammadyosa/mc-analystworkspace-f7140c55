@@ -13,6 +13,15 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2.10.0",
+    date: "2026-10-22",
+    title: "Profiling Terhubung Kanban",
+    items: [
+      { kind: "fitur", text: "Hasil Profiling dan detail cluster menampilkan status, progres, overdue, PIC, target, serta tindak lanjut kartu Kanban aktual." },
+      { kind: "perbaikan", text: "Perubahan Action Plan disimpan ke cloud; status manual dipertahankan dan insight diperbarui tanpa duplikasi ringkasan." },
+    ],
+  },
+  {
     version: "2.9.0",
     date: "2026-10-22",
     title: "Hasil Profiling & Sorting Master Cluster",

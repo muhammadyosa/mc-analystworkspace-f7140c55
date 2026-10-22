@@ -17,6 +17,9 @@ import { exportToExcel } from "@/lib/excel";
 import { useGlobalClusters } from "@/hooks/use-global-filters";
 import { GlobalFilterBar } from "@/components/global-filter";
 import { usePrefsStore } from "@/lib/prefs";
+import { useClusterActions } from "@/hooks/use-cluster-actions";
+import { ClusterActionSummary } from "@/components/cluster-action-summary";
+import { actionSummaryText } from "@/lib/action-plan-summary";
 
 export const Route = createFileRoute("/master")({
   head: () => ({ meta: [
@@ -64,6 +67,8 @@ function MasterPage() {
   const [dir, setDir] = useState<"asc" | "desc">("desc");
   const [risk, setRisk] = useState<"all" | "Tinggi" | "Sedang" | "Rendah">("all");
   const [detailId, setDetailId] = useState<string | null>(null);
+  const detailCluster = clusters.find((c) => c.id === detailId)?.cluster ?? "";
+  const actionSummary = useClusterActions(detailCluster);
   const [page, setPage] = useState(1);
   const perPage = 15;
 
@@ -137,11 +142,11 @@ function MasterPage() {
     if (!c) return null;
     const series = hcTrend(c);
     const trend = trendLabel(series);
-    const advice = [...new Set(retentionAdvice(c.ch.level, c))];
+    const advice = [...new Set([...retentionAdvice(c.ch.level, c), ...actionSummary.advice])];
     const period = month === "all" ? "Bulan terbaru" : (MONTHS.find((m) => m.key === month)?.label ?? "");
-    const text = profilingText({ cluster: c.cluster, kabupaten: c.kabupaten, provinsi: c.provinsi, pic: c.pic, period, hc: c.hcView, delta: c.deltaView, ticket: c.ticketView, trend, priority: c.pr, churn: c.ch, advice });
+    const text = profilingText({ cluster: c.cluster, kabupaten: c.kabupaten, provinsi: c.provinsi, pic: c.pic, period, hc: c.hcView, delta: c.deltaView, ticket: c.ticketView, trend, priority: c.pr, churn: c.ch, advice }) + "\n\nACTION PLAN — KANBAN\n" + actionSummaryText(actionSummary);
     return { c, series, trend, advice, text, rank: filtered.findIndex((x) => x.id === c.id) + 1 };
-  }, [scored, detailId, month, filtered]);
+  }, [scored, detailId, month, filtered, actionSummary]);
 
   const copyText = async (text: string) => {
     try { await navigator.clipboard.writeText(text); toast.success("Hasil profiling disalin"); }
@@ -442,6 +447,7 @@ function MasterPage() {
                     {detail.series.slice(-6).map((m) => <span key={m.key} className="rounded-md bg-muted/40 px-2 py-1">{m.label.slice(0, 3)}: <b className="text-foreground tabular-nums">{m.hc.toLocaleString("id-ID")}</b></span>)}
                   </div>
                 )}
+                <ClusterActionSummary summary={actionSummary} />
                 <div>
                   <p className="mb-1 text-xs font-semibold">Rekomendasi Retention</p>
                   <ul className="list-disc space-y-0.5 pl-5 text-sm text-muted-foreground">
