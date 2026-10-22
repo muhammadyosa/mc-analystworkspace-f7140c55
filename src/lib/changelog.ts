@@ -13,6 +13,14 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2.10.4",
+    date: "2026-10-22",
+    title: "Tombol Menu Lebih Ramping",
+    items: [
+      { kind: "tampilan", text: "Tombol buka dan tutup menu dibuat lebih kecil dan rapi dengan garis tepi halus serta bayangan tipis; animasi riak diperlembut dan area klik tetap nyaman." },
+    ],
+  },
+  {
     version: "2.10.3",
     date: "2026-10-22",
     title: "Tampilan Tombol Buka dan Tutup Menu",
