@@ -1,6 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Search, Download, ChevronRight, ArrowUpDown } from "lucide-react";
+import { Search, Download, ChevronRight, ArrowUpDown, FileText, Copy } from "lucide-react";
+import { toast } from "sonner";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { churnPotential, hcTrend, trendLabel, retentionAdvice, profilingText } from "@/lib/cluster-profiling";
 import { AppHeader } from "@/components/app-header";
 import { EmptyState } from "@/components/empty-state";
 import { Input } from "@/components/ui/input";
@@ -27,7 +30,9 @@ export const Route = createFileRoute("/master")({
   component: MasterPage,
 });
 
-type SortKey = "cluster" | "hc" | "ticket" | "growth";
+type SortKey = "cluster" | "hc" | "ticket" | "growth" | "churn" | "priority" | "decline" | "kabupaten" | "pic";
+const SORT_LABELS: Record<SortKey, string> = { churn: "Potensi Churn Tertinggi", priority: "Priority Score", decline: "Penurunan HC", ticket: "Jumlah Ticket", kabupaten: "Kabupaten", pic: "PIC", cluster: "Nama Cluster", hc: "HC Aktif", growth: "Δ HC Aktif" };
+const levelCls = (l: string) => l === "Tinggi" ? "border-destructive/40 bg-destructive/10 text-destructive" : l === "Sedang" ? "border-warning/40 bg-warning/10 text-warning" : "border-success/40 bg-success/10 text-success";
 
 const MONTHS = [
   { key: "januari", label: "Januari" },
@@ -57,6 +62,8 @@ function MasterPage() {
   const [month, setMonth] = useState<MonthKey | "all">("all");
   const [sort, setSort] = useState<SortKey>("hc");
   const [dir, setDir] = useState<"asc" | "desc">("desc");
+  const [risk, setRisk] = useState<"all" | "Tinggi" | "Sedang" | "Rendah">("all");
+  const [detailId, setDetailId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const perPage = 15;
 
@@ -85,25 +92,61 @@ function MasterPage() {
 
   const maxTicket = useMemo(() => Math.max(...rows.map((c) => c.ticketView), 1), [rows]);
 
+  const scored = useMemo(() => rows.map((c) => {
+    const pr = computePriority({ ...c, juni: c.hcView, ticket: c.ticketView, deltaMeiJuni: c.deltaView }, maxTicket);
+    const ch = churnPotential({ hc: c.hcView, delta: c.deltaView, churn: c.churn || 0, ticket: c.ticketView }, maxTicket);
+    return { ...c, pr, ch };
+  }), [rows, maxTicket]);
+
   const filtered = useMemo(() => {
     const ql = q.toLowerCase();
-    let arr = rows.filter((c) => {
-      const matchQ =
-        !ql ||
-        c.cluster.toLowerCase().includes(ql) ||
-        c.kabupaten.toLowerCase().includes(ql) ||
-        c.pic.toLowerCase().includes(ql);
+    const arr = scored.filter((c) => {
+      const matchQ = !ql || c.cluster.toLowerCase().includes(ql) || (c.kabupaten || "").toLowerCase().includes(ql) || (c.pic || "").toLowerCase().includes(ql);
       const matchP = prov === "all" || c.provinsi === prov;
-      return matchQ && matchP;
+      const matchR = risk === "all" || c.ch.level === risk;
+      return matchQ && matchP && matchR;
     });
-    arr = arr.sort((a, b) => {
-      const av = sort === "cluster" ? a.cluster : sort === "hc" ? a.hcView : sort === "ticket" ? a.ticketView : a.deltaView;
-      const bv = sort === "cluster" ? b.cluster : sort === "hc" ? b.hcView : sort === "ticket" ? b.ticketView : b.deltaView;
+    const val = (c: (typeof arr)[number]): string | number => {
+      switch (sort) {
+        case "cluster": return c.cluster;
+        case "kabupaten": return c.kabupaten || "";
+        case "pic": return c.pic || "";
+        case "hc": return c.hcView;
+        case "ticket": return c.ticketView;
+        case "growth": return c.deltaView;
+        case "decline": return -c.deltaView;
+        case "priority": return c.pr.score;
+        case "churn": return c.ch.score;
+      }
+    };
+    return [...arr].sort((a, b) => {
+      const av = val(a), bv = val(b);
       if (typeof av === "string" && typeof bv === "string") return dir === "asc" ? av.localeCompare(bv) : bv.localeCompare(av);
       return dir === "asc" ? (av as number) - (bv as number) : (bv as number) - (av as number);
     });
-    return arr;
-  }, [rows, q, prov, sort, dir]);
+  }, [scored, q, prov, risk, sort, dir]);
+
+  const riskCounts = useMemo(() => {
+    const r = { Tinggi: 0, Sedang: 0, Rendah: 0 };
+    scored.forEach((c) => r[c.ch.level]++);
+    return r;
+  }, [scored]);
+
+  const detail = useMemo(() => {
+    const c = scored.find((x) => x.id === detailId);
+    if (!c) return null;
+    const series = hcTrend(c);
+    const trend = trendLabel(series);
+    const advice = [...new Set(retentionAdvice(c.ch.level, c))];
+    const period = month === "all" ? "Bulan terbaru" : (MONTHS.find((m) => m.key === month)?.label ?? "");
+    const text = profilingText({ cluster: c.cluster, kabupaten: c.kabupaten, provinsi: c.provinsi, pic: c.pic, period, hc: c.hcView, delta: c.deltaView, ticket: c.ticketView, trend, priority: c.pr, churn: c.ch, advice });
+    return { c, series, trend, advice, text, rank: filtered.findIndex((x) => x.id === c.id) + 1 };
+  }, [scored, detailId, month, filtered]);
+
+  const copyText = async (text: string) => {
+    try { await navigator.clipboard.writeText(text); toast.success("Hasil profiling disalin"); }
+    catch { toast.error("Gagal menyalin — izinkan akses clipboard"); }
+  };
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
   const paginated = filtered.slice((page - 1) * perPage, page * perPage);
@@ -189,9 +232,26 @@ function MasterPage() {
                 ))}
               </SelectContent>
             </Select>
+            <Select value={sort} onValueChange={(v) => { setSort(v as SortKey); setDir(["cluster", "kabupaten", "pic"].includes(v) ? "asc" : "desc"); setPage(1); }}>
+              <SelectTrigger className="w-full sm:w-[200px]"><SelectValue placeholder="Urutkan" /></SelectTrigger>
+              <SelectContent>
+                {(Object.keys(SORT_LABELS) as SortKey[]).map((k) => <SelectItem key={k} value={k}>{SORT_LABELS[k]}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Button variant="outline" size="icon" aria-label="Balik urutan" onClick={() => setDir(dir === "asc" ? "desc" : "asc")}>
+              <ArrowUpDown className="h-4 w-4" />
+            </Button>
             <Button variant="outline" onClick={handleExport} className="w-full sm:w-auto">
               <Download className="mr-1 h-4 w-4" /> Export
             </Button>
+          </div>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <span className="text-xs text-muted-foreground">Potensi churn:</span>
+            {(["all", "Tinggi", "Sedang", "Rendah"] as const).map((r) => (
+              <Button key={r} size="sm" variant={risk === r ? "default" : "outline"} className="h-8 rounded-full px-3 text-xs" onClick={() => { setRisk(r); setPage(1); }}>
+                {r === "all" ? `Semua (${scored.length})` : `${r} (${riskCounts[r]})`}
+              </Button>
+            ))}
           </div>
         </Card>
 
@@ -199,17 +259,9 @@ function MasterPage() {
           {/* Mobile: setiap baris menjadi kartu agar tidak melebar */}
           <div className="space-y-2 p-3 md:hidden">
             {paginated.map((c) => {
-              const pr = computePriority(
-                { ...c, juni: c.hcView, ticket: c.ticketView, deltaMeiJuni: c.deltaView },
-                maxTicket,
-              );
+              const pr = c.pr;
               return (
-                <Link
-                  key={c.id}
-                  to="/cluster/$name"
-                  params={{ name: encodeURIComponent(c.cluster) }}
-                  className="block rounded-xl border border-border/60 bg-muted/20 p-3 active:bg-muted/40"
-                >
+                <div key={c.id} className="rounded-xl border border-border/60 bg-muted/20 p-3">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <p className="truncate font-medium">{c.cluster}</p>
@@ -241,8 +293,14 @@ function MasterPage() {
                       </b>
                     </div>
                     <div>PIC: <b className="text-foreground">{c.pic || "—"}</b></div>
+                    <div>Priority: <b className="text-foreground tabular-nums">{pr.score}</b></div>
+                    <div>Churn: <b className="text-foreground tabular-nums">{c.ch.score} · {c.ch.level}</b></div>
                   </dl>
-                </Link>
+                  <div className="mt-2 flex gap-2">
+                    <Button size="sm" variant="outline" className="h-9 flex-1" onClick={() => setDetailId(c.id)}><FileText className="mr-1 h-3.5 w-3.5" />Lihat Detail</Button>
+                    <Button asChild size="sm" variant="ghost" className="h-9"><Link to="/cluster/$name" params={{ name: encodeURIComponent(c.cluster) }}>Buka <ChevronRight className="h-3.5 w-3.5" /></Link></Button>
+                  </div>
+                </div>
               );
             })}
           </div>
@@ -278,7 +336,8 @@ function MasterPage() {
                     Δ HC Aktif <ArrowUpDown className="h-3 w-3" />
                   </button>
                 </TableHead>
-                <TableHead>Priority</TableHead>
+                <TableHead><button className="flex items-center gap-1 font-semibold" onClick={() => toggleSort("priority")}>Priority <ArrowUpDown className="h-3 w-3" /></button></TableHead>
+                <TableHead><button className="flex items-center gap-1 font-semibold" onClick={() => toggleSort("churn")}>Potensi Churn <ArrowUpDown className="h-3 w-3" /></button></TableHead>
                 <TableHead>SERPO</TableHead>
                 <TableHead>IKR</TableHead>
                 <TableHead />
@@ -286,10 +345,7 @@ function MasterPage() {
             </TableHeader>
             <TableBody>
               {paginated.map((c) => {
-                const pr = computePriority(
-                  { ...c, juni: c.hcView, ticket: c.ticketView, deltaMeiJuni: c.deltaView },
-                  maxTicket,
-                );
+                const pr = c.pr;
                 return (
                   <TableRow key={c.id}>
                     <TableCell className="font-medium">{c.cluster}</TableCell>
@@ -320,9 +376,11 @@ function MasterPage() {
                         {pr.level} ({pr.score})
                       </Badge>
                     </TableCell>
+                    <TableCell><Badge variant="outline" className={levelCls(c.ch.level)}>{c.ch.level} ({c.ch.score})</Badge></TableCell>
                     <TableCell className="text-xs text-muted-foreground">{c.serpoStatus || "—"}</TableCell>
                     <TableCell className="text-xs text-muted-foreground">{c.ikrStatus || "—"}</TableCell>
-                    <TableCell>
+                    <TableCell className="whitespace-nowrap">
+                      <Button variant="ghost" size="icon" aria-label="Lihat detail profiling" onClick={() => setDetailId(c.id)}><FileText className="h-4 w-4" /></Button>
                       <Button asChild variant="ghost" size="icon">
                         <Link to="/cluster/$name" params={{ name: encodeURIComponent(c.cluster) }}>
                           <ChevronRight className="h-4 w-4" />
@@ -350,6 +408,54 @@ function MasterPage() {
           </div>
         </Card>
 
+        <Dialog open={!!detail} onOpenChange={(o) => { if (!o) setDetailId(null); }}>
+          <DialogContent className="max-h-[90vh] w-[calc(100vw-1.5rem)] max-w-lg overflow-y-auto p-4 sm:p-6">
+            {detail && (
+              <>
+                <DialogHeader>
+                  <DialogTitle className="font-display pr-6">Hasil Profiling — {detail.c.cluster}</DialogTitle>
+                  <DialogDescription>{detail.c.kabupaten} · {detail.c.provinsi} · PIC {detail.c.pic || "—"}{detail.rank > 0 ? ` · Peringkat #${detail.rank} (${SORT_LABELS[sort]})` : ""}</DialogDescription>
+                </DialogHeader>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  {[
+                    ["Tren HC", detail.trend],
+                    ["HC Aktif", detail.c.hcView.toLocaleString("id-ID")],
+                    ["Perubahan HC", `${detail.c.deltaView >= 0 ? "+" : ""}${detail.c.deltaView.toLocaleString("id-ID")}`],
+                    ["Jumlah Ticket", detail.c.ticketView.toLocaleString("id-ID")],
+                  ].map(([k, v]) => (
+                    <div key={k} className="rounded-lg border border-border/60 bg-muted/20 p-2.5">
+                      <p className="text-[11px] text-muted-foreground">{k}</p>
+                      <p className="font-semibold tabular-nums">{v}</p>
+                    </div>
+                  ))}
+                  <div className="rounded-lg border border-border/60 bg-muted/20 p-2.5">
+                    <p className="text-[11px] text-muted-foreground">Priority Score</p>
+                    <Badge variant="outline" className={levelCls(detail.c.pr.level)}>{detail.c.pr.score} · {detail.c.pr.level}</Badge>
+                  </div>
+                  <div className="rounded-lg border border-border/60 bg-muted/20 p-2.5">
+                    <p className="text-[11px] text-muted-foreground">Potensi Churn</p>
+                    <Badge variant="outline" className={levelCls(detail.c.ch.level)}>{detail.c.ch.score} · {detail.c.ch.level}</Badge>
+                  </div>
+                </div>
+                {detail.series.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 text-[11px] text-muted-foreground">
+                    {detail.series.slice(-6).map((m) => <span key={m.key} className="rounded-md bg-muted/40 px-2 py-1">{m.label.slice(0, 3)}: <b className="text-foreground tabular-nums">{m.hc.toLocaleString("id-ID")}</b></span>)}
+                  </div>
+                )}
+                <div>
+                  <p className="mb-1 text-xs font-semibold">Rekomendasi Retention</p>
+                  <ul className="list-disc space-y-0.5 pl-5 text-sm text-muted-foreground">
+                    {detail.advice.map((a) => <li key={a}>{a}</li>)}
+                  </ul>
+                </div>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <Button className="flex-1" onClick={() => copyText(detail.text)}><Copy className="mr-1 h-4 w-4" />Salin Hasil Profiling</Button>
+                  <Button asChild variant="outline" className="flex-1"><Link to="/cluster/$name" params={{ name: encodeURIComponent(detail.c.cluster) }}>Buka Halaman Cluster</Link></Button>
+                </div>
+              </>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </>
   );
