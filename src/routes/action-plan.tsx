@@ -1,6 +1,11 @@
 import { useShallow } from "zustand/react/shallow";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { useRole } from "@/hooks/use-role";
+import { effectiveAction } from "@/lib/action-plan-summary";
+import { saveActionPlans, saveActionPlanPatch, deleteSharedActionPlan } from "@/lib/action-plan-sync";
 import {
   AlertTriangle,
   CalendarDays,
@@ -443,7 +448,22 @@ function CalendarView({ rows }: { rows: ActionPlanRow[] }) {
 }
 
 function ActionPlanPage() {
-  const { actionPlans, clusters, tickets, analyst, competitorData, overrideActionPlanStatus, addActionPlans, updateActionPlan, removeActionPlan } = useDataStore(useShallow((s) => ({ actionPlans: s.actionPlans, clusters: s.clusters, tickets: s.tickets, analyst: s.analyst, competitorData: s.competitorData, overrideActionPlanStatus: s.overrideActionPlanStatus, addActionPlans: s.addActionPlans, updateActionPlan: s.updateActionPlan, removeActionPlan: s.removeActionPlan })));
+  const { actionPlans, clusters, tickets, analyst, competitorData } = useDataStore(useShallow((s) => ({ actionPlans: s.actionPlans, clusters: s.clusters, tickets: s.tickets, analyst: s.analyst, competitorData: s.competitorData })));
+  const { canPlan } = useRole();
+  const mutation = useMutation({
+    scope: { id: "kanban-tasks" },
+    mutationFn: async (change: { kind: "add"; rows: ActionPlanRow[] } | { kind: "update"; id: string; patch: Partial<ActionPlanRow> } | { kind: "delete"; id: string }) => {
+      if (!canPlan) throw new Error("Anda tidak memiliki akses untuk mengubah Action Plan.");
+      if (change.kind === "add") return saveActionPlans(change.rows);
+      if (change.kind === "update") return saveActionPlanPatch(change.id, change.patch);
+      return deleteSharedActionPlan(change.id);
+    },
+    onError: () => toast.error("Action Plan belum tersimpan. Periksa koneksi dan hak akses, lalu coba lagi."),
+  });
+  const updateActionPlan = (id: string, patch: Partial<ActionPlanRow>) => mutation.mutate({ kind: "update", id, patch: { ...patch, ...(patch.status ? { statusManual: true } : {}) } });
+  const overrideActionPlanStatus = (id: string, status: ActionPlanStatus) => updateActionPlan(id, { status, statusManual: true });
+  const addActionPlans = (rows: ActionPlanRow[]) => mutation.mutate({ kind: "add", rows });
+  const removeActionPlan = (id: string) => mutation.mutate({ kind: "delete", id });
   const [search, setSearch] = useState("");
   const [filterPic, setFilterPic] = useState("");
   const [filterCluster, setFilterCluster] = useState("");
@@ -488,16 +508,8 @@ function ActionPlanPage() {
     return m;
   }, [competitorData]);
 
-  // Recompute status live but preserve manual overrides (completed / reschedule)
-  const rows = useMemo(() => {
-    return actionPlans.map((r) => ({
-      ...r,
-      status:
-        r.status === "completed" || r.status === "reschedule"
-          ? r.status
-          : computeActionStatus(r.startDate, r.endDate, r.result),
-    }));
-  }, [actionPlans]);
+  // All consumers share the same status derivation, including manual moves.
+  const rows = useMemo(() => actionPlans.map(effectiveAction), [actionPlans]);
 
   const pics = useMemo(() => Array.from(new Set(rows.map((r) => r.pic).filter(Boolean))).sort(), [rows]);
   const clusterOpts = useMemo(() => Array.from(new Set(rows.map((r) => r.cluster).filter(Boolean))).sort(), [rows]);
@@ -803,7 +815,7 @@ function ActionPlanPage() {
       </div>
 
       <DetailDialog
-        row={openRow ? (actionPlans.find((a) => a.id === openRow.id) ?? null) : null}
+        row={openRow ? (rows.find((a) => a.id === openRow.id) ?? null) : null}
         onClose={() => setOpenRow(null)}
         onUpdate={updateActionPlan}
         clusterMeta={clusterMeta}

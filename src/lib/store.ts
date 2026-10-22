@@ -146,9 +146,9 @@ export const useDataStore = create<DataState>()(
       addActionPlans: (rows) =>
         set((s) => ({ actionPlans: [...rows, ...s.actionPlans], lastUpdated: Date.now() })),
       updateActionPlan: (id, patch) =>
-        set((s) => ({ actionPlans: s.actionPlans.map((a) => (a.id === id ? { ...a, ...patch } : a)) })),
+        set((s) => ({ actionPlans: s.actionPlans.map((a) => (a.id === id ? { ...a, ...patch } : a)), lastUpdated: Date.now() })),
       overrideActionPlanStatus: (id, status) =>
-        set((s) => ({ actionPlans: s.actionPlans.map((a) => (a.id === id ? { ...a, status } : a)) })),
+        set((s) => ({ actionPlans: s.actionPlans.map((a) => (a.id === id ? { ...a, status, statusManual: true, updatedAt: new Date().toISOString() } : a)), lastUpdated: Date.now() })),
       removeActionPlan: (id) =>
         set((s) => ({ actionPlans: s.actionPlans.filter((a) => a.id !== id), lastUpdated: Date.now() })),
       pushHistory: (h) => set((s) => ({ history: [h, ...s.history].slice(0, 20) })),
