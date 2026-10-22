@@ -7,7 +7,7 @@
 - [x] Keep account access in the bottom navigation on phones; header account menu stays for tablet/desktop.
 - Device-level Android/iOS installation and published offline behavior require testing the published release on physical devices.
 # Kanban-linked cluster profiling
-- [ ] Derive cluster action summaries from the same Kanban rows and statuses.
-- [ ] Persist authorized task changes atomically to the existing shared dataset.
-- [ ] Integrate live summaries, insights, recommendations and copied profiling.
-- [ ] Verify real-data editing, completion, deletion and desktop/mobile layouts.
+- [x] Derive cluster action summaries from the same Kanban rows and statuses.
+- [x] Persist authorized task changes atomically to the existing shared dataset.
+- [x] Integrate live summaries, insights, recommendations and copied profiling.
+- [x] Verify real-data editing, completion, deletion and desktop/mobile layouts.
