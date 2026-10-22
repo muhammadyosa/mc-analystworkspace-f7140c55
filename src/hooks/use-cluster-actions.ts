@@ -4,10 +4,10 @@ import { summarizeActions } from "@/lib/action-plan-summary";
 
 export function useClusterActions(cluster: string) {
   const plans = useDataStore((s) => s.actionPlans);
-  const [day, setDay] = useState(0);
+  const [now, setNow] = useState(() => new Date());
   useEffect(() => {
-    const timer = setInterval(() => setDay((d) => d + 1), 60_000);
+    const timer = setInterval(() => setNow(new Date()), 60_000);
     return () => clearInterval(timer);
   }, []);
-  return useMemo(() => summarizeActions(plans, cluster, new Date(Date.now() + day * 0)), [plans, cluster, day]);
+  return useMemo(() => summarizeActions(plans, cluster, now), [plans, cluster, now]);
 }

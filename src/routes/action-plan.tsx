@@ -3,7 +3,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { useRole } from "@/hooks/use-role";
 import { effectiveAction } from "@/lib/action-plan-summary";
 import { saveActionPlans, saveActionPlanPatch, deleteSharedActionPlan } from "@/lib/action-plan-sync";
 import {
@@ -449,11 +448,9 @@ function CalendarView({ rows }: { rows: ActionPlanRow[] }) {
 
 function ActionPlanPage() {
   const { actionPlans, clusters, tickets, analyst, competitorData } = useDataStore(useShallow((s) => ({ actionPlans: s.actionPlans, clusters: s.clusters, tickets: s.tickets, analyst: s.analyst, competitorData: s.competitorData })));
-  const { canPlan } = useRole();
   const mutation = useMutation({
     scope: { id: "kanban-tasks" },
     mutationFn: async (change: { kind: "add"; rows: ActionPlanRow[] } | { kind: "update"; id: string; patch: Partial<ActionPlanRow> } | { kind: "delete"; id: string }) => {
-      if (!canPlan) throw new Error("Anda tidak memiliki akses untuk mengubah Action Plan.");
       if (change.kind === "add") return saveActionPlans(change.rows);
       if (change.kind === "update") return saveActionPlanPatch(change.id, change.patch);
       return deleteSharedActionPlan(change.id);
