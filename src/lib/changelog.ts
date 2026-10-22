@@ -13,6 +13,21 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2.10.7",
+    date: "2026-10-23",
+    title: "Audit Keandalan dan Sinkronisasi",
+    items: [
+      {
+        kind: "perbaikan",
+        text: "Perubahan kartu Action Plan tidak lagi tertimpa oleh pembaruan data latar belakang yang lebih lama.",
+      },
+      {
+        kind: "perbaikan",
+        text: "Sinkronisasi cloud tidak memicu tampilan ulang bila tidak ada data yang berubah.",
+      },
+    ],
+  },
+  {
     version: "2.10.6",
     date: "2026-10-22",
     title: "Ikon Seragam dan Navigasi Lebih Rapi",
