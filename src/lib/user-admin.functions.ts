@@ -15,7 +15,12 @@ const deleteSchema = z.object({
 type AuthContext = {
   supabase: {
     from: (table: string) => {
-      select: (cols: string) => { eq: (col: string, val: string) => Promise<{ data: { role: string }[] | null; error: { message: string } | null }> };
+      select: (cols: string) => {
+        eq: (
+          col: string,
+          val: string,
+        ) => Promise<{ data: { role: string }[] | null; error: { message: string } | null }>;
+      };
     };
   };
   userId: string;

@@ -118,7 +118,14 @@ export const Route = createFileRoute("/settings/users")({
     // Pencarian, filter, sorting, dan halaman bertahan saat berpindah tab Settings.
     middlewares: [
       retainSearchParams(true),
-      stripSearchParams({ q: "", role: "all", status: "all", sort: "joined", dir: "desc", page: 1 }),
+      stripSearchParams({
+        q: "",
+        role: "all",
+        status: "all",
+        sort: "joined",
+        dir: "desc",
+        page: 1,
+      }),
     ],
   },
   head: () => ({
@@ -268,7 +275,9 @@ function UserManagementPage() {
     const msg = e instanceof Error ? e.message : "";
     console.error("[user-admin]", msg);
     if (/email address is not allowed|cannot receive email/i.test(msg)) {
-      toast.error("Email adresa nije dozvoljena. Proverite domen — adrese na test domenima ne mogu da prime poštu.");
+      toast.error(
+        "Email adresa nije dozvoljena. Proverite domen — adrese na test domenima ne mogu da prime poštu.",
+      );
     } else if (/already.*(registered|exists)|duplicate/i.test(msg)) {
       toast.error("Korisnik sa ovom email adresom već postoji.");
     } else if (/unauthorized|forbidden|niste admin/i.test(msg)) {
@@ -331,7 +340,8 @@ function UserManagementPage() {
   });
 
   const inviteMut = useMutation({
-    mutationFn: (input: { email: string; role: AssignableRole }) => inviteWorkspaceUser({ data: input }),
+    mutationFn: (input: { email: string; role: AssignableRole }) =>
+      inviteWorkspaceUser({ data: input }),
     onSuccess: () => {
       toast.success("Undangan terkirim ke email pengguna");
       setAddOpen(false);
@@ -378,7 +388,9 @@ function UserManagementPage() {
     const sorted = [...list].sort((a, b) => {
       switch (search.sort) {
         case "name":
-          return dir * (a.full_name ?? a.email ?? "").localeCompare(b.full_name ?? b.email ?? "", "id");
+          return (
+            dir * (a.full_name ?? a.email ?? "").localeCompare(b.full_name ?? b.email ?? "", "id")
+          );
         case "email":
           return dir * (a.email ?? "").localeCompare(b.email ?? "");
         case "seen":
@@ -613,12 +625,7 @@ function UserManagementPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => invalidate()}
-              disabled={isFetching}
-            >
+            <Button variant="outline" size="sm" onClick={() => invalidate()} disabled={isFetching}>
               <RefreshCw className={cn("mr-2 h-4 w-4", isFetching && "animate-spin")} />
               Refresh
             </Button>
@@ -882,7 +889,11 @@ function UserManagementPage() {
                     label: "Last Login",
                     value: lastActionLabel(detailRow.last_seen_at),
                   },
-                  { icon: CalendarDays, label: "Bergabung", value: dateLabel(detailRow.created_at) },
+                  {
+                    icon: CalendarDays,
+                    label: "Bergabung",
+                    value: dateLabel(detailRow.created_at),
+                  },
                   {
                     icon: CheckCircle2,
                     label: "Disetujui Pada",
