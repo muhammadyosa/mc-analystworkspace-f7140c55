@@ -45,7 +45,9 @@ export function useTheme() {
     media.addEventListener("change", onSystem);
 
     const sync = (event: Event) => {
-      const detail = (event as CustomEvent<{ mode: ThemeMode; theme: "light" | "dark"; colorTheme: ColorTheme }>).detail;
+      const detail = (
+        event as CustomEvent<{ mode: ThemeMode; theme: "light" | "dark"; colorTheme: ColorTheme }>
+      ).detail;
       if (!detail) return;
       setModeState(detail.mode);
       setTheme(detail.theme);
@@ -67,7 +69,9 @@ export function useTheme() {
     localStorage.setItem(COLOR_KEY, nextColor);
     applyTheme(resolved, nextColor);
     window.dispatchEvent(
-      new CustomEvent("mcaw-theme-change", { detail: { mode: nextMode, theme: resolved, colorTheme: nextColor } }),
+      new CustomEvent("mcaw-theme-change", {
+        detail: { mode: nextMode, theme: resolved, colorTheme: nextColor },
+      }),
     );
   };
 

@@ -1,10 +1,26 @@
 import { useState } from "react";
-import { Filter, X, Bookmark, BookmarkPlus, Star, Copy, Pencil, Trash2, History } from "lucide-react";
+import {
+  Filter,
+  X,
+  Bookmark,
+  BookmarkPlus,
+  Star,
+  Copy,
+  Pencil,
+  Trash2,
+  History,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,7 +29,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MONTH_LABELS, filterSummary, isFilterActive, usePrefsStore, type MonthKey } from "@/lib/prefs";
+import {
+  MONTH_LABELS,
+  filterSummary,
+  isFilterActive,
+  usePrefsStore,
+  type MonthKey,
+} from "@/lib/prefs";
 import { useGlobalClusters } from "@/hooks/use-global-filters";
 import { toast } from "sonner";
 
@@ -65,7 +87,9 @@ export function GlobalFilterBar({ hideMonths = false }: { hideMonths?: boolean }
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="h-9">
                 <Bookmark className="mr-1 h-4 w-4" /> Views
-                {views.length > 0 && <span className="ml-1 text-xs text-muted-foreground">({views.length})</span>}
+                {views.length > 0 && (
+                  <span className="ml-1 text-xs text-muted-foreground">({views.length})</span>
+                )}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-72">
@@ -97,7 +121,13 @@ export function GlobalFilterBar({ hideMonths = false }: { hideMonths?: boolean }
                     aria-label="Jadikan default"
                     onClick={() => setDefaultView(defaultViewId === v.id ? null : v.id)}
                   >
-                    <Star className={defaultViewId === v.id ? "h-3.5 w-3.5 fill-primary text-primary" : "h-3.5 w-3.5"} />
+                    <Star
+                      className={
+                        defaultViewId === v.id
+                          ? "h-3.5 w-3.5 fill-primary text-primary"
+                          : "h-3.5 w-3.5"
+                      }
+                    />
                   </Button>
                   <Button
                     size="icon"
@@ -111,7 +141,13 @@ export function GlobalFilterBar({ hideMonths = false }: { hideMonths?: boolean }
                   >
                     <Pencil className="h-3.5 w-3.5" />
                   </Button>
-                  <Button size="icon" variant="ghost" className="h-7 w-7" aria-label="Duplikat" onClick={() => duplicateView(v.id)}>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-7 w-7"
+                    aria-label="Duplikat"
+                    onClick={() => duplicateView(v.id)}
+                  >
                     <Copy className="h-3.5 w-3.5" />
                   </Button>
                   <Button
@@ -234,11 +270,16 @@ export function GlobalFilterBar({ hideMonths = false }: { hideMonths?: boolean }
             onChange={(v) => setFilter("kategori", v as typeof filters.kategori)}
             autoLabel="Semua Kategori"
             autoValue="all"
-            items={KATEGORI.filter((k) => k.value !== "all").map((k) => ({ value: k.value, label: k.label }))}
+            items={KATEGORI.filter((k) => k.value !== "all").map((k) => ({
+              value: k.value,
+              label: k.label,
+            }))}
           />
         </div>
       </div>
-      {active && <p className="mt-2 text-[11px] text-muted-foreground">Aktif: {filterSummary(filters)}</p>}
+      {active && (
+        <p className="mt-2 text-[11px] text-muted-foreground">Aktif: {filterSummary(filters)}</p>
+      )}
     </Card>
   );
 }
@@ -260,7 +301,9 @@ function FilterSelect({
 }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-[10px] font-medium uppercase tracking-wide text-muted-foreground">{label}</span>
+      <span className="mb-1 block text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+        {label}
+      </span>
       <Select value={value} onValueChange={onChange}>
         <SelectTrigger className="h-9 w-full text-sm">
           <SelectValue placeholder={autoLabel} />

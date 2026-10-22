@@ -17,11 +17,15 @@ export function usePresenceHeartbeat() {
     async function beat() {
       if (cancelled || beating || !userId || document.visibilityState === "hidden") return;
       beating = true;
-      try { await supabase
-        .from("profiles")
-        .update({ last_seen_at: new Date().toISOString() })
-        .eq("id", userId)
-        .then(() => undefined); } finally { beating = false; }
+      try {
+        await supabase
+          .from("profiles")
+          .update({ last_seen_at: new Date().toISOString() })
+          .eq("id", userId)
+          .then(() => undefined);
+      } finally {
+        beating = false;
+      }
     }
 
     async function start(uid: string) {

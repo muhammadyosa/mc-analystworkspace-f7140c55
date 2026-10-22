@@ -1,6 +1,13 @@
 import { create } from "zustand";
 import { persist, createJSONStorage, type StateStorage } from "zustand/middleware";
-import type { ActionPlanRow, AnalystRow, ClusterRow, CompetitorRow, TicketRow, UploadMeta } from "./excel";
+import type {
+  ActionPlanRow,
+  AnalystRow,
+  ClusterRow,
+  CompetitorRow,
+  TicketRow,
+  UploadMeta,
+} from "./excel";
 
 // Debounced localStorage — sync reads keep hydration flash-free,
 // async writes prevent JSON.stringify on large datasets from blocking navigation.
@@ -27,7 +34,8 @@ const debouncedLocalStorage: StateStorage = {
         if (v === undefined) return;
         try {
           const write = () => window.localStorage.setItem(name, v);
-          const ric = (window as unknown as { requestIdleCallback?: (cb: () => void) => void }).requestIdleCallback;
+          const ric = (window as unknown as { requestIdleCallback?: (cb: () => void) => void })
+            .requestIdleCallback;
           if (typeof ric === "function") ric(write);
           else write();
         } catch {
@@ -134,38 +142,80 @@ export const useDataStore = create<DataState>()(
           lastUpdated: Date.now(),
         })),
       setClusters: (rows, mode = "replace") =>
-        set((s) => ({ clusters: mode === "append" ? [...s.clusters, ...rows] : rows, lastUpdated: Date.now() })),
+        set((s) => ({
+          clusters: mode === "append" ? [...s.clusters, ...rows] : rows,
+          lastUpdated: Date.now(),
+        })),
       setTickets: (rows, mode = "replace") =>
-        set((s) => ({ tickets: mode === "append" ? [...s.tickets, ...rows] : rows, lastUpdated: Date.now() })),
+        set((s) => ({
+          tickets: mode === "append" ? [...s.tickets, ...rows] : rows,
+          lastUpdated: Date.now(),
+        })),
       setAnalyst: (rows, mode = "replace") =>
-        set((s) => ({ analyst: mode === "append" ? [...s.analyst, ...rows] : rows, lastUpdated: Date.now() })),
+        set((s) => ({
+          analyst: mode === "append" ? [...s.analyst, ...rows] : rows,
+          lastUpdated: Date.now(),
+        })),
       setCompetitorData: (rows, mode = "replace") =>
-        set((s) => ({ competitorData: mode === "append" ? [...s.competitorData, ...rows] : rows, lastUpdated: Date.now() })),
+        set((s) => ({
+          competitorData: mode === "append" ? [...s.competitorData, ...rows] : rows,
+          lastUpdated: Date.now(),
+        })),
       setActionPlans: (rows, mode = "replace") =>
-        set((s) => ({ actionPlans: mode === "append" ? [...s.actionPlans, ...rows] : rows, lastUpdated: Date.now() })),
+        set((s) => ({
+          actionPlans: mode === "append" ? [...s.actionPlans, ...rows] : rows,
+          lastUpdated: Date.now(),
+        })),
       addActionPlans: (rows) =>
         set((s) => ({ actionPlans: [...rows, ...s.actionPlans], lastUpdated: Date.now() })),
       updateActionPlan: (id, patch) =>
-        set((s) => ({ actionPlans: s.actionPlans.map((a) => (a.id === id ? { ...a, ...patch } : a)), lastUpdated: Date.now() })),
+        set((s) => ({
+          actionPlans: s.actionPlans.map((a) => (a.id === id ? { ...a, ...patch } : a)),
+          lastUpdated: Date.now(),
+        })),
       overrideActionPlanStatus: (id, status) =>
-        set((s) => ({ actionPlans: s.actionPlans.map((a) => (a.id === id ? { ...a, status, statusManual: true, updatedAt: new Date().toISOString() } : a)), lastUpdated: Date.now() })),
+        set((s) => ({
+          actionPlans: s.actionPlans.map((a) =>
+            a.id === id
+              ? { ...a, status, statusManual: true, updatedAt: new Date().toISOString() }
+              : a,
+          ),
+          lastUpdated: Date.now(),
+        })),
       removeActionPlan: (id) =>
-        set((s) => ({ actionPlans: s.actionPlans.filter((a) => a.id !== id), lastUpdated: Date.now() })),
+        set((s) => ({
+          actionPlans: s.actionPlans.filter((a) => a.id !== id),
+          lastUpdated: Date.now(),
+        })),
       pushHistory: (h) => set((s) => ({ history: [h, ...s.history].slice(0, 20) })),
       addAction: (a) => set((s) => ({ actions: [...s.actions, a] })),
       updateActionStatus: (id, status) =>
         set((s) => ({ actions: s.actions.map((a) => (a.id === id ? { ...a, status } : a)) })),
       deleteAction: (id) => set((s) => ({ actions: s.actions.filter((a) => a.id !== id) })),
       addCompetitor: (c) => set((s) => ({ competitors: [...s.competitors, c] })),
-      deleteCompetitor: (id) => set((s) => ({ competitors: s.competitors.filter((c) => c.id !== id) })),
+      deleteCompetitor: (id) =>
+        set((s) => ({ competitors: s.competitors.filter((c) => c.id !== id) })),
       clearAll: () =>
-        set({ clusters: [], tickets: [], analyst: [], competitorData: [], actionPlans: [], actions: [], competitors: [], history: [], lastUpdated: null }),
+        set({
+          clusters: [],
+          tickets: [],
+          analyst: [],
+          competitorData: [],
+          actionPlans: [],
+          actions: [],
+          competitors: [],
+          history: [],
+          lastUpdated: null,
+        }),
     }),
     { name: "mcaw-store", storage: createJSONStorage(() => debouncedLocalStorage) },
   ),
 );
 
-export function computePriority(row: ClusterRow, maxTicket: number): { score: number; level: "Rendah" | "Sedang" | "Tinggi" } {
+export function computePriority(
+  row: ClusterRow,
+  maxTicket: number,
+): { score: number; level: "Rendah" | "Sedang" | "Tinggi" } {
   const growthPct = row.mei > 0 ? (row.deltaMeiJuni / row.mei) * 100 : 0;
   const growthScore = Math.max(0, Math.min(100, 50 + growthPct * 2));
   const ticketScore = maxTicket > 0 ? (row.ticket / maxTicket) * 100 : 0;
@@ -182,8 +232,17 @@ export function recommendStrategy(row: ClusterRow): { type: StrategyType; action
   const lowHC = row.totalHC2026 > 0 && row.juni / row.totalHC2026 < 0.4;
   const highPotensi = row.totalHC2026 > 0 && row.juni / row.totalHC2026 < 0.6;
 
-  if (declined && highTicket) return { type: "Retention", actions: ["Site Visit", "Follow Up Customer", "Koordinasi Teknik"] };
-  if (lowHC && highPotensi) return { type: "Acquisition", actions: ["Door to Door", "Digital Ads", "Event", "Partnership"] };
-  if (row.totalHC2026 > 0 && row.juni / row.totalHC2026 < 0.3) return { type: "Development", actions: ["Open Access", "FAT Baru", "Homepass Baru"] };
+  if (declined && highTicket)
+    return {
+      type: "Retention",
+      actions: ["Site Visit", "Follow Up Customer", "Koordinasi Teknik"],
+    };
+  if (lowHC && highPotensi)
+    return {
+      type: "Acquisition",
+      actions: ["Door to Door", "Digital Ads", "Event", "Partnership"],
+    };
+  if (row.totalHC2026 > 0 && row.juni / row.totalHC2026 < 0.3)
+    return { type: "Development", actions: ["Open Access", "FAT Baru", "Homepass Baru"] };
   return { type: "Maintain", actions: ["Monitoring rutin", "Program loyalitas"] };
 }

@@ -5,12 +5,18 @@ import type { ClusterRow } from "./excel";
 export type ChurnLevel = "Tinggi" | "Sedang" | "Rendah";
 
 /** Churn potential from actual data: HC decline, recorded churn and ticket load (0–100). */
-export function churnPotential(input: { hc: number; delta: number; churn: number; ticket: number }, maxTicket: number) {
+export function churnPotential(
+  input: { hc: number; delta: number; churn: number; ticket: number },
+  maxTicket: number,
+) {
   const prev = input.hc - input.delta;
   const declinePct = input.delta < 0 && prev > 0 ? Math.min(100, (-input.delta / prev) * 100) : 0;
-  const churnPct = input.hc + input.churn > 0 ? Math.min(100, (input.churn / (input.hc + input.churn)) * 100) : 0;
+  const churnPct =
+    input.hc + input.churn > 0 ? Math.min(100, (input.churn / (input.hc + input.churn)) * 100) : 0;
   const ticketPct = maxTicket > 0 ? Math.min(100, (input.ticket / maxTicket) * 100) : 0;
-  const score = Math.round(Math.min(100, declinePct * 4) * 0.45 + Math.min(100, churnPct * 4) * 0.25 + ticketPct * 0.3);
+  const score = Math.round(
+    Math.min(100, declinePct * 4) * 0.45 + Math.min(100, churnPct * 4) * 0.25 + ticketPct * 0.3,
+  );
   const level: ChurnLevel = score >= 60 ? "Tinggi" : score >= 30 ? "Sedang" : "Rendah";
   return { score, level };
 }
@@ -18,7 +24,11 @@ export function churnPotential(input: { hc: number; delta: number; churn: number
 /** HC series over months that contain data for this cluster. */
 export function hcTrend(c: ClusterRow) {
   const rec = c as unknown as Record<string, unknown>;
-  return MONTH_KEYS.map((k) => ({ key: k, label: MONTH_LABELS[k], hc: Number(rec[k]) || 0 })).filter((m) => m.hc > 0);
+  return MONTH_KEYS.map((k) => ({
+    key: k,
+    label: MONTH_LABELS[k],
+    hc: Number(rec[k]) || 0,
+  })).filter((m) => m.hc > 0);
 }
 
 export function trendLabel(series: { hc: number }[]) {
@@ -33,15 +43,30 @@ export function trendLabel(series: { hc: number }[]) {
 
 export function retentionAdvice(level: ChurnLevel, c: ClusterRow): string[] {
   const base = recommendStrategy(c).actions;
-  if (level === "Tinggi") return ["Site visit & win-back pelanggan non-aktif", "Selesaikan ticket terbuka prioritas", ...base];
-  if (level === "Sedang") return ["Follow up pelanggan dengan keluhan", "Program loyalitas/promo perpanjangan", ...base];
+  if (level === "Tinggi")
+    return [
+      "Site visit & win-back pelanggan non-aktif",
+      "Selesaikan ticket terbuka prioritas",
+      ...base,
+    ];
+  if (level === "Sedang")
+    return ["Follow up pelanggan dengan keluhan", "Program loyalitas/promo perpanjangan", ...base];
   return ["Monitoring rutin & jaga kualitas layanan", ...base];
 }
 
 export function profilingText(p: {
-  cluster: string; kabupaten: string; provinsi: string; pic: string; period: string;
-  hc: number; delta: number; ticket: number; trend: string; priority: { score: number; level: string };
-  churn: { score: number; level: string }; advice: string[];
+  cluster: string;
+  kabupaten: string;
+  provinsi: string;
+  pic: string;
+  period: string;
+  hc: number;
+  delta: number;
+  ticket: number;
+  trend: string;
+  priority: { score: number; level: string };
+  churn: { score: number; level: string };
+  advice: string[];
 }) {
   return [
     `HASIL PROFILING CLUSTER — ${p.cluster}`,

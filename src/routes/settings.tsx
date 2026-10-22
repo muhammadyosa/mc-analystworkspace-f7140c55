@@ -6,14 +6,22 @@ import { useRole } from "@/hooks/use-role";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/settings")({
-  head: () => ({ meta: [
-    { title: "Settings — MCA Analyst Workspace" },
-    { name: "description", content: "Kelola data, pengguna, dan preferensi MCA Analyst Workspace." },
-    { property: "og:title", content: "Settings — MCA Analyst Workspace" },
-    { property: "og:description", content: "Kelola data, pengguna, dan preferensi MCA Analyst Workspace." },
-    { property: "og:type", content: "website" },
-    { name: "twitter:card", content: "summary" },
-  ] }),
+  head: () => ({
+    meta: [
+      { title: "Settings — MCA Analyst Workspace" },
+      {
+        name: "description",
+        content: "Kelola data, pengguna, dan preferensi MCA Analyst Workspace.",
+      },
+      { property: "og:title", content: "Settings — MCA Analyst Workspace" },
+      {
+        property: "og:description",
+        content: "Kelola data, pengguna, dan preferensi MCA Analyst Workspace.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: SettingsLayout,
 });
 
@@ -46,7 +54,8 @@ function SettingsLayout() {
       <div className="space-y-6 p-4 sm:p-6">
         <div className="glass-card inline-flex flex-wrap gap-1 rounded-xl border-0 p-1">
           {visible.map((t) => {
-            const active = pathname === t.to || (t.to === "/settings/data" && pathname === "/settings");
+            const active =
+              pathname === t.to || (t.to === "/settings/data" && pathname === "/settings");
             return (
               <Link
                 key={t.to}

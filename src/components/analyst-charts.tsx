@@ -75,7 +75,13 @@ function RankedBar({
         {...cursor}
       >
         <XAxis type="number" hide domain={[0, max * 1.15]} />
-        <YAxis type="category" dataKey="name" {...axisProps} width={labelWidth} tickFormatter={(v) => truncateLabel(v, 20)} />
+        <YAxis
+          type="category"
+          dataKey="name"
+          {...axisProps}
+          width={labelWidth}
+          tickFormatter={(v) => truncateLabel(v, 20)}
+        />
         <Tooltip content={tooltip} cursor={hoverCursor} />
         <Bar dataKey={valueKey} radius={[0, 6, 6, 0]} barSize={16} isAnimationActive={false}>
           {data.map((d, i) => (
@@ -115,49 +121,59 @@ function Donut({
   const slices = data.filter((d) => Number.isFinite(d.value) && d.value > 0);
   return (
     <div className="@container h-full">
-    <div className="grid h-full grid-cols-1 grid-rows-[160px_minmax(0,1fr)] items-center gap-2 @min-[420px]:grid-cols-[minmax(0,1fr)_190px] @min-[420px]:grid-rows-1 @min-[420px]:gap-3">
-      <div className="relative h-full min-w-0">
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            <Pie
-               data={slices}
-              dataKey="value"
-              nameKey="name"
-              innerRadius="62%"
-              outerRadius="88%"
-               paddingAngle={slices.length > 1 ? 2 : 0}
-              stroke="none"
-              isAnimationActive={false}
-              onClick={onClick}
-              {...cursor}
-            >
-               {slices.map((d) => (
-                 <Cell key={d.name} fill={colorFor(d, data.indexOf(d))} />
-              ))}
-            </Pie>
-            <Tooltip content={tooltip} />
-          </PieChart>
-        </ResponsiveContainer>
-        <div className="pointer-events-none absolute inset-0 grid place-items-center text-center">
-          <div>
-            <div className="font-display text-2xl font-bold tabular-nums">{centerValue}</div>
-            <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{centerLabel}</div>
+      <div className="grid h-full grid-cols-1 grid-rows-[160px_minmax(0,1fr)] items-center gap-2 @min-[420px]:grid-cols-[minmax(0,1fr)_190px] @min-[420px]:grid-rows-1 @min-[420px]:gap-3">
+        <div className="relative h-full min-w-0">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={slices}
+                dataKey="value"
+                nameKey="name"
+                innerRadius="62%"
+                outerRadius="88%"
+                paddingAngle={slices.length > 1 ? 2 : 0}
+                stroke="none"
+                isAnimationActive={false}
+                onClick={onClick}
+                {...cursor}
+              >
+                {slices.map((d) => (
+                  <Cell key={d.name} fill={colorFor(d, data.indexOf(d))} />
+                ))}
+              </Pie>
+              <Tooltip content={tooltip} />
+            </PieChart>
+          </ResponsiveContainer>
+          <div className="pointer-events-none absolute inset-0 grid place-items-center text-center">
+            <div>
+              <div className="font-display text-2xl font-bold tabular-nums">{centerValue}</div>
+              <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                {centerLabel}
+              </div>
+            </div>
           </div>
         </div>
+        <ul className="space-y-1.5">
+          {data.map((d, i) => (
+            <li
+              key={d.name}
+              className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 text-xs"
+            >
+              <span
+                className="h-2.5 w-2.5 shrink-0 rounded-[3px]"
+                style={{ background: colorFor(d, i) }}
+              />
+              <span className="truncate text-muted-foreground">{d.name}</span>
+              <span className="shrink-0 font-semibold tabular-nums">
+                {fmtFull(d.value)}{" "}
+                <span className="font-normal text-muted-foreground">
+                  ({fmtPct(potentialPercent(d.value, total))})
+                </span>
+              </span>
+            </li>
+          ))}
+        </ul>
       </div>
-      <ul className="space-y-1.5">
-        {data.map((d, i) => (
-          <li key={d.name} className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 text-xs">
-            <span className="h-2.5 w-2.5 shrink-0 rounded-[3px]" style={{ background: colorFor(d, i) }} />
-            <span className="truncate text-muted-foreground">{d.name}</span>
-            <span className="shrink-0 font-semibold tabular-nums">
-              {fmtFull(d.value)}{" "}
-               <span className="font-normal text-muted-foreground">({fmtPct(potentialPercent(d.value, total))})</span>
-            </span>
-          </li>
-        ))}
-      </ul>
-    </div>
     </div>
   );
 }
@@ -179,7 +195,8 @@ export default function AnalystCharts({
   const cursor = onSelect ? { style: { cursor: "pointer" } } : {};
 
   const competitors = useMemo(
-    () => [...s.topCompetitors].sort((a, b) => b.count - a.count).map((c) => ({ ...c, name: c.name })),
+    () =>
+      [...s.topCompetitors].sort((a, b) => b.count - a.count).map((c) => ({ ...c, name: c.name })),
     [s.topCompetitors],
   );
   const compTotal = competitors.reduce((a, b) => a + b.count, 0) || 1;
@@ -187,7 +204,9 @@ export default function AnalystCharts({
     () => competitors.filter((c) => c.avgPrice > 0).sort((a, b) => a.avgPrice - b.avgPrice),
     [competitors],
   );
-  const priceAvg = priceRows.length ? priceRows.reduce((a, b) => a + b.avgPrice, 0) / priceRows.length : 0;
+  const priceAvg = priceRows.length
+    ? priceRows.reduce((a, b) => a + b.avgPrice, 0) / priceRows.length
+    : 0;
 
   const potensiData = useMemo(
     () => [
@@ -199,8 +218,14 @@ export default function AnalystCharts({
   );
   const potensiTotal = potensiData.reduce((a, b) => a + b.value, 0);
 
-  const promos = useMemo(() => [...s.promos].sort((a, b) => b.value - a.value).slice(0, 10), [s.promos]);
-  const strategies = useMemo(() => [...s.strategies].sort((a, b) => b.value - a.value).slice(0, 10), [s.strategies]);
+  const promos = useMemo(
+    () => [...s.promos].sort((a, b) => b.value - a.value).slice(0, 10),
+    [s.promos],
+  );
+  const strategies = useMemo(
+    () => [...s.strategies].sort((a, b) => b.value - a.value).slice(0, 10),
+    [s.strategies],
+  );
   const segments = useMemo(() => [...s.segments].sort((a, b) => b.value - a.value), [s.segments]);
   const dayaBeli = useMemo(() => [...s.dayaBeli].sort((a, b) => b.value - a.value), [s.dayaBeli]);
   const segTotal = segments.reduce((a, b) => a + b.value, 0);
@@ -220,7 +245,10 @@ export default function AnalystCharts({
     title: d.name,
     rows: [
       { label: "Harga rata²", value: `Rp${fmtFull(d.avgPrice)}`, color: C.info, strong: true },
-      { label: "vs rata² pasar", value: fmtPct(priceAvg ? ((d.avgPrice - priceAvg) / priceAvg) * 100 : 0, true) },
+      {
+        label: "vs rata² pasar",
+        value: fmtPct(priceAvg ? ((d.avgPrice - priceAvg) / priceAvg) * 100 : 0, true),
+      },
       { label: "Sampel", value: `${fmtFull(d.count)} cluster` },
     ],
   }));
@@ -230,7 +258,7 @@ export default function AnalystCharts({
       title: d.name,
       rows: [
         { label: "Jumlah", value: fmtFull(d.value), strong: true },
-         { label: "Porsi", value: fmtPct(potentialPercent(d.value, total)) },
+        { label: "Porsi", value: fmtPct(potentialPercent(d.value, total)) },
       ],
     }));
 
@@ -320,7 +348,11 @@ export default function AnalystCharts({
         subtitle="Jenis promo yang paling sering ditemukan"
         height={252}
         className="lg:col-span-6"
-        footer={topPromo ? `Promo dominan: ${topPromo.name} (${fmtFull(topPromo.value)} temuan).` : undefined}
+        footer={
+          topPromo
+            ? `Promo dominan: ${topPromo.name} (${fmtFull(topPromo.value)} temuan).`
+            : undefined
+        }
       >
         <RankedBar
           data={promos as unknown as Array<Record<string, unknown>>}
@@ -358,7 +390,11 @@ export default function AnalystCharts({
         subtitle="Profil segmen dominan"
         height={252}
         className="lg:col-span-6"
-        footer={segments[0] ? `Segmen terbesar: ${segments[0].name} (${fmtFull(segments[0].value)} cluster).` : undefined}
+        footer={
+          segments[0]
+            ? `Segmen terbesar: ${segments[0].name} (${fmtFull(segments[0].value)} cluster).`
+            : undefined
+        }
       >
         <Donut
           data={segments}
@@ -377,7 +413,9 @@ export default function AnalystCharts({
         subtitle="Kemampuan belanja pelanggan per cluster"
         height={252}
         className="lg:col-span-12"
-        footer={dayaBeli[0] ? `Mayoritas cluster berada pada daya beli ${dayaBeli[0].name}.` : undefined}
+        footer={
+          dayaBeli[0] ? `Mayoritas cluster berada pada daya beli ${dayaBeli[0].name}.` : undefined
+        }
       >
         <Donut
           data={dayaBeli}

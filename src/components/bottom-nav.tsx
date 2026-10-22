@@ -17,7 +17,9 @@ const itemCls =
   "relative flex min-h-[56px] w-full flex-col items-center justify-center gap-1 px-1 py-2 text-[10px] font-medium transition-colors";
 
 function ActiveDot({ on }: { on: boolean }) {
-  return on ? <span aria-hidden className="absolute top-0 h-0.5 w-8 rounded-full bg-primary" /> : null;
+  return on ? (
+    <span aria-hidden className="absolute top-0 h-0.5 w-8 rounded-full bg-primary" />
+  ) : null;
 }
 
 /** Navigasi bawah khusus ponsel: Dashboard, Analyst, Menu (drawer utama), Reports, Akun. */
@@ -54,10 +56,18 @@ export function BottomNav() {
         to={to}
         aria-label={accessibleTitle}
         aria-current={isActive(to) ? "page" : undefined}
-        className={cn(itemCls, isActive(to) && !openMobile ? "text-primary" : "text-muted-foreground")}
+        className={cn(
+          itemCls,
+          isActive(to) && !openMobile ? "text-primary" : "text-muted-foreground",
+        )}
       >
         <ActiveDot on={isActive(to) && !openMobile} />
-        <span aria-hidden="true" className="flex size-6 shrink-0 items-center justify-center text-xl leading-none">{emoji}</span>
+        <span
+          aria-hidden="true"
+          className="flex size-6 shrink-0 items-center justify-center text-xl leading-none"
+        >
+          {emoji}
+        </span>
         <span className="truncate">{title}</span>
       </Link>
     </li>
@@ -78,10 +88,19 @@ export function BottomNav() {
             onClick={() => setOpenMobile(!openMobile)}
             aria-label="Buka menu navigasi"
             aria-expanded={openMobile}
-            className={cn(itemCls, "h-auto gap-1 rounded-none text-[10px]", mainActive ? "text-primary" : "text-muted-foreground")}
+            className={cn(
+              itemCls,
+              "h-auto gap-1 rounded-none text-[10px]",
+              mainActive ? "text-primary" : "text-muted-foreground",
+            )}
           >
             <ActiveDot on={mainActive} />
-            <span className={cn("grid size-6 place-items-center rounded-md", mainActive ? "bg-primary/15" : "bg-muted/50")}>
+            <span
+              className={cn(
+                "grid size-6 place-items-center rounded-md",
+                mainActive ? "bg-primary/15" : "bg-muted/50",
+              )}
+            >
               <Menu className="h-5 w-5 shrink-0" />
             </span>
             <span>Menu</span>
@@ -94,11 +113,20 @@ export function BottomNav() {
             type="button"
             onClick={() => setAccountOpen(true)}
             aria-label="Akun"
-            className={cn(itemCls, "h-auto gap-1 rounded-none text-[10px]", accountOpen ? "text-primary" : "text-muted-foreground")}
+            className={cn(
+              itemCls,
+              "h-auto gap-1 rounded-none text-[10px]",
+              accountOpen ? "text-primary" : "text-muted-foreground",
+            )}
           >
             <ActiveDot on={accountOpen} />
             {identity ? (
-              <Avatar className={cn("h-6 w-6 shrink-0 ring-1", accountOpen ? "ring-primary/70" : "ring-border/60")}>
+              <Avatar
+                className={cn(
+                  "h-6 w-6 shrink-0 ring-1",
+                  accountOpen ? "ring-primary/70" : "ring-border/60",
+                )}
+              >
                 {avatar && <AvatarImage src={avatar} alt={name ?? "User"} />}
                 <AvatarFallback className="text-[9px]">{initials}</AvatarFallback>
               </Avatar>
@@ -111,7 +139,10 @@ export function BottomNav() {
       </ul>
 
       <Sheet open={accountOpen} onOpenChange={setAccountOpen}>
-        <SheetContent side="bottom" className="rounded-t-2xl pb-[max(1rem,env(safe-area-inset-bottom))]">
+        <SheetContent
+          side="bottom"
+          className="rounded-t-2xl pb-[max(1rem,env(safe-area-inset-bottom))]"
+        >
           <SheetHeader className="text-left">
             <SheetTitle className="font-display text-base">Akun</SheetTitle>
           </SheetHeader>
@@ -125,9 +156,22 @@ export function BottomNav() {
               <div className="truncate text-xs text-muted-foreground">{email}</div>
             </div>
             {role && (
-              <Badge variant={role === "admin" ? "default" : "secondary"} className="shrink-0 gap-1">
-                {role === "admin" ? <ShieldCheck className="h-3 w-3" /> : <UserRound className="h-3 w-3" />}
-                {role === "admin" ? "Admin" : role === "manager" ? "Manager" : role === "analyst" ? "Analyst" : "Viewer"}
+              <Badge
+                variant={role === "admin" ? "default" : "secondary"}
+                className="shrink-0 gap-1"
+              >
+                {role === "admin" ? (
+                  <ShieldCheck className="h-3 w-3" />
+                ) : (
+                  <UserRound className="h-3 w-3" />
+                )}
+                {role === "admin"
+                  ? "Admin"
+                  : role === "manager"
+                    ? "Manager"
+                    : role === "analyst"
+                      ? "Analyst"
+                      : "Viewer"}
               </Badge>
             )}
           </div>
@@ -144,7 +188,10 @@ export function BottomNav() {
             {canInstall && (
               <button
                 type="button"
-                onClick={() => { void install(); setAccountOpen(false); }}
+                onClick={() => {
+                  void install();
+                  setAccountOpen(false);
+                }}
                 className="flex min-h-[48px] items-center gap-3 rounded-xl border border-border/60 px-3 text-left text-sm font-medium"
               >
                 <Download className="h-4 w-4 shrink-0" /> Pasang ke Layar Utama

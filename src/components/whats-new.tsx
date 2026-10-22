@@ -76,7 +76,9 @@ export function WhatsNew() {
             <DialogTitle className="flex flex-wrap items-center gap-2 text-base sm:text-lg">
               <Sparkles className="h-4 w-4 shrink-0 text-primary" />
               Apa yang Baru
-              <Badge variant="secondary" className="text-[10px]">v{APP_VERSION}</Badge>
+              <Badge variant="secondary" className="text-[10px]">
+                v{APP_VERSION}
+              </Badge>
             </DialogTitle>
             <DialogDescription className="text-xs sm:text-sm">
               Ringkasan fitur, menu, dan fungsi terbaru pada MCA Workspace.

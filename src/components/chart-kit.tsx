@@ -43,7 +43,9 @@ const COMPETITOR_COLORS: Record<string, string> = {
 };
 
 export function competitorColor(name: string, index = 0) {
-  return COMPETITOR_COLORS[(name || "").trim().toLowerCase()] ?? CATEGORICAL[index % CATEGORICAL.length];
+  return (
+    COMPETITOR_COLORS[(name || "").trim().toLowerCase()] ?? CATEGORICAL[index % CATEGORICAL.length]
+  );
 }
 
 export function potensiColor(name: string) {
@@ -112,7 +114,11 @@ export const gridProps = {
   vertical: false,
 } as const;
 
-export const axisTick = { fontSize: 10, fontWeight: 500, fill: "var(--color-muted-foreground)" } as const;
+export const axisTick = {
+  fontSize: 10,
+  fontWeight: 500,
+  fill: "var(--color-muted-foreground)",
+} as const;
 
 export const axisProps = {
   tick: axisTick,
@@ -120,7 +126,11 @@ export const axisProps = {
   axisLine: false,
 } as const;
 
-export const legendStyle = { fontSize: 11, paddingTop: 6, color: "var(--color-muted-foreground)" } as const;
+export const legendStyle = {
+  fontSize: 11,
+  paddingTop: 6,
+  color: "var(--color-muted-foreground)",
+} as const;
 
 export const hoverCursor = { fill: "var(--color-muted)", fillOpacity: 0.35 } as const;
 
@@ -139,10 +149,14 @@ export function TooltipShell({ title, rows }: { title?: ReactNode; rows: TipRow[
         {rows.map((r, i) => (
           <div key={i} className="flex items-center justify-between gap-4 text-[11px]">
             <span className="flex items-center gap-1.5 text-muted-foreground">
-              {r.color && <span className="h-2 w-2 shrink-0 rounded-[3px]" style={{ background: r.color }} />}
+              {r.color && (
+                <span className="h-2 w-2 shrink-0 rounded-[3px]" style={{ background: r.color }} />
+              )}
               {r.label}
             </span>
-            <span className={`tabular-nums ${r.strong ? "font-bold" : "font-medium"}`}>{r.value}</span>
+            <span className={`tabular-nums ${r.strong ? "font-bold" : "font-medium"}`}>
+              {r.value}
+            </span>
           </div>
         ))}
       </div>
@@ -200,8 +214,14 @@ export function ChartCard({
               </span>
             )}
             <div className="min-w-0">
-              <h3 className="line-clamp-2 font-display text-[13px] font-semibold leading-snug">{title}</h3>
-              {subtitle && <p className="mt-0.5 line-clamp-2 text-[11px] font-normal leading-snug text-muted-foreground">{subtitle}</p>}
+              <h3 className="line-clamp-2 font-display text-[13px] font-semibold leading-snug">
+                {title}
+              </h3>
+              {subtitle && (
+                <p className="mt-0.5 line-clamp-2 text-[11px] font-normal leading-snug text-muted-foreground">
+                  {subtitle}
+                </p>
+              )}
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-2">
@@ -220,7 +240,9 @@ export function ChartCard({
           {children}
         </div>
         {footer && (
-          <p className="border-t border-border/60 px-1 pt-2 text-[11px] leading-relaxed text-muted-foreground">{footer}</p>
+          <p className="border-t border-border/60 px-1 pt-2 text-[11px] leading-relaxed text-muted-foreground">
+            {footer}
+          </p>
         )}
       </CardContent>
     </Card>
@@ -228,7 +250,15 @@ export function ChartCard({
 }
 
 /** Small pill showing a delta with direction. */
-export function DeltaBadge({ value, suffix = "%", label }: { value: number; suffix?: string; label?: string }) {
+export function DeltaBadge({
+  value,
+  suffix = "%",
+  label,
+}: {
+  value: number;
+  suffix?: string;
+  label?: string;
+}) {
   const up = value >= 0;
   return (
     <span
@@ -243,7 +273,11 @@ export function DeltaBadge({ value, suffix = "%", label }: { value: number; suff
 }
 
 /* ---------------- Insights ---------------- */
-export type Insight = { icon: string; tone: "positive" | "warning" | "negative" | "info" | "neutral"; text: ReactNode };
+export type Insight = {
+  icon: string;
+  tone: "positive" | "warning" | "negative" | "info" | "neutral";
+  text: ReactNode;
+};
 
 const TONE: Record<Insight["tone"], string> = {
   positive: C.positive,
@@ -253,7 +287,13 @@ const TONE: Record<Insight["tone"], string> = {
   neutral: C.neutral,
 };
 
-export function KeyInsights({ items, title = "Key Insights" }: { items: Insight[]; title?: string }) {
+export function KeyInsights({
+  items,
+  title = "Key Insights",
+}: {
+  items: Insight[];
+  title?: string;
+}) {
   if (!items.length) return null;
   return (
     <section aria-label={title}>
@@ -291,7 +331,12 @@ export function ProgressStat({
   tone?: "primary" | "positive" | "warning" | "negative";
 }) {
   const pct = total > 0 ? Math.min(100, (value / total) * 100) : 0;
-  const color = { primary: C.primary, positive: C.positive, warning: C.warning, negative: C.negative }[tone];
+  const color = {
+    primary: C.primary,
+    positive: C.positive,
+    warning: C.warning,
+    negative: C.negative,
+  }[tone];
   return (
     <div className="glass-card rounded-2xl p-5">
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-3">
@@ -337,21 +382,42 @@ export function ArcDistribution({
   const arc = (r: number, frac: number) => {
     const a0 = Math.PI;
     const a1 = Math.PI + Math.PI * Math.max(0, Math.min(1, frac));
-    const p = (a: number) => `${(cx + r * Math.cos(a)).toFixed(2)} ${(cy + r * Math.sin(a)).toFixed(2)}`;
+    const p = (a: number) =>
+      `${(cx + r * Math.cos(a)).toFixed(2)} ${(cy + r * Math.sin(a)).toFixed(2)}`;
     return `M ${p(a0)} A ${r} ${r} 0 0 1 ${p(a1)}`;
   };
 
   return (
-    <div className={`grid h-full min-h-0 grid-cols-1 content-start gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(260px,0.85fr)] sm:items-center sm:gap-5 ${className}`}>
+    <div
+      className={`grid h-full min-h-0 grid-cols-1 content-start gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(260px,0.85fr)] sm:items-center sm:gap-5 ${className}`}
+    >
       <div className="min-h-0 min-w-0">
-        <svg viewBox={`0 0 ${W} ${H}`} className="mx-auto h-auto max-h-[170px] w-full max-w-[360px]" role="img" aria-label="Distribusi">
+        <svg
+          viewBox={`0 0 ${W} ${H}`}
+          className="mx-auto h-auto max-h-[170px] w-full max-w-[360px]"
+          role="img"
+          aria-label="Distribusi"
+        >
           {items.map((it, i) => {
-            const r = (W / 2 - stroke) - i * (stroke + gap - 5);
+            const r = W / 2 - stroke - i * (stroke + gap - 5);
             const frac = total ? it.value / total : 0;
             return (
               <g key={it.name}>
-                <path d={arc(r, 1)} fill="none" stroke="var(--color-muted)" strokeOpacity={0.5} strokeWidth={stroke} strokeLinecap="round" />
-                <path d={arc(r, frac)} fill="none" stroke={it.color} strokeWidth={stroke} strokeLinecap="round" />
+                <path
+                  d={arc(r, 1)}
+                  fill="none"
+                  stroke="var(--color-muted)"
+                  strokeOpacity={0.5}
+                  strokeWidth={stroke}
+                  strokeLinecap="round"
+                />
+                <path
+                  d={arc(r, frac)}
+                  fill="none"
+                  stroke={it.color}
+                  strokeWidth={stroke}
+                  strokeLinecap="round"
+                />
               </g>
             );
           })}
@@ -368,11 +434,20 @@ export function ArcDistribution({
                 onSelect ? "cursor-pointer transition-colors hover:bg-muted/60" : ""
               }`}
             >
-              <span className="text-right font-display text-sm font-bold tabular-nums" style={{ color: it.color }}>
+              <span
+                className="text-right font-display text-sm font-bold tabular-nums"
+                style={{ color: it.color }}
+              >
                 {fmtFull(it.value)}
               </span>
-              <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: it.color }} />
-              <span className="min-w-0 break-words font-medium leading-tight" style={{ color: it.color }}>
+              <span
+                className="h-2.5 w-2.5 shrink-0 rounded-full"
+                style={{ background: it.color }}
+              />
+              <span
+                className="min-w-0 break-words font-medium leading-tight"
+                style={{ color: it.color }}
+              >
                 {it.icon ? `${it.icon} ` : ""}
                 {it.name}
               </span>

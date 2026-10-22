@@ -22,7 +22,8 @@ export function useGlobalClusters() {
     })).filter((m) => m.total > 0);
 
     const lastIdx = filled.length ? filled[filled.length - 1].idx : MONTH_KEYS.indexOf("juni");
-    const prevIdxDefault = filled.length > 1 ? filled[filled.length - 2].idx : Math.max(0, lastIdx - 1);
+    const prevIdxDefault =
+      filled.length > 1 ? filled[filled.length - 2].idx : Math.max(0, lastIdx - 1);
 
     const curKey: MonthKey = filters.monthTo === "auto" ? MONTH_KEYS[lastIdx] : filters.monthTo;
     const curIdx = MONTH_KEYS.indexOf(curKey);
@@ -40,7 +41,16 @@ export function useGlobalClusters() {
       const prev = Number(c[prevKey]) || 0;
       const ticketRange = rangeKeys.reduce((a, k) => a + (Number(c.ticketByMonth?.[k]) || 0), 0);
       const ticketView = monthScoped && ticketRange > 0 ? ticketRange : c.ticket;
-      return { ...c, juni: cur, mei: prev, deltaMeiJuni: cur - prev, ticket: ticketView, hcCur: cur, hcPrev: prev, ticketView };
+      return {
+        ...c,
+        juni: cur,
+        mei: prev,
+        deltaMeiJuni: cur - prev,
+        ticket: ticketView,
+        hcCur: cur,
+        hcPrev: prev,
+        ticketView,
+      };
     });
 
     const maxTicket = Math.max(...mapped.map((c) => c.ticket), 1);
@@ -53,7 +63,8 @@ export function useGlobalClusters() {
       if (filters.kategori === "growth" && c.deltaMeiJuni <= 0) return false;
       if (filters.kategori === "decline" && c.deltaMeiJuni >= 0) return false;
       if (filters.kategori === "high-ticket" && c.ticket < 100) return false;
-      if (filters.kategori === "high-risk" && computePriority(c, maxTicket).level !== "Tinggi") return false;
+      if (filters.kategori === "high-risk" && computePriority(c, maxTicket).level !== "Tinggi")
+        return false;
       return true;
     });
 
@@ -86,7 +97,9 @@ export function useGlobalClusters() {
         cluster: uniq(
           clusters
             .filter((c) => filters.provinsi === "all" || (c.provinsi || "N/A") === filters.provinsi)
-            .filter((c) => filters.kabupaten === "all" || (c.kabupaten || "N/A") === filters.kabupaten)
+            .filter(
+              (c) => filters.kabupaten === "all" || (c.kabupaten || "N/A") === filters.kabupaten,
+            )
             .map((c) => c.cluster),
         ).slice(0, 500),
         pic: uniq(clusters.map((c) => c.pic)),

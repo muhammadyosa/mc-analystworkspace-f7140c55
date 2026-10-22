@@ -4,20 +4,34 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useTheme, type ColorTheme, type ThemeMode } from "@/hooks/use-theme";
 import { DASHBOARD_WIDGETS, defaultWidgets, filterSummary, usePrefsStore } from "@/lib/prefs";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/settings/preferences")({
-  head: () => ({ meta: [
-    { title: "Preferensi — MCA Analyst Workspace" },
-    { name: "description", content: "Atur tampilan, notifikasi, dan tampilan tersimpan workspace." },
-    { property: "og:title", content: "Preferensi — MCA Analyst Workspace" },
-    { property: "og:description", content: "Atur tampilan, notifikasi, dan tampilan tersimpan workspace." },
-    { property: "og:type", content: "website" },
-    { name: "twitter:card", content: "summary" },
-  ] }),
+  head: () => ({
+    meta: [
+      { title: "Preferensi — MCA Analyst Workspace" },
+      {
+        name: "description",
+        content: "Atur tampilan, notifikasi, dan tampilan tersimpan workspace.",
+      },
+      { property: "og:title", content: "Preferensi — MCA Analyst Workspace" },
+      {
+        property: "og:description",
+        content: "Atur tampilan, notifikasi, dan tampilan tersimpan workspace.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: PreferencesPage,
 });
 
@@ -65,7 +79,9 @@ function PreferencesPage() {
           <label className="block">
             <span className="mb-1 block text-xs font-medium text-muted-foreground">Mode tema</span>
             <Select value={mode} onValueChange={(v) => setMode(v as ThemeMode)}>
-              <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-10">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="light">Terang</SelectItem>
                 <SelectItem value="dark">Gelap</SelectItem>
@@ -76,10 +92,14 @@ function PreferencesPage() {
           <label className="block">
             <span className="mb-1 block text-xs font-medium text-muted-foreground">Tema warna</span>
             <Select value={colorTheme} onValueChange={(v) => setColorTheme(v as ColorTheme)}>
-              <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-10">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 {COLORS.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>{c.label}</SelectItem>
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.label}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -98,7 +118,9 @@ function PreferencesPage() {
           <div className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/20 px-3 py-2.5">
             <div>
               <p className="text-sm font-medium">Kurangi animasi</p>
-              <p className="text-xs text-muted-foreground">Nonaktifkan transisi agar lebih nyaman & ringan.</p>
+              <p className="text-xs text-muted-foreground">
+                Nonaktifkan transisi agar lebih nyaman & ringan.
+              </p>
             </div>
             <Switch
               checked={prefs.reduceMotion}
@@ -148,11 +170,16 @@ function PreferencesPage() {
           <CardTitle className="flex items-center gap-2 font-display text-base">
             <Bell className="h-4 w-4 text-primary" /> Notifikasi
           </CardTitle>
-          <CardDescription>Pilih jenis peringatan yang muncul di lonceng notifikasi.</CardDescription>
+          <CardDescription>
+            Pilih jenis peringatan yang muncul di lonceng notifikasi.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-2">
           {NOTIF.map((n) => (
-            <div key={n.key} className="flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-muted/20 px-3 py-2.5">
+            <div
+              key={n.key}
+              className="flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-muted/20 px-3 py-2.5"
+            >
               <div className="min-w-0">
                 <p className="text-sm font-medium">{n.label}</p>
                 <p className="truncate text-xs text-muted-foreground">{n.desc}</p>
@@ -181,12 +208,19 @@ function PreferencesPage() {
             </p>
           )}
           {prefs.views.map((v) => (
-            <div key={v.id} className="flex items-center gap-2 rounded-lg border border-border/60 bg-muted/20 px-3 py-2.5">
+            <div
+              key={v.id}
+              className="flex items-center gap-2 rounded-lg border border-border/60 bg-muted/20 px-3 py-2.5"
+            >
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium">{v.name}</p>
                 <p className="truncate text-xs text-muted-foreground">{filterSummary(v.filters)}</p>
               </div>
-              {prefs.defaultViewId === v.id && <Badge variant="secondary" className="text-[10px]">Default</Badge>}
+              {prefs.defaultViewId === v.id && (
+                <Badge variant="secondary" className="text-[10px]">
+                  Default
+                </Badge>
+              )}
               <Button
                 size="sm"
                 variant="outline"
@@ -195,7 +229,11 @@ function PreferencesPage() {
                   toast.success("Preferensi disimpan");
                 }}
               >
-                <Star className={prefs.defaultViewId === v.id ? "h-4 w-4 fill-primary text-primary" : "h-4 w-4"} />
+                <Star
+                  className={
+                    prefs.defaultViewId === v.id ? "h-4 w-4 fill-primary text-primary" : "h-4 w-4"
+                  }
+                />
               </Button>
             </div>
           ))}
@@ -226,7 +264,11 @@ function PreferencesPage() {
               }`}
             >
               <span className="truncate">{p.label}</span>
-              <Star className={prefs.favorites.includes(p.url) ? "h-4 w-4 fill-primary" : "h-4 w-4 opacity-40"} />
+              <Star
+                className={
+                  prefs.favorites.includes(p.url) ? "h-4 w-4 fill-primary" : "h-4 w-4 opacity-40"
+                }
+              />
             </button>
           ))}
         </CardContent>

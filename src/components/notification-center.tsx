@@ -55,7 +55,10 @@ export function NotificationCenter() {
         level: "kritis",
         icon: AlertTriangle,
         title: `${overdue.length} program melewati tenggat`,
-        detail: overdue.slice(0, 3).map((a) => `${a.cluster} — ${a.program}`).join(", "),
+        detail: overdue
+          .slice(0, 3)
+          .map((a) => `${a.cluster} — ${a.program}`)
+          .join(", "),
         to: "/action-plan",
       });
     }
@@ -151,10 +154,17 @@ export function NotificationCenter() {
       <PopoverContent align="end" className="w-[min(23rem,calc(100vw-2rem))] p-0">
         <div className="flex items-center justify-between gap-2 border-b border-border/60 px-3 py-2.5">
           <span className="font-display text-sm font-semibold">Notification Center</span>
-          <Badge variant="secondary" className="text-[10px]">{unread.length} belum dibaca</Badge>
+          <Badge variant="secondary" className="text-[10px]">
+            {unread.length} belum dibaca
+          </Badge>
         </div>
         <div className="flex items-center gap-1 border-b border-border/60 px-2 py-1.5">
-          <Button size="sm" variant={onlyUnread ? "default" : "ghost"} className="h-7 text-xs" onClick={() => setOnlyUnread((v) => !v)}>
+          <Button
+            size="sm"
+            variant={onlyUnread ? "default" : "ghost"}
+            className="h-7 text-xs"
+            onClick={() => setOnlyUnread((v) => !v)}
+          >
             Belum dibaca
           </Button>
           <Button
@@ -169,7 +179,8 @@ export function NotificationCenter() {
         <div className="max-h-[60vh] overflow-y-auto">
           {visible.length === 0 ? (
             <div className="flex items-center gap-2 px-3 py-6 text-sm text-muted-foreground">
-              <CheckCircle2 className="h-4 w-4 text-emerald-500" /> Semua indikator dalam kondisi baik.
+              <CheckCircle2 className="h-4 w-4 text-emerald-500" /> Semua indikator dalam kondisi
+              baik.
             </div>
           ) : (
             visible.map((a) => {
@@ -204,7 +215,9 @@ export function NotificationCenter() {
                       {!isRead && <span className="h-1.5 w-1.5 rounded-full bg-primary" />}
                     </div>
                     <div className="text-sm font-medium leading-snug">{a.title}</div>
-                    <div className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{a.detail}</div>
+                    <div className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
+                      {a.detail}
+                    </div>
                   </div>
                 </Link>
               );

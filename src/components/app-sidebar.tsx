@@ -1,11 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import {
-  Check,
-  ChevronLeft,
-  Moon,
-  Palette,
-  Sun,
-} from "lucide-react";
+import { Check, ChevronLeft, Moon, Palette, Sun } from "lucide-react";
 import iconnetLogo from "@/assets/iconnet-logo.png.asset.json";
 import {
   Sidebar,
@@ -68,13 +62,16 @@ export function AppSidebar() {
             aria-expanded={menuOpen}
             className="sidebar-toggle-float absolute -right-[22px] top-1/2 z-50 flex size-11 -translate-y-1/2 rounded-full p-0"
           >
-            <span className="sidebar-toggle-face flex size-5 items-center justify-center rounded-full" aria-hidden="true">
-            <ChevronLeft
-              className={cn(
-                "h-3 w-3 shrink-0 transition-transform duration-300 ease-out",
-                !menuOpen && "rotate-180",
-              )}
-            />
+            <span
+              className="sidebar-toggle-face flex size-5 items-center justify-center rounded-full"
+              aria-hidden="true"
+            >
+              <ChevronLeft
+                className={cn(
+                  "h-3 w-3 shrink-0 transition-transform duration-300 ease-out",
+                  !menuOpen && "rotate-180",
+                )}
+              />
             </span>
           </Button>
         </TooltipTrigger>
@@ -107,9 +104,20 @@ export function AppSidebar() {
                     tooltip={item.title}
                     className="h-11 justify-start gap-3 group-data-[collapsible=icon]:justify-center"
                   >
-                    <Link to={item.url} onClick={() => setOpenMobile(false)} className="flex items-center gap-3">
-                      <span aria-hidden="true" className="flex h-5 w-5 shrink-0 items-center justify-center text-lg leading-none">{item.emoji}</span>
-                      <span className="min-w-0 group-data-[collapsible=icon]:hidden">{item.title}</span>
+                    <Link
+                      to={item.url}
+                      onClick={() => setOpenMobile(false)}
+                      className="flex items-center gap-3"
+                    >
+                      <span
+                        aria-hidden="true"
+                        className="flex h-5 w-5 shrink-0 items-center justify-center text-lg leading-none"
+                      >
+                        {item.emoji}
+                      </span>
+                      <span className="min-w-0 group-data-[collapsible=icon]:hidden">
+                        {item.title}
+                      </span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -126,8 +134,14 @@ export function AppSidebar() {
           className="w-full justify-start gap-3 px-2 text-sidebar-foreground group-data-[collapsible=icon]:size-8 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
           aria-label={theme === "dark" ? "Aktifkan Light Mode" : "Aktifkan Dark Mode"}
         >
-          {theme === "dark" ? <Sun className="h-4 w-4 text-warning" /> : <Moon className="h-4 w-4 text-warning" />}
-          <span className="group-data-[collapsible=icon]:hidden">{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>
+          {theme === "dark" ? (
+            <Sun className="h-4 w-4 text-warning" />
+          ) : (
+            <Moon className="h-4 w-4 text-warning" />
+          )}
+          <span className="group-data-[collapsible=icon]:hidden">
+            {theme === "dark" ? "Light Mode" : "Dark Mode"}
+          </span>
         </Button>
 
         <Popover>
@@ -138,7 +152,13 @@ export function AppSidebar() {
               className="w-full justify-start gap-3 px-2 text-sidebar-foreground group-data-[collapsible=icon]:size-8 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
               aria-label="Pilih tema warna"
             >
-              <span className={cn("theme-swatch", colorThemes.find((item) => item.id === colorTheme)?.swatch)} aria-hidden="true" />
+              <span
+                className={cn(
+                  "theme-swatch",
+                  colorThemes.find((item) => item.id === colorTheme)?.swatch,
+                )}
+                aria-hidden="true"
+              />
               <span className="truncate group-data-[collapsible=icon]:hidden">
                 {colorThemes.find((item) => item.id === colorTheme)?.label}
               </span>

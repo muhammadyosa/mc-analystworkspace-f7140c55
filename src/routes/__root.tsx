@@ -30,9 +30,7 @@ function NotFoundComponent() {
       <div className="max-w-md text-center">
         <h1 className="text-7xl font-bold text-gradient">404</h1>
         <h2 className="mt-4 text-xl font-semibold">Halaman tidak ditemukan</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          URL yang Anda tuju tidak tersedia.
-        </p>
+        <p className="mt-2 text-sm text-muted-foreground">URL yang Anda tuju tidak tersedia.</p>
         <div className="mt-6">
           <Link
             to="/"
@@ -97,20 +95,21 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "MCA Workspace" },
       {
         name: "description",
-        content:
-          "Dashboard executive: HC, ticket, growth, dan prioritas cluster.",
+        content: "Dashboard executive: HC, ticket, growth, dan prioritas cluster.",
       },
       { name: "author", content: "MCA Workspace" },
       { property: "og:title", content: "MCA Workspace" },
       {
         property: "og:description",
-        content:
-          "Dashboard executive: HC, ticket, growth, dan prioritas cluster.",
+        content: "Dashboard executive: HC, ticket, growth, dan prioritas cluster.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "MCA Workspace" },
-      { name: "twitter:description", content: "Dashboard executive: HC, ticket, growth, dan prioritas cluster." },
+      {
+        name: "twitter:description",
+        content: "Dashboard executive: HC, ticket, growth, dan prioritas cluster.",
+      },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
@@ -164,28 +163,28 @@ function AuthGate({ children }: { children: ReactNode }) {
     let generation = 0;
     let deferred: ReturnType<typeof setTimeout> | undefined;
     async function resolve(session: unknown) {
-    const request = ++generation;
-    if (!session) {
-      if (mounted) setStatus("out");
-      return;
+      const request = ++generation;
+      if (!session) {
+        if (mounted) setStatus("out");
+        return;
+      }
+      try {
+        const { data: u } = await supabase.auth.getUser();
+        if (!mounted || request !== generation) return;
+        if (!u.user) {
+          setStatus("out");
+          return;
+        }
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("approved")
+          .eq("id", u.user.id)
+          .maybeSingle();
+        if (mounted && request === generation) setStatus(profile?.approved ? "in" : "pending");
+      } catch {
+        if (mounted && request === generation) setStatus("out");
+      }
     }
-    try {
-    const { data: u } = await supabase.auth.getUser();
-    if (!mounted || request !== generation) return;
-    if (!u.user) {
-      setStatus("out");
-      return;
-    }
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("approved")
-      .eq("id", u.user.id)
-      .maybeSingle();
-    if (mounted && request === generation) setStatus(profile?.approved ? "in" : "pending");
-    } catch {
-      if (mounted && request === generation) setStatus("out");
-    }
-  }
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       if (
         event === "SIGNED_IN" ||
@@ -199,7 +198,9 @@ function AuthGate({ children }: { children: ReactNode }) {
         if (event !== "INITIAL_SESSION") {
           queryClient.removeQueries({ queryKey: ["workspace-user"] });
         }
-        deferred = setTimeout(() => { if (mounted) void resolve(session); }, 0);
+        deferred = setTimeout(() => {
+          if (mounted) void resolve(session);
+        }, 0);
       }
     });
     return () => {
@@ -286,7 +287,9 @@ function useAutoUpdate() {
     };
     const onError = (e: ErrorEvent) => {
       const msg = String(e?.message ?? "");
-      if (/dynamically imported module|Importing a module script failed|ChunkLoadError/i.test(msg)) {
+      if (
+        /dynamically imported module|Importing a module script failed|ChunkLoadError/i.test(msg)
+      ) {
         reloadOnce();
       }
     };
@@ -302,7 +305,9 @@ function useAutoUpdate() {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   useAutoUpdate();
-  useEffect(() => { void initializeAppWorker().catch(() => undefined); }, []);
+  useEffect(() => {
+    void initializeAppWorker().catch(() => undefined);
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>

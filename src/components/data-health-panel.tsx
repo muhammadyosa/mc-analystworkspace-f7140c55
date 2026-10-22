@@ -1,10 +1,25 @@
 import { useShallow } from "zustand/react/shallow";
 import { useMemo } from "react";
-import { Activity, CheckCircle2, AlertTriangle, XCircle, Clock, Database, Columns3 } from "lucide-react";
+import {
+  Activity,
+  CheckCircle2,
+  AlertTriangle,
+  XCircle,
+  Clock,
+  Database,
+  Columns3,
+} from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { useDataStore } from "@/lib/store";
 import { formatDistanceToNow } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
@@ -20,7 +35,17 @@ type Dataset = {
 
 /** Ringkasan kualitas, kesegaran, dan validitas data workspace. */
 export function DataHealthPanel() {
-  const store = useDataStore(useShallow((s) => ({ clusters: s.clusters, tickets: s.tickets, analyst: s.analyst, competitorData: s.competitorData, actionPlans: s.actionPlans, lastUpdated: s.lastUpdated, history: s.history })));
+  const store = useDataStore(
+    useShallow((s) => ({
+      clusters: s.clusters,
+      tickets: s.tickets,
+      analyst: s.analyst,
+      competitorData: s.competitorData,
+      actionPlans: s.actionPlans,
+      lastUpdated: s.lastUpdated,
+      history: s.history,
+    })),
+  );
 
   const datasets = useMemo<Dataset[]>(
     () => [
@@ -82,7 +107,8 @@ export function DataHealthPanel() {
           if (k.trim() && seen.has(k)) duplicates += 1;
           else seen.add(k);
           if (d.requiredFields.some((f) => !String(r[f] ?? "").trim())) missing += 1;
-          if (d.numericFields.some((f) => r[f] !== undefined && !Number.isFinite(Number(r[f])))) invalid += 1;
+          if (d.numericFields.some((f) => r[f] !== undefined && !Number.isFinite(Number(r[f]))))
+            invalid += 1;
         });
         const valid = Math.max(0, total - missing - invalid);
         const score = total ? Math.round((valid / total) * 100) : 0;
@@ -92,12 +118,24 @@ export function DataHealthPanel() {
   );
 
   const totalRows = report.reduce((a, r) => a + r.total, 0);
-  const overall = totalRows ? Math.round((report.reduce((a, r) => a + r.valid, 0) / totalRows) * 100) : 0;
+  const overall = totalRows
+    ? Math.round((report.reduce((a, r) => a + r.valid, 0) / totalRows) * 100)
+    : 0;
   const ageHours = store.lastUpdated ? (Date.now() - store.lastUpdated) / 3600000 : null;
   const freshness =
-    ageHours === null ? "Belum ada data" : ageHours < 24 ? "Segar" : ageHours < 24 * 7 ? "Cukup segar" : "Kedaluwarsa";
+    ageHours === null
+      ? "Belum ada data"
+      : ageHours < 24
+        ? "Segar"
+        : ageHours < 24 * 7
+          ? "Cukup segar"
+          : "Kedaluwarsa";
   const freshTone =
-    freshness === "Segar" ? "text-success" : freshness === "Cukup segar" ? "text-warning" : "text-destructive";
+    freshness === "Segar"
+      ? "text-success"
+      : freshness === "Cukup segar"
+        ? "text-warning"
+        : "text-destructive";
 
   return (
     <div className="space-y-4">
@@ -117,7 +155,9 @@ export function DataHealthPanel() {
           <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
             <Database className="h-3.5 w-3.5" /> Total baris
           </div>
-          <p className="mt-1.5 font-display text-2xl font-bold tabular-nums">{totalRows.toLocaleString("id-ID")}</p>
+          <p className="mt-1.5 font-display text-2xl font-bold tabular-nums">
+            {totalRows.toLocaleString("id-ID")}
+          </p>
         </Card>
         <Card className="border border-border/60 bg-muted/15 p-4 shadow-none">
           <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
@@ -155,12 +195,22 @@ export function DataHealthPanel() {
               {report.map((r) => (
                 <TableRow key={r.key}>
                   <TableCell className="font-medium">{r.label}</TableCell>
-                  <TableCell className="text-right tabular-nums">{r.total.toLocaleString("id-ID")}</TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {r.total.toLocaleString("id-ID")}
+                  </TableCell>
                   <TableCell className="text-right tabular-nums">{r.columns}</TableCell>
-                  <TableCell className="text-right tabular-nums text-success">{r.valid.toLocaleString("id-ID")}</TableCell>
-                  <TableCell className="text-right tabular-nums text-warning">{r.missing}</TableCell>
-                  <TableCell className="text-right tabular-nums text-warning">{r.duplicates}</TableCell>
-                  <TableCell className="text-right tabular-nums text-destructive">{r.invalid}</TableCell>
+                  <TableCell className="text-right tabular-nums text-success">
+                    {r.valid.toLocaleString("id-ID")}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums text-warning">
+                    {r.missing}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums text-warning">
+                    {r.duplicates}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums text-destructive">
+                    {r.invalid}
+                  </TableCell>
                   <TableCell>
                     <StatusBadge total={r.total} score={r.score} />
                   </TableCell>
@@ -178,12 +228,24 @@ export function DataHealthPanel() {
                 <StatusBadge total={r.total} score={r.score} />
               </div>
               <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                <div>Baris: <b className="text-foreground">{r.total.toLocaleString("id-ID")}</b></div>
-                <div>Kolom: <b className="text-foreground">{r.columns}</b></div>
-                <div>Valid: <b className="text-success">{r.valid}</b></div>
-                <div>Kosong: <b className="text-warning">{r.missing}</b></div>
-                <div>Duplikat: <b className="text-warning">{r.duplicates}</b></div>
-                <div>Tidak valid: <b className="text-destructive">{r.invalid}</b></div>
+                <div>
+                  Baris: <b className="text-foreground">{r.total.toLocaleString("id-ID")}</b>
+                </div>
+                <div>
+                  Kolom: <b className="text-foreground">{r.columns}</b>
+                </div>
+                <div>
+                  Valid: <b className="text-success">{r.valid}</b>
+                </div>
+                <div>
+                  Kosong: <b className="text-warning">{r.missing}</b>
+                </div>
+                <div>
+                  Duplikat: <b className="text-warning">{r.duplicates}</b>
+                </div>
+                <div>
+                  Tidak valid: <b className="text-destructive">{r.invalid}</b>
+                </div>
               </dl>
             </div>
           ))}
@@ -193,16 +255,22 @@ export function DataHealthPanel() {
       <div className="space-y-2">
         <p className="text-xs font-semibold text-muted-foreground">Riwayat impor terakhir</p>
         {store.history.length === 0 && (
-          <p className="text-sm text-muted-foreground">Belum ada riwayat impor pada perangkat ini.</p>
+          <p className="text-sm text-muted-foreground">
+            Belum ada riwayat impor pada perangkat ini.
+          </p>
         )}
         {store.history.slice(0, 8).map((h, i) => (
           <div
             key={`${h.fileName}-${i}`}
             className="flex flex-wrap items-center gap-2 rounded-lg border border-border/60 bg-muted/20 px-3 py-2 text-xs"
           >
-            <Badge variant="secondary" className="text-[10px]">{h.kind}</Badge>
+            <Badge variant="secondary" className="text-[10px]">
+              {h.kind}
+            </Badge>
             <span className="min-w-0 flex-1 truncate font-medium">{h.fileName}</span>
-            <span className="text-muted-foreground">{h.rowCount?.toLocaleString("id-ID")} baris</span>
+            <span className="text-muted-foreground">
+              {h.rowCount?.toLocaleString("id-ID")} baris
+            </span>
             <span className="text-muted-foreground">{h.mode}</span>
             <span className="text-muted-foreground">Mapping {Math.round(h.mappingPct ?? 0)}%</span>
           </div>
@@ -221,12 +289,18 @@ function StatusBadge({ total, score }: { total: number; score: number }) {
     );
   if (score >= 95)
     return (
-      <Badge variant="outline" className="gap-1 border-success/40 bg-success/10 text-[10px] text-success">
+      <Badge
+        variant="outline"
+        className="gap-1 border-success/40 bg-success/10 text-[10px] text-success"
+      >
         <CheckCircle2 className="h-3 w-3" /> Sehat
       </Badge>
     );
   return (
-    <Badge variant="outline" className="gap-1 border-warning/40 bg-warning/10 text-[10px] text-warning">
+    <Badge
+      variant="outline"
+      className="gap-1 border-warning/40 bg-warning/10 text-[10px] text-warning"
+    >
       <AlertTriangle className="h-3 w-3" /> Perlu ditinjau
     </Badge>
   );

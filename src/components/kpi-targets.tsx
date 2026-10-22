@@ -16,24 +16,32 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  KPI_METRIC_META,
-  usePrefsStore,
-  type KpiMetric,
-} from "@/lib/prefs";
+import { KPI_METRIC_META, usePrefsStore, type KpiMetric } from "@/lib/prefs";
 
 export type KpiActuals = Record<KpiMetric, number>;
 
 const fmt = (v: number, metric: KpiMetric) =>
-  metric === "ticketPer100HC" ? v.toFixed(1) : v.toLocaleString("id-ID", { maximumFractionDigits: 1 });
+  metric === "ticketPer100HC"
+    ? v.toFixed(1)
+    : v.toLocaleString("id-ID", { maximumFractionDigits: 1 });
 
 /** Kartu Target & KPI: membandingkan realisasi periode berjalan dengan target yang diatur pengguna. */
-export function KpiTargetsCard({ actuals, periodLabel }: { actuals: KpiActuals; periodLabel: string }) {
+export function KpiTargetsCard({
+  actuals,
+  periodLabel,
+}: {
+  actuals: KpiActuals;
+  periodLabel: string;
+}) {
   const targets = usePrefsStore((s) => s.kpiTargets);
   const setKpiTarget = usePrefsStore((s) => s.setKpiTarget);
   const resetKpiTargets = usePrefsStore((s) => s.resetKpiTargets);
   const [open, setOpen] = useState(false);
-  const [draft, setDraft] = useState<Record<KpiMetric, string>>({ hcGrowth: "", ticketPer100HC: "", highRisk: "" });
+  const [draft, setDraft] = useState<Record<KpiMetric, string>>({
+    hcGrowth: "",
+    ticketPer100HC: "",
+    highRisk: "",
+  });
 
   const achieved = targets.filter((t) =>
     t.direction === "min" ? actuals[t.metric] >= t.target : actuals[t.metric] <= t.target,
@@ -136,7 +144,15 @@ export function KpiTargetsCard({ actuals, periodLabel }: { actuals: KpiActuals; 
           const ok = t.direction === "min" ? actual >= t.target : actual <= t.target;
           const pct =
             t.target > 0
-              ? Math.min(100, Math.max(4, (t.direction === "min" ? actual / t.target : t.target / Math.max(actual, 0.0001)) * 100))
+              ? Math.min(
+                  100,
+                  Math.max(
+                    4,
+                    (t.direction === "min"
+                      ? actual / t.target
+                      : t.target / Math.max(actual, 0.0001)) * 100,
+                  ),
+                )
               : 100;
           return (
             <div key={t.id} className="space-y-1.5">
@@ -145,15 +161,22 @@ export function KpiTargetsCard({ actuals, periodLabel }: { actuals: KpiActuals; 
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-muted-foreground tabular-nums">
                     {fmt(actual, t.metric)}
-                    {meta.unit === "%" ? "%" : ""} / target {t.direction === "min" ? "≥" : "≤"} {fmt(t.target, t.metric)}
+                    {meta.unit === "%" ? "%" : ""} / target {t.direction === "min" ? "≥" : "≤"}{" "}
+                    {fmt(t.target, t.metric)}
                     {meta.unit === "%" ? "%" : meta.unit ? ` ${meta.unit}` : ""}
                   </span>
-                  <Badge variant={ok ? "default" : "destructive"} className={ok ? "bg-success text-success-foreground" : ""}>
+                  <Badge
+                    variant={ok ? "default" : "destructive"}
+                    className={ok ? "bg-success text-success-foreground" : ""}
+                  >
                     {ok ? "Tercapai" : "Belum"}
                   </Badge>
                 </div>
               </div>
-              <Progress value={pct} className={`h-2 ${ok ? "[&>div]:bg-success" : "[&>div]:bg-warning"}`} />
+              <Progress
+                value={pct}
+                className={`h-2 ${ok ? "[&>div]:bg-success" : "[&>div]:bg-warning"}`}
+              />
             </div>
           );
         })}

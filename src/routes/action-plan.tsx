@@ -4,7 +4,11 @@ import { useMemo, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { effectiveAction } from "@/lib/action-plan-summary";
-import { saveActionPlans, saveActionPlanPatch, deleteSharedActionPlan } from "@/lib/action-plan-sync";
+import {
+  saveActionPlans,
+  saveActionPlanPatch,
+  deleteSharedActionPlan,
+} from "@/lib/action-plan-sync";
 import {
   AlertTriangle,
   CalendarDays,
@@ -51,17 +55,32 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useDataStore } from "@/lib/store";
-import { computeActionStatus, type ActionPlanRow, type ActionPlanStatus } from "@/lib/excel";
+import {
+  computeActionStatus,
+  type ActionPlanRow,
+  type ActionPlanStatus,
+  type AnalystRow,
+  type ClusterRow,
+  type CompetitorRow,
+} from "@/lib/excel";
 
 export const Route = createFileRoute("/action-plan")({
-  head: () => ({ meta: [
-    { title: "Action Plan — MCA Analyst Workspace" },
-    { name: "description", content: "Kelola program, status, dan efektivitas action plan cluster." },
-    { property: "og:title", content: "Action Plan — MCA Analyst Workspace" },
-    { property: "og:description", content: "Kelola program, status, dan efektivitas action plan cluster." },
-    { property: "og:type", content: "website" },
-    { name: "twitter:card", content: "summary" },
-  ] }),
+  head: () => ({
+    meta: [
+      { title: "Action Plan — MCA Analyst Workspace" },
+      {
+        name: "description",
+        content: "Kelola program, status, dan efektivitas action plan cluster.",
+      },
+      { property: "og:title", content: "Action Plan — MCA Analyst Workspace" },
+      {
+        property: "og:description",
+        content: "Kelola program, status, dan efektivitas action plan cluster.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: ActionPlanPage,
 });
 
@@ -81,11 +100,41 @@ const STATUS_META: Record<
   ActionPlanStatus,
   { label: string; color: string; dot: string; ring: string; icon: typeof Clock }
 > = {
-  planned: { label: "Not Started", color: "text-sky-500", dot: "bg-sky-500", ring: "ring-sky-500/30", icon: CalendarDays },
-  onprogress: { label: "On Progress", color: "text-amber-500", dot: "bg-amber-500", ring: "ring-amber-500/30", icon: Clock },
-  completed: { label: "Done", color: "text-emerald-500", dot: "bg-emerald-500", ring: "ring-emerald-500/30", icon: CheckCircle2 },
-  overdue: { label: "Overdue", color: "text-rose-500", dot: "bg-rose-500", ring: "ring-rose-500/30", icon: AlertTriangle },
-  reschedule: { label: "Reschedule", color: "text-purple-500", dot: "bg-purple-500", ring: "ring-purple-500/30", icon: RotateCcw },
+  planned: {
+    label: "Not Started",
+    color: "text-sky-500",
+    dot: "bg-sky-500",
+    ring: "ring-sky-500/30",
+    icon: CalendarDays,
+  },
+  onprogress: {
+    label: "On Progress",
+    color: "text-amber-500",
+    dot: "bg-amber-500",
+    ring: "ring-amber-500/30",
+    icon: Clock,
+  },
+  completed: {
+    label: "Done",
+    color: "text-emerald-500",
+    dot: "bg-emerald-500",
+    ring: "ring-emerald-500/30",
+    icon: CheckCircle2,
+  },
+  overdue: {
+    label: "Overdue",
+    color: "text-rose-500",
+    dot: "bg-rose-500",
+    ring: "ring-rose-500/30",
+    icon: AlertTriangle,
+  },
+  reschedule: {
+    label: "Reschedule",
+    color: "text-purple-500",
+    dot: "bg-purple-500",
+    ring: "ring-purple-500/30",
+    icon: RotateCcw,
+  },
 };
 
 const COLUMNS: ActionPlanStatus[] = ["planned", "onprogress", "completed", "overdue", "reschedule"];
@@ -103,7 +152,11 @@ function progressOf(row: ActionPlanRow): number {
 function fmtDate(iso: string) {
   if (!iso) return "-";
   try {
-    return new Date(iso).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
+    return new Date(iso).toLocaleDateString("id-ID", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
   } catch {
     return iso;
   }
@@ -120,7 +173,10 @@ function DraggableCard({
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: row.id });
   const style = transform
-    ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`, opacity: isDragging ? 0.5 : 1 }
+    ? {
+        transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+        opacity: isDragging ? 0.5 : 1,
+      }
     : undefined;
   const meta = STATUS_META[row.status];
   const pct = progressOf(row);
@@ -198,14 +254,21 @@ function OltGroupCard({
     >
       <div className="flex items-start justify-between gap-2">
         <p className="truncate text-sm font-semibold">{cluster || "—"}</p>
-        <Badge className="shrink-0 bg-primary/10 text-[10px] text-primary">{rows.length} action</Badge>
+        <Badge className="shrink-0 bg-primary/10 text-[10px] text-primary">
+          {rows.length} action
+        </Badge>
       </div>
       <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
-        {rows.slice(0, 2).map((r) => r.program).join(" · ")}
+        {rows
+          .slice(0, 2)
+          .map((r) => r.program)
+          .join(" · ")}
         {rows.length > 2 ? ` +${rows.length - 2} lainnya` : ""}
       </p>
       <div className="mt-2 flex items-center justify-between text-[10px] text-muted-foreground">
-        <span className="truncate">PIC: {Array.from(new Set(rows.map((r) => r.pic).filter(Boolean))).join(", ") || "-"}</span>
+        <span className="truncate">
+          PIC: {Array.from(new Set(rows.map((r) => r.pic).filter(Boolean))).join(", ") || "-"}
+        </span>
         {hasResult && <span className="text-emerald-600">Hasil ✓</span>}
       </div>
       <Progress value={avgPct} className="mt-2 h-1.5" />
@@ -338,7 +401,10 @@ function TimelineView({ rows }: { rows: ActionPlanRow[] }) {
           const width = Math.max(1.5, ((r.e - r.s) / data.span) * 100);
           const meta = STATUS_META[r.status];
           return (
-            <div key={r.id} className="grid grid-cols-[minmax(140px,220px)_1fr] items-center gap-3 text-xs">
+            <div
+              key={r.id}
+              className="grid grid-cols-[minmax(140px,220px)_1fr] items-center gap-3 text-xs"
+            >
               <div className="truncate">
                 <span className="font-medium">{r.cluster || "-"}</span>
                 <span className="ml-1 text-muted-foreground">· {r.pic || "-"}</span>
@@ -447,18 +513,38 @@ function CalendarView({ rows }: { rows: ActionPlanRow[] }) {
 }
 
 function ActionPlanPage() {
-  const { actionPlans, clusters, tickets, analyst, competitorData } = useDataStore(useShallow((s) => ({ actionPlans: s.actionPlans, clusters: s.clusters, tickets: s.tickets, analyst: s.analyst, competitorData: s.competitorData })));
+  const { actionPlans, clusters, tickets, analyst, competitorData } = useDataStore(
+    useShallow((s) => ({
+      actionPlans: s.actionPlans,
+      clusters: s.clusters,
+      tickets: s.tickets,
+      analyst: s.analyst,
+      competitorData: s.competitorData,
+    })),
+  );
   const mutation = useMutation({
     scope: { id: "kanban-tasks" },
-    mutationFn: async (change: { kind: "add"; rows: ActionPlanRow[] } | { kind: "update"; id: string; patch: Partial<ActionPlanRow> } | { kind: "delete"; id: string }) => {
+    mutationFn: async (
+      change:
+        | { kind: "add"; rows: ActionPlanRow[] }
+        | { kind: "update"; id: string; patch: Partial<ActionPlanRow> }
+        | { kind: "delete"; id: string },
+    ) => {
       if (change.kind === "add") return saveActionPlans(change.rows);
       if (change.kind === "update") return saveActionPlanPatch(change.id, change.patch);
       return deleteSharedActionPlan(change.id);
     },
-    onError: () => toast.error("Action Plan belum tersimpan. Periksa koneksi dan hak akses, lalu coba lagi."),
+    onError: () =>
+      toast.error("Action Plan belum tersimpan. Periksa koneksi dan hak akses, lalu coba lagi."),
   });
-  const updateActionPlan = (id: string, patch: Partial<ActionPlanRow>) => mutation.mutate({ kind: "update", id, patch: { ...patch, ...(patch.status ? { statusManual: true } : {}) } });
-  const overrideActionPlanStatus = (id: string, status: ActionPlanStatus) => updateActionPlan(id, { status, statusManual: true });
+  const updateActionPlan = (id: string, patch: Partial<ActionPlanRow>) =>
+    mutation.mutate({
+      kind: "update",
+      id,
+      patch: { ...patch, ...(patch.status ? { statusManual: true } : {}) },
+    });
+  const overrideActionPlanStatus = (id: string, status: ActionPlanStatus) =>
+    updateActionPlan(id, { status, statusManual: true });
   const addActionPlans = (rows: ActionPlanRow[]) => mutation.mutate({ kind: "add", rows });
   const removeActionPlan = (id: string) => mutation.mutate({ kind: "delete", id });
   const [search, setSearch] = useState("");
@@ -508,19 +594,33 @@ function ActionPlanPage() {
   // All consumers share the same status derivation, including manual moves.
   const rows = useMemo(() => actionPlans.map(effectiveAction), [actionPlans]);
 
-  const pics = useMemo(() => Array.from(new Set(rows.map((r) => r.pic).filter(Boolean))).sort(), [rows]);
-  const clusterOpts = useMemo(() => Array.from(new Set(rows.map((r) => r.cluster).filter(Boolean))).sort(), [rows]);
+  const pics = useMemo(
+    () => Array.from(new Set(rows.map((r) => r.pic).filter(Boolean))).sort(),
+    [rows],
+  );
+  const clusterOpts = useMemo(
+    () => Array.from(new Set(rows.map((r) => r.cluster).filter(Boolean))).sort(),
+    [rows],
+  );
   const kabOpts = useMemo(
     () =>
       Array.from(
-        new Set(rows.map((r) => clusterMeta.get(r.cluster.toLowerCase())?.kabupaten).filter(Boolean) as string[]),
+        new Set(
+          rows
+            .map((r) => clusterMeta.get(r.cluster.toLowerCase())?.kabupaten)
+            .filter(Boolean) as string[],
+        ),
       ).sort(),
     [rows, clusterMeta],
   );
   const provOpts = useMemo(
     () =>
       Array.from(
-        new Set(rows.map((r) => clusterMeta.get(r.cluster.toLowerCase())?.provinsi).filter(Boolean) as string[]),
+        new Set(
+          rows
+            .map((r) => clusterMeta.get(r.cluster.toLowerCase())?.provinsi)
+            .filter(Boolean) as string[],
+        ),
       ).sort(),
     [rows, clusterMeta],
   );
@@ -550,7 +650,17 @@ function ActionPlanPage() {
         (r.result || "").toLowerCase().includes(s)
       );
     });
-  }, [rows, search, filterPic, filterCluster, filterKab, filterProv, filterStatus, filterMonth, clusterMeta]);
+  }, [
+    rows,
+    search,
+    filterPic,
+    filterCluster,
+    filterKab,
+    filterProv,
+    filterStatus,
+    filterMonth,
+    clusterMeta,
+  ]);
 
   const kpis = useMemo(() => {
     const total = rows.length;
@@ -563,7 +673,18 @@ function ActionPlanPage() {
     const withResult = rows.filter((r) => r.result?.trim()).length;
     const completion = total ? Math.round((completed / total) * 100) : 0;
     const effectiveness = total ? Math.round((withResult / total) * 100) : 0;
-    return { total, planned, onprogress, completed, overdue, uniquePic, uniqueCluster, completion, effectiveness, withResult };
+    return {
+      total,
+      planned,
+      onprogress,
+      completed,
+      overdue,
+      uniquePic,
+      uniqueCluster,
+      completion,
+      effectiveness,
+      withResult,
+    };
   }, [rows]);
 
   const recommendations = useMemo(() => {
@@ -573,7 +694,11 @@ function ActionPlanPage() {
       out.push({
         severity: "high",
         title: `${overdueList.length} program terlambat (belum ada Hasil)`,
-        detail: `Evaluasi & Site Visit: ${Array.from(new Set(overdueList.map((r) => `${r.cluster}·${r.pic}`))).slice(0, 5).join(" | ") || "-"}. Update kolom Hasil untuk menutup program.`,
+        detail: `Evaluasi & Site Visit: ${
+          Array.from(new Set(overdueList.map((r) => `${r.cluster}·${r.pic}`)))
+            .slice(0, 5)
+            .join(" | ") || "-"
+        }. Update kolom Hasil untuk menutup program.`,
       });
     }
     const bestPractice = rows.filter((r) => r.status === "completed" && r.result?.trim());
@@ -581,11 +706,16 @@ function ActionPlanPage() {
       out.push({
         severity: "low",
         title: `Best Practice: ${bestPractice.length} program sukses`,
-        detail: `Replikasi: ${bestPractice.slice(0, 4).map((r) => `${r.program} @ ${r.cluster}`).join(" | ")}.`,
+        detail: `Replikasi: ${bestPractice
+          .slice(0, 4)
+          .map((r) => `${r.program} @ ${r.cluster}`)
+          .join(" | ")}.`,
       });
     }
     const clustersWithPlan = new Set(rows.map((r) => r.cluster));
-    const clustersNoPlan = clusters.map((c) => c.cluster).filter((c) => c && !clustersWithPlan.has(c));
+    const clustersNoPlan = clusters
+      .map((c) => c.cluster)
+      .filter((c) => c && !clustersWithPlan.has(c));
     if (clustersNoPlan.length) {
       out.push({
         severity: "med",
@@ -636,14 +766,45 @@ function ActionPlanPage() {
       <div className="space-y-4 p-4 sm:p-6">
         {/* KPI Row */}
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8">
-          <KpiCard icon={ListChecks} label="Total Program" value={kpis.total} sub={`${kpis.uniqueCluster} cluster`} />
+          <KpiCard
+            icon={ListChecks}
+            label="Total Program"
+            value={kpis.total}
+            sub={`${kpis.uniqueCluster} cluster`}
+          />
           <KpiCard icon={CalendarDays} label="Planned" value={kpis.planned} color="text-sky-500" />
-          <KpiCard icon={Clock} label="On Progress" value={kpis.onprogress} color="text-amber-500" />
-          <KpiCard icon={CheckCircle2} label="Completed" value={kpis.completed} color="text-emerald-500" />
-          <KpiCard icon={AlertTriangle} label="Overdue" value={kpis.overdue} color="text-rose-500" />
+          <KpiCard
+            icon={Clock}
+            label="On Progress"
+            value={kpis.onprogress}
+            color="text-amber-500"
+          />
+          <KpiCard
+            icon={CheckCircle2}
+            label="Completed"
+            value={kpis.completed}
+            color="text-emerald-500"
+          />
+          <KpiCard
+            icon={AlertTriangle}
+            label="Overdue"
+            value={kpis.overdue}
+            color="text-rose-500"
+          />
           <KpiCard icon={Users} label="PIC Terlibat" value={kpis.uniquePic} color="text-primary" />
-          <KpiCard icon={Target} label="Completion" value={`${kpis.completion}%`} sub="rate keseluruhan" />
-          <KpiCard icon={Trophy} label="Efektivitas" value={`${kpis.effectiveness}%`} sub={`${kpis.withResult} program ada Hasil`} color="text-emerald-500" />
+          <KpiCard
+            icon={Target}
+            label="Completion"
+            value={`${kpis.completion}%`}
+            sub="rate keseluruhan"
+          />
+          <KpiCard
+            icon={Trophy}
+            label="Efektivitas"
+            value={`${kpis.effectiveness}%`}
+            sub={`${kpis.withResult} program ada Hasil`}
+            color="text-emerald-500"
+          />
         </div>
 
         {/* Exec Summary */}
@@ -671,10 +832,30 @@ function ActionPlanPage() {
               />
               <div className="scroll-x -mx-3 px-3 sm:mx-0 sm:px-0 sm:contents">
                 <div className="flex min-w-max gap-2 sm:min-w-0 sm:flex-wrap">
-                  <FilterSelect value={filterPic} onChange={setFilterPic} placeholder="Semua PIC" options={pics} />
-                  <FilterSelect value={filterCluster} onChange={setFilterCluster} placeholder="Semua Cluster" options={clusterOpts} />
-                  <FilterSelect value={filterKab} onChange={setFilterKab} placeholder="Semua Kabupaten" options={kabOpts} />
-                  <FilterSelect value={filterProv} onChange={setFilterProv} placeholder="Semua Provinsi" options={provOpts} />
+                  <FilterSelect
+                    value={filterPic}
+                    onChange={setFilterPic}
+                    placeholder="Semua PIC"
+                    options={pics}
+                  />
+                  <FilterSelect
+                    value={filterCluster}
+                    onChange={setFilterCluster}
+                    placeholder="Semua Cluster"
+                    options={clusterOpts}
+                  />
+                  <FilterSelect
+                    value={filterKab}
+                    onChange={setFilterKab}
+                    placeholder="Semua Kabupaten"
+                    options={kabOpts}
+                  />
+                  <FilterSelect
+                    value={filterProv}
+                    onChange={setFilterProv}
+                    placeholder="Semua Provinsi"
+                    options={provOpts}
+                  />
                   <select
                     value={filterStatus}
                     onChange={(e) => setFilterStatus(e.target.value as "" | ActionPlanStatus)}
@@ -693,7 +874,13 @@ function ActionPlanPage() {
                     onChange={(e) => setFilterMonth(e.target.value)}
                     className="h-8 shrink-0 rounded-md border border-input bg-background px-2 text-xs"
                   />
-                  {(search || filterPic || filterCluster || filterKab || filterProv || filterStatus || filterMonth) && (
+                  {(search ||
+                    filterPic ||
+                    filterCluster ||
+                    filterKab ||
+                    filterProv ||
+                    filterStatus ||
+                    filterMonth) && (
                     <Button
                       size="sm"
                       variant="ghost"
@@ -724,7 +911,6 @@ function ActionPlanPage() {
             </div>
           </CardContent>
         </Card>
-
 
         <Tabs defaultValue="kanban" className="space-y-4">
           <TabsList>
@@ -805,7 +991,8 @@ function ActionPlanPage() {
         {!rows.length && (
           <Card className="glass-card border-0">
             <CardContent className="p-6 text-center text-sm text-muted-foreground">
-              Belum ada data. Upload <code className="font-mono">ACTION PLAN.xlsx</code> di Settings → Data Management.
+              Belum ada data. Upload <code className="font-mono">ACTION PLAN.xlsx</code> di Settings
+              → Data Management.
             </CardContent>
           </Card>
         )}
@@ -821,14 +1008,21 @@ function ActionPlanPage() {
         competitorByCluster={competitorByCluster}
       />
 
-      <Dialog open={!!oltGroup} onOpenChange={(o) => { if (!o) setOltGroup(null); }}>
+      <Dialog
+        open={!!oltGroup}
+        onOpenChange={(o) => {
+          if (!o) setOltGroup(null);
+        }}
+      >
         <DialogContent className="w-[calc(100vw-1.5rem)] max-w-[calc(100vw-1.5rem)] p-4 sm:max-w-lg sm:p-6">
           <DialogHeader>
             <DialogTitle className="font-display flex flex-wrap items-center gap-2 text-base">
               <span className="min-w-0 truncate">OLT · {oltGroup?.cluster}</span>
               {oltGroup && <Badge variant="secondary">{oltGroup.rows.length} action</Badge>}
             </DialogTitle>
-            <DialogDescription>Klik salah satu action plan untuk melihat / mengedit detail.</DialogDescription>
+            <DialogDescription>
+              Klik salah satu action plan untuk melihat / mengedit detail.
+            </DialogDescription>
           </DialogHeader>
           {oltGroup && (
             <div className="max-h-[60vh] space-y-2 overflow-y-auto pr-1">
@@ -841,16 +1035,26 @@ function ActionPlanPage() {
                     key={r.id}
                     role="button"
                     tabIndex={0}
-                    onClick={() => { setOltGroup(null); setOpenRow(r); }}
+                    onClick={() => {
+                      setOltGroup(null);
+                      setOpenRow(r);
+                    }}
                     onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") { setOltGroup(null); setOpenRow(r); }
+                      if (e.key === "Enter" || e.key === " ") {
+                        setOltGroup(null);
+                        setOpenRow(r);
+                      }
                     }}
                     className={`w-full cursor-pointer rounded-xl border border-border/60 bg-muted/30 p-3 text-left transition hover:border-primary/60 hover:bg-muted/60`}
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <div className="truncate font-display text-sm font-semibold">{r.program || "—"}</div>
-                        <div className="mt-0.5 text-[11px] text-muted-foreground">PIC: {r.pic || "-"} · {fmtDate(r.startDate)} → {fmtDate(r.endDate)}</div>
+                        <div className="truncate font-display text-sm font-semibold">
+                          {r.program || "—"}
+                        </div>
+                        <div className="mt-0.5 text-[11px] text-muted-foreground">
+                          PIC: {r.pic || "-"} · {fmtDate(r.startDate)} → {fmtDate(r.endDate)}
+                        </div>
                       </div>
                       <div className="flex shrink-0 items-center gap-1">
                         <Badge variant="outline" className={`gap-1 text-[10px] ${meta.color}`}>
@@ -860,14 +1064,21 @@ function ActionPlanPage() {
                           type="button"
                           aria-label={`Hapus action plan ${r.program}`}
                           title="Hapus action plan"
-                          onClick={(e) => { e.stopPropagation(); askDelete(r); }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            askDelete(r);
+                          }}
                           className="rounded-md p-1 text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
                       </div>
                     </div>
-                    {r.description && <p className="mt-1 line-clamp-2 text-[11px] text-muted-foreground">{r.description}</p>}
+                    {r.description && (
+                      <p className="mt-1 line-clamp-2 text-[11px] text-muted-foreground">
+                        {r.description}
+                      </p>
+                    )}
                     <Progress value={pct} className="mt-2 h-1.5" />
                   </div>
                 );
@@ -884,9 +1095,16 @@ function ActionPlanPage() {
         picOptions={Array.from(new Set(clusters.map((c) => c.pic).filter(Boolean))).sort()}
         onSubmit={(payload) => {
           const now = Date.now();
-          const durationDays = payload.startDate && payload.endDate
-            ? Math.max(1, Math.round((new Date(payload.endDate).getTime() - new Date(payload.startDate).getTime()) / 86400000) + 1)
-            : 0;
+          const durationDays =
+            payload.startDate && payload.endDate
+              ? Math.max(
+                  1,
+                  Math.round(
+                    (new Date(payload.endDate).getTime() - new Date(payload.startDate).getTime()) /
+                      86400000,
+                  ) + 1,
+                )
+              : 0;
           const created: ActionPlanRow[] = payload.clusters.flatMap((target, ci) =>
             payload.programs.map((prog, i) => ({
               id: `manual-${now}-${ci}-${i}-${target.cluster}-${prog}`.slice(0, 160),
@@ -895,7 +1113,10 @@ function ActionPlanPage() {
               program: prog,
               startDate: payload.startDate,
               endDate: payload.endDate,
-              description: [payload.description, target.kabupaten ? `Kabupaten: ${target.kabupaten}` : ""]
+              description: [
+                payload.description,
+                target.kabupaten ? `Kabupaten: ${target.kabupaten}` : "",
+              ]
                 .filter(Boolean)
                 .join("\n"),
               result: "",
@@ -908,7 +1129,12 @@ function ActionPlanPage() {
         }}
       />
 
-      <Dialog open={!!deleteTarget} onOpenChange={(o) => { if (!o) setDeleteTarget(null); }}>
+      <Dialog
+        open={!!deleteTarget}
+        onOpenChange={(o) => {
+          if (!o) setDeleteTarget(null);
+        }}
+      >
         <DialogContent className="w-[calc(100vw-1.5rem)] max-w-md">
           <DialogHeader>
             <DialogTitle className="font-display">Hapus action plan?</DialogTitle>
@@ -919,7 +1145,9 @@ function ActionPlanPage() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setDeleteTarget(null)}>Batal</Button>
+            <Button variant="ghost" onClick={() => setDeleteTarget(null)}>
+              Batal
+            </Button>
             <Button
               variant="destructive"
               onClick={() => {
@@ -965,7 +1193,9 @@ async function exportCalendarExcel(rows: ActionPlanRow[]) {
 function exportCalendarPDF(rows: ActionPlanRow[]) {
   const w = window.open("", "", "width=1000,height=1200");
   if (!w) return;
-  const sorted = [...rows].filter((r) => r.startDate).sort((a, b) => a.startDate.localeCompare(b.startDate));
+  const sorted = [...rows]
+    .filter((r) => r.startDate)
+    .sort((a, b) => a.startDate.localeCompare(b.startDate));
   const body = sorted
     .map(
       (r) => `<tr>
@@ -1040,13 +1270,21 @@ function AddProgramDialog({
 
   const chosen = mode === "all" ? oltInKab : oltInKab.filter((c) => oltPick.includes(c.cluster));
 
-  const toggle = (p: string) => setSelected((s) => (s.includes(p) ? s.filter((x) => x !== p) : [...s, p]));
+  const toggle = (p: string) =>
+    setSelected((s) => (s.includes(p) ? s.filter((x) => x !== p) : [...s, p]));
   const toggleOlt = (c: string) =>
     setOltPick((s) => (s.includes(c) ? s.filter((x) => x !== c) : [...s, c]));
 
   const resetAll = () => {
-    setSelected([]); setKab(""); setMode("all"); setOltPick([]); setOltSearch("");
-    setPic(""); setStartDate(""); setEndDate(""); setDescription("");
+    setSelected([]);
+    setKab("");
+    setMode("all");
+    setOltPick([]);
+    setOltSearch("");
+    setPic("");
+    setStartDate("");
+    setEndDate("");
+    setDescription("");
   };
 
   const submit = () => {
@@ -1067,7 +1305,9 @@ function AddProgramDialog({
       <DialogContent className="max-h-[90vh] w-[calc(100vw-1.5rem)] max-w-lg overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-display">Tambah ke Action Plan</DialogTitle>
-          <DialogDescription>Pilih program, kabupaten, lalu OLT yang menjadi target.</DialogDescription>
+          <DialogDescription>
+            Pilih program, kabupaten, lalu OLT yang menjadi target.
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
           <div>
@@ -1099,11 +1339,18 @@ function AddProgramDialog({
                 <Label className="text-xs">Kabupaten</Label>
                 <select
                   value={kab}
-                  onChange={(e) => { setKab(e.target.value); setOltPick([]); }}
+                  onChange={(e) => {
+                    setKab(e.target.value);
+                    setOltPick([]);
+                  }}
                   className="mt-1 h-8 w-full rounded-md border border-input bg-background px-2 text-xs"
                 >
                   <option value="">Semua Kabupaten</option>
-                  {kabOptions.map((k) => <option key={k} value={k}>{k}</option>)}
+                  {kabOptions.map((k) => (
+                    <option key={k} value={k}>
+                      {k}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div>
@@ -1140,18 +1387,31 @@ function AddProgramDialog({
                     size="sm"
                     variant="outline"
                     className="h-7 text-[11px]"
-                    onClick={() => setOltPick(Array.from(new Set([...oltPick, ...visibleOlt.map((c) => c.cluster)])))}
+                    onClick={() =>
+                      setOltPick(
+                        Array.from(new Set([...oltPick, ...visibleOlt.map((c) => c.cluster)])),
+                      )
+                    }
                   >
                     Select All
                   </Button>
-                  <Button size="sm" variant="ghost" className="h-7 text-[11px]" onClick={() => setOltPick([])}>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 text-[11px]"
+                    onClick={() => setOltPick([])}
+                  >
                     Clear Selection
                   </Button>
-                  <Badge variant="secondary" className="text-[10px]">{oltPick.length} OLT dipilih</Badge>
+                  <Badge variant="secondary" className="text-[10px]">
+                    {oltPick.length} OLT dipilih
+                  </Badge>
                 </div>
                 <div className="max-h-44 space-y-1 overflow-y-auto rounded-lg border bg-background p-1.5">
                   {visibleOlt.length === 0 ? (
-                    <p className="p-2 text-xs text-muted-foreground">Tidak ada OLT pada filter ini.</p>
+                    <p className="p-2 text-xs text-muted-foreground">
+                      Tidak ada OLT pada filter ini.
+                    </p>
                   ) : (
                     visibleOlt.map((c) => (
                       <label
@@ -1165,7 +1425,9 @@ function AddProgramDialog({
                           className="h-3.5 w-3.5 accent-[var(--primary)]"
                         />
                         <span className="min-w-0 flex-1 truncate">{c.cluster}</span>
-                        <span className="shrink-0 text-[10px] text-muted-foreground">{c.kabupaten || "—"}</span>
+                        <span className="shrink-0 text-[10px] text-muted-foreground">
+                          {c.kabupaten || "—"}
+                        </span>
                       </label>
                     ))
                   )}
@@ -1182,26 +1444,51 @@ function AddProgramDialog({
           <div className="grid grid-cols-2 gap-2">
             <div>
               <Label className="text-xs">PIC</Label>
-              <Input list="ap-pics" value={pic} onChange={(e) => setPic(e.target.value)} className="h-8" />
-              <datalist id="ap-pics">{picOptions.map((p) => <option key={p} value={p} />)}</datalist>
+              <Input
+                list="ap-pics"
+                value={pic}
+                onChange={(e) => setPic(e.target.value)}
+                className="h-8"
+              />
+              <datalist id="ap-pics">
+                {picOptions.map((p) => (
+                  <option key={p} value={p} />
+                ))}
+              </datalist>
             </div>
             <div />
             <div>
               <Label className="text-xs">Start Date</Label>
-              <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="h-8" />
+              <Input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="h-8"
+              />
             </div>
             <div>
               <Label className="text-xs">End Date</Label>
-              <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="h-8" />
+              <Input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="h-8"
+              />
             </div>
           </div>
           <div>
             <Label className="text-xs">Catatan</Label>
-            <Textarea rows={2} value={description} onChange={(e) => setDescription(e.target.value)} />
+            <Textarea
+              rows={2}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
           </div>
         </div>
         <DialogFooter>
-          <Button variant="ghost" onClick={onClose}>Batal</Button>
+          <Button variant="ghost" onClick={onClose}>
+            Batal
+          </Button>
           <Button onClick={submit} disabled={!selected.length || !chosen.length}>
             Simpan {selected.length && chosen.length ? `(${selected.length * chosen.length})` : ""}
           </Button>
@@ -1250,10 +1537,10 @@ function DetailDialog({
   row: ActionPlanRow | null;
   onClose: () => void;
   onUpdate: (id: string, patch: Partial<ActionPlanRow>) => void;
-  clusterMeta: Map<string, any>;
+  clusterMeta: Map<string, ClusterRow>;
   ticketByCluster: Map<string, number>;
-  analystByCluster: Map<string, any>;
-  competitorByCluster: Map<string, any[]>;
+  analystByCluster: Map<string, AnalystRow>;
+  competitorByCluster: Map<string, CompetitorRow[]>;
 }) {
   if (!row) return null;
   const key = row.cluster.toLowerCase();
@@ -1268,20 +1555,26 @@ function DetailDialog({
   const hcJan = meta?.januari ?? 0;
   const growth = hcJan > 0 ? Math.round(((hcNow - hcJan) / hcJan) * 100) : 0;
   const potensi = hcTarget > 0 ? Math.round((hcNow / hcTarget) * 100) : 0;
-  const aiNote = row.status === "completed" && row.result?.trim()
-    ? `Program berhasil dieksekusi. Best Practice: replikasi pola "${row.program}" ke cluster serupa (potensi ${potensi}%).`
-    : row.status === "overdue"
-      ? `Program overdue tanpa Hasil. Rekomendasi: evaluasi PIC ${row.pic || "-"}, jadwalkan Site Visit dan update kolom Hasil untuk closing.`
-      : row.status === "onprogress"
-        ? `Program aktif ${pct}%. Pantau progres mingguan, siapkan dokumentasi Hasil menjelang End Date.`
-        : `Program akan dimulai. Pastikan resource PIC ${row.pic || "-"} & alignment dengan cluster ${row.cluster}.`;
+  const aiNote =
+    row.status === "completed" && row.result?.trim()
+      ? `Program berhasil dieksekusi. Best Practice: replikasi pola "${row.program}" ke cluster serupa (potensi ${potensi}%).`
+      : row.status === "overdue"
+        ? `Program overdue tanpa Hasil. Rekomendasi: evaluasi PIC ${row.pic || "-"}, jadwalkan Site Visit dan update kolom Hasil untuk closing.`
+        : row.status === "onprogress"
+          ? `Program aktif ${pct}%. Pantau progres mingguan, siapkan dokumentasi Hasil menjelang End Date.`
+          : `Program akan dimulai. Pastikan resource PIC ${row.pic || "-"} & alignment dengan cluster ${row.cluster}.`;
 
   const patchDates = (startDate: string, endDate: string) => {
     const s = startDate || row.startDate;
     const e = endDate || row.endDate;
     const ms = s && e ? new Date(e).getTime() - new Date(s).getTime() : 0;
     const durationDays = ms > 0 ? Math.round(ms / 86400000) + 1 : row.durationDays;
-    onUpdate(row.id, { startDate, endDate, durationDays, status: computeActionStatus(startDate, endDate, row.result) });
+    onUpdate(row.id, {
+      startDate,
+      endDate,
+      durationDays,
+      status: computeActionStatus(startDate, endDate, row.result),
+    });
   };
 
   return (
@@ -1299,7 +1592,9 @@ function DetailDialog({
               className="ml-auto h-7 rounded-md border border-input bg-background px-2 text-xs"
             >
               {COLUMNS.map((s) => (
-                <option key={s} value={s}>{STATUS_META[s].label}</option>
+                <option key={s} value={s}>
+                  {STATUS_META[s].label}
+                </option>
               ))}
             </select>
           </div>
@@ -1312,30 +1607,57 @@ function DetailDialog({
           <div className="space-y-3 md:col-span-2">
             <Card className="glass-card border-0">
               <CardContent className="space-y-3 p-4 text-sm">
-                <div className="text-xs font-semibold text-muted-foreground">Edit Manual (perubahan tersimpan otomatis)</div>
+                <div className="text-xs font-semibold text-muted-foreground">
+                  Edit Manual (perubahan tersimpan otomatis)
+                </div>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="space-y-1">
                     <Label className="text-[11px]">OLT / Cluster</Label>
-                    <Input className="h-8" value={row.cluster} onChange={(e) => onUpdate(row.id, { cluster: e.target.value })} />
+                    <Input
+                      className="h-8"
+                      value={row.cluster}
+                      onChange={(e) => onUpdate(row.id, { cluster: e.target.value })}
+                    />
                   </div>
                   <div className="space-y-1">
                     <Label className="text-[11px]">PIC</Label>
-                    <Input className="h-8" value={row.pic} onChange={(e) => onUpdate(row.id, { pic: e.target.value })} />
+                    <Input
+                      className="h-8"
+                      value={row.pic}
+                      onChange={(e) => onUpdate(row.id, { pic: e.target.value })}
+                    />
                   </div>
                   <div className="space-y-1 sm:col-span-2">
                     <Label className="text-[11px]">Program</Label>
-                    <Input className="h-8" value={row.program} onChange={(e) => onUpdate(row.id, { program: e.target.value })} list="program-options" />
+                    <Input
+                      className="h-8"
+                      value={row.program}
+                      onChange={(e) => onUpdate(row.id, { program: e.target.value })}
+                      list="program-options"
+                    />
                     <datalist id="program-options">
-                      {PROGRAM_OPTIONS.map((p) => <option key={p} value={p} />)}
+                      {PROGRAM_OPTIONS.map((p) => (
+                        <option key={p} value={p} />
+                      ))}
                     </datalist>
                   </div>
                   <div className="space-y-1">
                     <Label className="text-[11px]">Start Date</Label>
-                    <Input type="date" className="h-8" value={row.startDate} onChange={(e) => patchDates(e.target.value, row.endDate)} />
+                    <Input
+                      type="date"
+                      className="h-8"
+                      value={row.startDate}
+                      onChange={(e) => patchDates(e.target.value, row.endDate)}
+                    />
                   </div>
                   <div className="space-y-1">
                     <Label className="text-[11px]">End Date</Label>
-                    <Input type="date" className="h-8" value={row.endDate} onChange={(e) => patchDates(row.startDate, e.target.value)} />
+                    <Input
+                      type="date"
+                      className="h-8"
+                      value={row.endDate}
+                      onChange={(e) => patchDates(row.startDate, e.target.value)}
+                    />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3 text-xs">
@@ -1345,11 +1667,15 @@ function DetailDialog({
                   <Info label="Progress" value={`${pct}%`} />
                 </div>
                 <div>
-                  <div className="mb-1 text-xs font-semibold text-muted-foreground">Progress Timeline</div>
+                  <div className="mb-1 text-xs font-semibold text-muted-foreground">
+                    Progress Timeline
+                  </div>
                   <Progress value={pct} className="h-2" />
                 </div>
                 <div>
-                  <div className="mb-1 text-xs font-semibold text-muted-foreground">Catatan / Keterangan (editable)</div>
+                  <div className="mb-1 text-xs font-semibold text-muted-foreground">
+                    Catatan / Keterangan (editable)
+                  </div>
                   <Textarea
                     rows={3}
                     value={row.description || ""}
@@ -1396,7 +1722,16 @@ function DetailDialog({
                 <Info label="Growth (Jan→Jun)" value={`${growth}%`} />
                 <Info label="Potensi Realisasi" value={`${potensi}%`} />
                 <Info label="Total Ticket" value={tickets.toLocaleString()} />
-                <Info label="Kompetitor" value={comps.length ? Array.from(new Set(comps.map((c) => c.competitor))).slice(0, 3).join(", ") : "-"} />
+                <Info
+                  label="Kompetitor"
+                  value={
+                    comps.length
+                      ? Array.from(new Set(comps.map((c) => c.competitor)))
+                          .slice(0, 3)
+                          .join(", ")
+                      : "-"
+                  }
+                />
                 {a && (
                   <>
                     <Info label="AE" value={a.aeName || "-"} />

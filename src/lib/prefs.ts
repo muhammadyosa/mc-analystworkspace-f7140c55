@@ -87,9 +87,21 @@ export type KpiTarget = {
 };
 
 export const KPI_METRIC_META: Record<KpiMetric, { label: string; unit: string; hint: string }> = {
-  hcGrowth: { label: "Pertumbuhan HC", unit: "%", hint: "Target pertumbuhan HC bulan berjalan vs bulan sebelumnya" },
-  ticketPer100HC: { label: "Ticket per 100 HC", unit: "", hint: "Batas maksimal rasio ticket per 100 HC" },
-  highRisk: { label: "Cluster Risiko Tinggi", unit: "cluster", hint: "Batas maksimal jumlah cluster prioritas tinggi" },
+  hcGrowth: {
+    label: "Pertumbuhan HC",
+    unit: "%",
+    hint: "Target pertumbuhan HC bulan berjalan vs bulan sebelumnya",
+  },
+  ticketPer100HC: {
+    label: "Ticket per 100 HC",
+    unit: "",
+    hint: "Batas maksimal rasio ticket per 100 HC",
+  },
+  highRisk: {
+    label: "Cluster Risiko Tinggi",
+    unit: "cluster",
+    hint: "Batas maksimal jumlah cluster prioritas tinggi",
+  },
 };
 
 /** Widget Dashboard yang bisa disembunyikan pengguna (personalisasi). */
@@ -221,19 +233,34 @@ export const usePrefsStore = create<PrefsState>()(
       clearFilters: () => set({ filters: emptyFilters }),
       saveView: (name) =>
         set((s) => ({
-          views: [...s.views, { id: uid(), name: name.trim() || "View baru", filters: s.filters, createdAt: Date.now() }],
+          views: [
+            ...s.views,
+            {
+              id: uid(),
+              name: name.trim() || "View baru",
+              filters: s.filters,
+              createdAt: Date.now(),
+            },
+          ],
         })),
       applyView: (id) => {
         const v = get().views.find((x) => x.id === id);
         if (v) set({ filters: v.filters });
       },
       renameView: (id, name) =>
-        set((s) => ({ views: s.views.map((v) => (v.id === id ? { ...v, name: name.trim() || v.name } : v)) })),
+        set((s) => ({
+          views: s.views.map((v) => (v.id === id ? { ...v, name: name.trim() || v.name } : v)),
+        })),
       duplicateView: (id) =>
         set((s) => {
           const v = s.views.find((x) => x.id === id);
           if (!v) return s;
-          return { views: [...s.views, { ...v, id: uid(), name: `${v.name} (copy)`, createdAt: Date.now() }] };
+          return {
+            views: [
+              ...s.views,
+              { ...v, id: uid(), name: `${v.name} (copy)`, createdAt: Date.now() },
+            ],
+          };
         }),
       deleteView: (id) =>
         set((s) => ({
@@ -243,7 +270,9 @@ export const usePrefsStore = create<PrefsState>()(
       setDefaultView: (id) => set({ defaultViewId: id }),
       toggleFavorite: (url) =>
         set((s) => ({
-          favorites: s.favorites.includes(url) ? s.favorites.filter((f) => f !== url) : [...s.favorites, url],
+          favorites: s.favorites.includes(url)
+            ? s.favorites.filter((f) => f !== url)
+            : [...s.favorites, url],
         })),
       markRead: (id) => set((s) => ({ readAlerts: [...new Set([...s.readAlerts, id])] })),
       markAllRead: (ids) => set((s) => ({ readAlerts: [...new Set([...s.readAlerts, ...ids])] })),

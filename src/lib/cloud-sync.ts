@@ -27,7 +27,10 @@ export async function pushDataset(kind: ImportKind, rows: unknown[], fileName?: 
 }
 
 /** Ambil semua dataset yang tersimpan di cloud. */
-export async function fetchDatasets(kinds?: ImportKind[], signal?: AbortSignal): Promise<CloudDataset[]> {
+export async function fetchDatasets(
+  kinds?: ImportKind[],
+  signal?: AbortSignal,
+): Promise<CloudDataset[]> {
   if (kinds?.length === 0) return [];
   let query = supabase
     .from("shared_datasets")
@@ -47,9 +50,7 @@ export async function fetchDatasets(kinds?: ImportKind[], signal?: AbortSignal):
 
 /** Ringkasan tanpa payload — untuk menampilkan status cloud dengan cepat. */
 export async function fetchDatasetStatus(signal?: AbortSignal) {
-  let query = supabase
-    .from("shared_datasets")
-    .select("kind, row_count, file_name, updated_at");
+  let query = supabase.from("shared_datasets").select("kind, row_count, file_name, updated_at");
   if (signal) query = query.abortSignal(signal);
   const { data, error } = await query;
   if (error) throw new Error(error.message);

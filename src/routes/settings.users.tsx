@@ -37,14 +37,22 @@ import {
 } from "@/components/ui/select";
 
 export const Route = createFileRoute("/settings/users")({
-  head: () => ({ meta: [
-    { title: "User Management — MCA Analyst Workspace" },
-    { name: "description", content: "Kelola persetujuan, peran, dan aktivitas pengguna workspace." },
-    { property: "og:title", content: "User Management — MCA Analyst Workspace" },
-    { property: "og:description", content: "Kelola persetujuan, peran, dan aktivitas pengguna workspace." },
-    { property: "og:type", content: "website" },
-    { name: "twitter:card", content: "summary" },
-  ] }),
+  head: () => ({
+    meta: [
+      { title: "User Management — MCA Analyst Workspace" },
+      {
+        name: "description",
+        content: "Kelola persetujuan, peran, dan aktivitas pengguna workspace.",
+      },
+      { property: "og:title", content: "User Management — MCA Analyst Workspace" },
+      {
+        property: "og:description",
+        content: "Kelola persetujuan, peran, dan aktivitas pengguna workspace.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: UserManagementPage,
 });
 
@@ -71,7 +79,6 @@ const ROLE_LABEL: Record<AppRole, string> = {
 
 const ROLE_OPTIONS: AppRole[] = ["admin", "manager", "analyst", "viewer"];
 
-
 const ONLINE_WINDOW_MS = 5 * 60_000;
 
 function isOnline(lastSeen: string | null) {
@@ -89,7 +96,11 @@ function lastActionLabel(lastSeen: string | null) {
   if (hours < 24) return `${hours} jam lalu`;
   const days = Math.floor(hours / 24);
   if (days < 30) return `${days} hari lalu`;
-  return new Date(lastSeen).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "2-digit" });
+  return new Date(lastSeen).toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "short",
+    year: "2-digit",
+  });
 }
 
 function UserManagementPage() {
@@ -159,7 +170,10 @@ function UserManagementPage() {
     setBusy(row.id);
     const { error } = await supabase
       .from("profiles")
-      .update({ approved: !row.approved, approved_at: !row.approved ? new Date().toISOString() : null })
+      .update({
+        approved: !row.approved,
+        approved_at: !row.approved ? new Date().toISOString() : null,
+      })
       .eq("id", row.id);
     setBusy(null);
     if (error) return toast.error(error.message);
@@ -295,7 +309,9 @@ function UserManagementPage() {
                         <div className="flex items-center gap-3">
                           <div className="relative">
                             <Avatar className="h-9 w-9 ring-1 ring-border/60">
-                              {r.avatar_url && <AvatarImage src={r.avatar_url} alt={r.full_name ?? "User"} />}
+                              {r.avatar_url && (
+                                <AvatarImage src={r.avatar_url} alt={r.full_name ?? "User"} />
+                              )}
                               <AvatarFallback className="text-[11px]">
                                 {(r.full_name ?? r.email ?? "U").slice(0, 2).toUpperCase()}
                               </AvatarFallback>
@@ -313,7 +329,9 @@ function UserManagementPage() {
                               <span className="truncate font-medium">{r.full_name ?? "—"}</span>
                               <Pencil className="h-3 w-3 text-muted-foreground/60" />
                             </div>
-                            <div className="truncate text-xs text-muted-foreground">{r.email ?? r.id}</div>
+                            <div className="truncate text-xs text-muted-foreground">
+                              {r.email ?? r.id}
+                            </div>
                           </div>
                         </div>
                       </TableCell>
@@ -353,7 +371,9 @@ function UserManagementPage() {
                             Online
                           </Badge>
                         ) : (
-                          <span className="text-xs text-muted-foreground">{lastActionLabel(r.last_seen_at)}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {lastActionLabel(r.last_seen_at)}
+                          </span>
                         )}
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground">
@@ -384,7 +404,11 @@ function UserManagementPage() {
                             title={r.role === "admin" ? "Jadikan Viewer" : "Jadikan Admin"}
                             onClick={() => changeRole(r, r.role === "admin" ? "viewer" : "admin")}
                           >
-                            {r.role === "admin" ? <ShieldOff className="h-4 w-4" /> : <Shield className="h-4 w-4" />}
+                            {r.role === "admin" ? (
+                              <ShieldOff className="h-4 w-4" />
+                            ) : (
+                              <Shield className="h-4 w-4" />
+                            )}
                           </Button>
                         </div>
                       </TableCell>
@@ -393,7 +417,10 @@ function UserManagementPage() {
                 })}
                 {filtered.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={7} className="py-8 text-center text-sm text-muted-foreground">
+                    <TableCell
+                      colSpan={7}
+                      className="py-8 text-center text-sm text-muted-foreground"
+                    >
                       Tidak ada user
                     </TableCell>
                   </TableRow>

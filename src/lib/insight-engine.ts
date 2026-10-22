@@ -18,7 +18,8 @@ export type StructuredInsight = {
 
 const num = (n: number) => Math.round(n).toLocaleString("id-ID");
 const pct = (n: number) => `${n >= 0 ? "+" : ""}${n.toFixed(1)}%`;
-const growth = (cur: number, prev: number) => (prev > 0 ? ((cur - prev) / prev) * 100 : cur > 0 ? 100 : 0);
+const growth = (cur: number, prev: number) =>
+  prev > 0 ? ((cur - prev) / prev) * 100 : cur > 0 ? 100 : 0;
 
 /**
  * Bangun daftar insight terstruktur dari cluster yang sudah difilter.
@@ -77,7 +78,10 @@ export function buildStructuredInsights(
   });
 
   // 2. Cluster dengan penurunan HC terbesar.
-  const decline = [...rows].sort((a, b) => a.hcCur - a.hcPrev - (b.hcCur - b.hcPrev)).slice(0, 3).filter((c) => c.hcCur < c.hcPrev);
+  const decline = [...rows]
+    .sort((a, b) => a.hcCur - a.hcPrev - (b.hcCur - b.hcPrev))
+    .slice(0, 3)
+    .filter((c) => c.hcCur < c.hcPrev);
   decline.forEach((c) => {
     const g = growth(c.hcCur, c.hcPrev);
     out.push({
@@ -115,8 +119,10 @@ export function buildStructuredInsights(
         { label: "Ticket / 100 HC", value: ratio.toFixed(1) },
         { label: "Prioritas", value: computePriority(c, maxTicket).level },
       ],
-      cause: "Konsentrasi gangguan menandakan masalah infrastruktur atau kapasitas teknisi di area tersebut.",
-      impact: "Beban biaya penanganan naik dan risiko churn pelanggan meningkat pada bulan berikutnya.",
+      cause:
+        "Konsentrasi gangguan menandakan masalah infrastruktur atau kapasitas teknisi di area tersebut.",
+      impact:
+        "Beban biaya penanganan naik dan risiko churn pelanggan meningkat pada bulan berikutnya.",
       recommendation: `Perbaikan teknis terjadwal di ${c.cluster} dan penambahan kapasitas penanganan gangguan.`,
     });
   });
