@@ -51,7 +51,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useDataStore } from "@/lib/store";
-import { computeActionStatus, type ActionPlanRow, type ActionPlanStatus } from "@/lib/excel";
+import {
+  computeActionStatus,
+  type ActionPlanRow,
+  type ActionPlanStatus,
+  type AnalystRow,
+  type ClusterRow,
+  type CompetitorRow,
+} from "@/lib/excel";
 
 export const Route = createFileRoute("/action-plan")({
   head: () => ({ meta: [
@@ -1250,10 +1257,10 @@ function DetailDialog({
   row: ActionPlanRow | null;
   onClose: () => void;
   onUpdate: (id: string, patch: Partial<ActionPlanRow>) => void;
-  clusterMeta: Map<string, any>;
+  clusterMeta: Map<string, ClusterRow>;
   ticketByCluster: Map<string, number>;
-  analystByCluster: Map<string, any>;
-  competitorByCluster: Map<string, any[]>;
+  analystByCluster: Map<string, AnalystRow>;
+  competitorByCluster: Map<string, CompetitorRow[]>;
 }) {
   if (!row) return null;
   const key = row.cluster.toLowerCase();
