@@ -106,7 +106,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      mutate_action_plan: {
+        Args: {
+          new_tasks?: Json
+          operation: string
+          task_id?: string
+          task_patch?: Json
+        }
+        Returns: Json
+      }
     }
     Enums: {
       app_role: "admin" | "user" | "viewer" | "manager" | "analyst"
