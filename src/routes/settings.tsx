@@ -60,6 +60,7 @@ function SettingsLayout() {
               <Link
                 key={t.to}
                 to={t.to}
+                search={(prev) => prev}
                 className={cn(
                   "inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition",
                   active

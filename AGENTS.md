@@ -17,3 +17,5 @@
 - Shared dialogs constrain width and height to the viewport; wide data tables scroll locally rather than widening the page.
 - Every user-visible feature, menu, fix or design change must add a new top entry in src/lib/changelog.ts in the same turn, since the version is derived from that entry and drives the "Apa yang Baru" notice.
 - Cluster action summaries are derived from shared ActionPlanRow records using one effective-status helper; never persist duplicate summaries. Kanban edits use the role-validated atomic mutate_action_plan RPC on the existing JSON dataset to avoid overwriting concurrent tasks.
+
+- Admin user actions (invite/delete) run through createServerFn in src/lib/user-admin.functions.ts; supabaseAdmin loads inside handlers via await import.

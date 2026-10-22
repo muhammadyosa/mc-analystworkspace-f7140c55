@@ -13,6 +13,25 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2.11.0",
+    date: "2026-10-23",
+    title: "User Management Lebih Profesional",
+    items: [
+      {
+        kind: "fitur",
+        text: "User Management kini punya kartu statistik (Total, Aktif, Nonaktif, Total Role), pencarian, filter role dan status, sorting kolom, pagination, serta tampilan kartu ringkas di ponsel.",
+      },
+      {
+        kind: "fitur",
+        text: "Tambah pengguna lewat undangan email, edit nama, ubah role, aktif/nonaktifkan, lihat detail, dan hapus pengguna dengan konfirmasi — semua tervalidasi dan aman di sisi server.",
+      },
+      {
+        kind: "perbaikan",
+        text: "Perpindahan tab lebih cepat: data pengguna di-cache, tidak ada loading berulang, filter dan halaman tersimpan saat berpindah tab, dan request yang kedaluwarsa dibatalkan.",
+      },
+    ],
+  },
+  {
     version: "2.10.7",
     date: "2026-10-23",
     title: "Audit Keandalan dan Sinkronisasi",
