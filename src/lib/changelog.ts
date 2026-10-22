@@ -13,6 +13,53 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2.9.0",
+    date: "2026-10-22",
+    title: "Hasil Profiling & Sorting Master Cluster",
+    items: [
+      { kind: "fitur", text: "Master Cluster: tombol Lihat Detail menampilkan hasil profiling otomatis (tren HC, perubahan HC, ticket, Priority Score, potensi churn, rekomendasi retention)." },
+      { kind: "fitur", text: "Tombol Salin Hasil Profiling untuk dibagikan ke tim." },
+      { kind: "fungsi", text: "Urutkan cluster berdasarkan potensi churn, Priority Score, penurunan HC, ticket, kabupaten, PIC, atau nama, plus filter risiko Tinggi/Sedang/Rendah." },
+    ],
+  },
+  {
+    version: "2.8.0",
+    date: "2026-10-20",
+    title: "Navigasi Mobile Baru",
+    items: [
+      { kind: "tampilan", text: "Bilah bawah ponsel: Dashboard, Analyst, Menu, Reports, dan Akun." },
+      { kind: "fungsi", text: "Tab Akun berisi profil, Pengaturan, Pasang ke Layar Utama, dan Keluar." },
+    ],
+  },
+  {
+    version: "2.7.0",
+    date: "2026-10-15",
+    title: "Lebih Cepat & Ramah Ponsel",
+    items: [
+      { kind: "perbaikan", text: "Perpindahan menu lebih cepat dan impor Excel tidak membuat aplikasi macet." },
+      { kind: "tampilan", text: "Semua halaman, tabel, dan jendela dialog menyesuaikan ukuran layar." },
+    ],
+  },
+  {
+    version: "2.6.0",
+    date: "2026-10-01",
+    title: "Potensi Cluster Akurat",
+    items: [
+      { kind: "perbaikan", text: "Potensi Cluster dihitung dari asesmen terbaru per cluster sehingga Tinggi/Sedang/Rendah sesuai data aktual." },
+      { kind: "tampilan", text: "Customer Loyalty dan Distribusi HC per Provinsi rapi di ponsel." },
+    ],
+  },
+  {
+    version: "2.5.0",
+    date: "2026-09-25",
+    title: "Bulan Baru Terbaca Otomatis",
+    items: [
+      { kind: "fungsi", text: "Kolom bulan baru (mis. September, Oktober) dari Excel otomatis terbaca di KPI, grafik, filter, dan laporan." },
+      { kind: "perbaikan", text: "Insight HC Aktif Turun dan Cluster Risiko Tinggi kembali menampilkan data." },
+      { kind: "fitur", text: "Action Plan bisa memilih banyak OLT; Competitor Intel punya filter rentang tanggal." },
+    ],
+  },
+  {
     version: "2.4.0",
     date: "2026-09-13",
     title: "Personalisasi Dashboard & Kenyamanan Akses",
