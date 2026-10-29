@@ -8,6 +8,13 @@
       "when": 1792691415410,
       "tag": "0000_mutate_shared_action_plan",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1793245065837,
+      "tag": "0001_mutate_shared_competitor_profile",
+      "breakpoints": true
     }
   ]
 }

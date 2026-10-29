@@ -115,6 +115,10 @@ export type Database = {
         }
         Returns: Json
       }
+      save_competitor_profile: {
+        Args: { expected_row?: Json; profile: Json }
+        Returns: Json
+      }
     }
     Enums: {
       app_role: "admin" | "user" | "viewer" | "manager" | "analyst"

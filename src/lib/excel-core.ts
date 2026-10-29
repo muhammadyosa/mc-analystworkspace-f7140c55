@@ -104,6 +104,16 @@ export type CompetitorRow = {
   price: number;
   promo: string;
   promoCategory: PromoCategory;
+  serviceType?: string;
+  speedMbps?: number | null;
+  installationCost?: number | null;
+  promoStart?: string;
+  promoEnd?: string;
+  iconnetPrice?: number | null;
+  iconnetSpeedMbps?: number | null;
+  iconnetInstallationCost?: number | null;
+  iconnetPromo?: string;
+  updatedAt?: string;
 };
 
 export type PromoCategory =
@@ -885,6 +895,23 @@ export async function parseCompetitorFile(
         price,
         promo: promoRaw,
         promoCategory,
+        serviceType: toStr(pick(r, ["JENIS LAYANAN", "SERVICE TYPE"])),
+        speedMbps: toStr(pick(r, ["KECEPATAN MBPS", "SPEED MBPS"]))
+          ? toNum(pick(r, ["KECEPATAN MBPS", "SPEED MBPS"]))
+          : null,
+        installationCost: toStr(pick(r, ["BIAYA INSTALASI", "INSTALLATION COST"]))
+          ? toNum(pick(r, ["BIAYA INSTALASI", "INSTALLATION COST"]))
+          : null,
+        promoStart: toISODate(pick(r, ["MULAI PROMO"])),
+        promoEnd: toISODate(pick(r, ["AKHIR PROMO"])),
+        iconnetPrice: toStr(pick(r, ["HARGA ICONNET"])) ? toNum(pick(r, ["HARGA ICONNET"])) : null,
+        iconnetSpeedMbps: toStr(pick(r, ["KECEPATAN ICONNET MBPS"]))
+          ? toNum(pick(r, ["KECEPATAN ICONNET MBPS"]))
+          : null,
+        iconnetInstallationCost: toStr(pick(r, ["BIAYA INSTALASI ICONNET"]))
+          ? toNum(pick(r, ["BIAYA INSTALASI ICONNET"]))
+          : null,
+        iconnetPromo: toStr(pick(r, ["PROMO ICONNET"])),
       });
     }
   }
@@ -1093,9 +1120,7 @@ export async function smartImport(file: File): Promise<SmartResult> {
   return { kind: "ticket", ...r };
 }
 
-export async function classifyFile(
-  file: File,
-): Promise<{
+export async function classifyFile(file: File): Promise<{
   kind: ImportKind;
   fileName: string;
   sheetName: string;
@@ -1240,6 +1265,15 @@ export function downloadTemplate(kind: ImportKind) {
       "NAMA KOMPETITOR",
       "HARGA KOMPETITOR TERMURAH",
       "PROMO COMPETITOR",
+      "JENIS LAYANAN",
+      "KECEPATAN MBPS",
+      "BIAYA INSTALASI",
+      "MULAI PROMO",
+      "AKHIR PROMO",
+      "HARGA ICONNET",
+      "KECEPATAN ICONNET MBPS",
+      "BIAYA INSTALASI ICONNET",
+      "PROMO ICONNET",
     ],
     actionplan: ["NAMA", "CLUSTER", "PROGRAM", "START DATE", "END DATE", "KETERANGAN", "Hasil"],
   };
