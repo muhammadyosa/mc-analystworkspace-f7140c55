@@ -11,3 +11,9 @@
 - [x] Persist authorized task changes atomically to the existing shared dataset.
 - [x] Integrate live summaries, insights, recommendations and copied profiling.
 - [x] Verify real-data editing, completion, deletion and desktop/mobile layouts.
+
+# Master Cluster competitor profiling
+- [ ] Reuse churn scoring with bidirectional sorting and visible risk ranking.
+- [ ] Derive territory-aware competitor and ICONNET comparisons from actual shared data.
+- [ ] Add authorized atomic competitor editing and extended Excel fields.
+- [ ] Verify tests, persistence, sorting, and desktop/mobile profiling.
