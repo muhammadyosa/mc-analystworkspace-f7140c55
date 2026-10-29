@@ -41,7 +41,7 @@ export function competitorProfiles(
       source: "Competitor",
       scope: r.cluster.trim() ? "Cluster" : "Wilayah",
     }));
-  const existing = new Set(result.map((r) => profileKey(r.competitor)));
+  const existing = new Set(result.flatMap((r) => r.competitor.split(/[,;\n]+/).map(profileKey)));
   // Newest assessment first; a grouped offer stays grouped: no invented per-provider price.
   const assessments = analyst
     .filter((r) => profileKey(r.cluster) === key)
@@ -72,6 +72,17 @@ export function competitorProfiles(
     names.forEach((n) => existing.add(n));
   }
   return result;
+}
+
+export function rankChurn<T extends { id: string; cluster: string; ch: { score: number } }>(rows: T[]) {
+  const sorted = [...rows].sort((a, b) => b.ch.score - a.ch.score || a.cluster.localeCompare(b.cluster));
+  const ranks = new Map<string, number>();
+  let rank = 0;
+  sorted.forEach((row, index) => {
+    if (index === 0 || row.ch.score !== sorted[index - 1].ch.score) rank = index + 1;
+    ranks.set(row.id, rank);
+  });
+  return ranks;
 }
 
 export function competitorComparison(row: CompetitorRow) {

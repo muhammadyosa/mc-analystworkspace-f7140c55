@@ -43,6 +43,7 @@ import {
   competitorProfiles,
   competitorProfileText,
   competitorComparison,
+  rankChurn,
 } from "@/lib/competitor-profiling";
 import { exportToExcel } from "@/lib/excel";
 import { useGlobalClusters } from "@/hooks/use-global-filters";
@@ -242,19 +243,7 @@ function MasterPage() {
     return r;
   }, [scored]);
 
-  const churnRanks = useMemo(() => {
-    const ranked = [...scored].sort(
-      (a, b) => b.ch.score - a.ch.score || a.cluster.localeCompare(b.cluster),
-    );
-    return new Map(
-      ranked.map((c, index) => [
-        c.id,
-        index > 0 && c.ch.score === ranked[index - 1].ch.score
-          ? ranked.findIndex((x) => x.ch.score === c.ch.score) + 1
-          : index + 1,
-      ]),
-    );
-  }, [scored]);
+  const churnRanks = useMemo(() => rankChurn(scored), [scored]);
 
   const detail = useMemo(() => {
     const c = scored.find((x) => x.id === detailId);

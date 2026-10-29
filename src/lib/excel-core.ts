@@ -902,8 +902,8 @@ export async function parseCompetitorFile(
         installationCost: toStr(pick(r, ["BIAYA INSTALASI", "INSTALLATION COST"]))
           ? toNum(pick(r, ["BIAYA INSTALASI", "INSTALLATION COST"]))
           : null,
-        promoStart: toStr(pick(r, ["MULAI PROMO"])),
-        promoEnd: toStr(pick(r, ["AKHIR PROMO"])),
+        promoStart: toISODate(pick(r, ["MULAI PROMO"])),
+        promoEnd: toISODate(pick(r, ["AKHIR PROMO"])),
         iconnetPrice: toStr(pick(r, ["HARGA ICONNET"])) ? toNum(pick(r, ["HARGA ICONNET"])) : null,
         iconnetSpeedMbps: toStr(pick(r, ["KECEPATAN ICONNET MBPS"]))
           ? toNum(pick(r, ["KECEPATAN ICONNET MBPS"]))
