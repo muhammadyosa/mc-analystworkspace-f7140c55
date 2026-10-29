@@ -1697,7 +1697,20 @@ function ReportsPage() {
     setWkWeek(1);
     setCDFrom("");
     setCDTo("");
-  }, [first, lastM, monthRangeKey, prevM, syncKey, setSyncKey, setMFrom, setMTo, setWkMonth, setWkWeek, setCDFrom, setCDTo]);
+  }, [
+    first,
+    lastM,
+    monthRangeKey,
+    prevM,
+    syncKey,
+    setSyncKey,
+    setMFrom,
+    setMTo,
+    setWkMonth,
+    setWkWeek,
+    setCDFrom,
+    setCDTo,
+  ]);
 
   const cDFromEff = cDFrom || monthStartKey(first);
   const cDToEff = cDTo || monthEndKey(lastM);
