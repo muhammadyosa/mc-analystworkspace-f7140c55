@@ -27,9 +27,12 @@ export function navigationMemory(client: QueryClient) {
 export function validateMenuSearch(search: Search): Search {
   // Keep URL values serializable; controls apply their existing value restrictions.
   return Object.fromEntries(
-    Object.entries(search).filter(([, value]) =>
-      typeof value === "string" || typeof value === "number" ||
-      value === null || (Array.isArray(value) && value.every((v) => typeof v === "number")),
+    Object.entries(search).filter(
+      ([, value]) =>
+        typeof value === "string" ||
+        typeof value === "number" ||
+        value === null ||
+        (Array.isArray(value) && value.every((v) => typeof v === "number")),
     ),
   );
 }

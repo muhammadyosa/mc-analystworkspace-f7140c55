@@ -22,6 +22,7 @@ test("navigation memory is bounded and isolated between users/SSR clients", () =
 });
 
 test("search validation retains date ranges and comparison weeks, excluding nonserializable data", () => {
-  expect(validateMenuSearch({ from: "2026-10-01", weeks: [1, 2], fn: () => {}, bad: [{}] }))
-    .toEqual({ from: "2026-10-01", weeks: [1, 2] });
+  expect(
+    validateMenuSearch({ from: "2026-10-01", weeks: [1, 2], fn: () => {}, bad: [{}] }),
+  ).toEqual({ from: "2026-10-01", weeks: [1, 2] });
 });
