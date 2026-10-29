@@ -97,9 +97,15 @@ function dateToKey(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
+const profilingDates = new WeakMap<AnalystRow, string>();
+
 function profilingDateKey(row: AnalystRow): string {
+  const cached = profilingDates.get(row);
+  if (cached !== undefined) return cached;
   const date = parseProfilingDate(row.profilingDate) || parseProfilingDate(row.timestamp);
-  return date ? dateToKey(date) : "";
+  const key = date ? dateToKey(date) : "";
+  profilingDates.set(row, key);
+  return key;
 }
 
 function formatDateID(key: string, compact = false): string {
