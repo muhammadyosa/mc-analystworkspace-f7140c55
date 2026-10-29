@@ -5,6 +5,7 @@ import { AppHeader } from "@/components/app-header";
 import { useRole } from "@/hooks/use-role";
 import { cn } from "@/lib/utils";
 import { useMenuSearch } from "@/hooks/use-menu-state";
+import { useQueryClient } from "@tanstack/react-query";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
@@ -34,6 +35,7 @@ const tabs = [
 
 function SettingsLayout() {
   const menuSearch = useMenuSearch();
+  const queryClient = useQueryClient();
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const navigate = useNavigate();
   const { isAdmin, loading } = useRole();
@@ -50,6 +52,12 @@ function SettingsLayout() {
     );
   }
   const visible = tabs.filter((t) => !t.adminOnly || isAdmin);
+  const prefetchUsers = () => {
+    if (!isAdmin) return;
+    void import("@/lib/admin-users").then(({ adminUsersOptions }) =>
+      queryClient.prefetchQuery(adminUsersOptions),
+    ).catch(() => undefined);
+  };
   return (
     <>
       <AppHeader title="Settings" subtitle="Kelola data dan akses pengguna workspace" />
@@ -63,6 +71,9 @@ function SettingsLayout() {
                 key={t.to}
                 to={t.to}
                 search={() => menuSearch(t.to)}
+                onMouseEnter={t.to === "/settings/users" ? prefetchUsers : undefined}
+                onFocus={t.to === "/settings/users" ? prefetchUsers : undefined}
+                onTouchStart={t.to === "/settings/users" ? prefetchUsers : undefined}
                 className={cn(
                   "inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition",
                   active

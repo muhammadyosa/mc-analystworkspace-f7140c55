@@ -29,8 +29,8 @@ export const getRouter = () => {
     defaultPendingMinMs: 150,
   });
 
-  router.subscribe("onBeforeNavigate", ({ fromLocation }) => {
-    if (fromLocation) {
+  router.subscribe("onBeforeNavigate", ({ fromLocation, toLocation }) => {
+    if (fromLocation && fromLocation.pathname !== toLocation.pathname) {
       navigationMemory(queryClient).save(fromLocation.pathname, fromLocation.search);
     }
   });

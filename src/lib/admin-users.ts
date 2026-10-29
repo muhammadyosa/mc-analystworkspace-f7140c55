@@ -1,6 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { normalizeRole, type AssignableRole } from "@/lib/user-admin-rules";
+import { workspaceUserOptions } from "@/lib/workspace-user";
 
 export type AdminUserRow = {
   id: string;
@@ -24,13 +25,13 @@ export const adminUsersOptions = queryOptions({
   staleTime: 60_000,
   gcTime: 300_000,
   refetchInterval: 60_000,
-  queryFn: async ({ signal }): Promise<AdminUsersResult> => {
-    const { data: u } = await supabase.auth.getUser();
-    if (!u.user) return { isAdmin: false, rows: [] };
+  queryFn: async ({ signal, client }): Promise<AdminUsersResult> => {
+    const identity = await client.ensureQueryData(workspaceUserOptions);
+    if (!identity?.user || signal.aborted) return { isAdmin: false, rows: [] };
     const { data: myRoles, error: myErr } = await supabase
       .from("user_roles")
       .select("role")
-      .eq("user_id", u.user.id)
+      .eq("user_id", identity.user.id)
       .abortSignal(signal);
     if (myErr) throw myErr;
     if (!(myRoles ?? []).some((r) => r.role === "admin")) return { isAdmin: false, rows: [] };
