@@ -17,7 +17,7 @@ export function useMenuState<T>(key: string, initial: T): [T, Dispatch<SetStateA
     const next = typeof update === "function"
       ? (update as (value: T) => T)(previous)
       : update;
-    const search = { ...location.search, [key]: next };
+    const search = { ...location.search, ...navigationMemory(client).read(location.pathname), [key]: next };
     navigationMemory(client).save(location.pathname, search);
     void router.navigate({ to: location.pathname, search, replace: true, resetScroll: false });
   }, [client, initial, key, router]);

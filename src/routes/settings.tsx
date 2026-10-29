@@ -4,6 +4,7 @@ import { Database, Users, SlidersHorizontal } from "lucide-react";
 import { AppHeader } from "@/components/app-header";
 import { useRole } from "@/hooks/use-role";
 import { cn } from "@/lib/utils";
+import { useMenuSearch } from "@/hooks/use-menu-state";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
@@ -32,6 +33,7 @@ const tabs = [
 ] as const;
 
 function SettingsLayout() {
+  const menuSearch = useMenuSearch();
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const navigate = useNavigate();
   const { isAdmin, loading } = useRole();
@@ -60,7 +62,7 @@ function SettingsLayout() {
               <Link
                 key={t.to}
                 to={t.to}
-                search={(prev) => prev}
+                search={() => menuSearch(t.to)}
                 className={cn(
                   "inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition",
                   active

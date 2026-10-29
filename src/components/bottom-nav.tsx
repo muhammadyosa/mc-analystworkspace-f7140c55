@@ -12,6 +12,7 @@ import { workspaceUserOptions } from "@/lib/workspace-user";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { useMenuSearch } from "@/hooks/use-menu-state";
 
 const itemCls =
   "relative flex min-h-[56px] w-full flex-col items-center justify-center gap-1 px-1 py-2 text-[10px] font-medium transition-colors";
@@ -24,6 +25,7 @@ function ActiveDot({ on }: { on: boolean }) {
 
 /** Navigasi bawah khusus ponsel: Dashboard, Analyst, Menu (drawer utama), Reports, Akun. */
 export function BottomNav() {
+  const menuSearch = useMenuSearch();
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const { openMobile, setOpenMobile } = useSidebar();
   const { canInstall, install } = useInstallPrompt();
@@ -54,6 +56,7 @@ export function BottomNav() {
     <li>
       <Link
         to={to}
+        search={() => menuSearch(to)}
         aria-label={accessibleTitle}
         aria-current={isActive(to) ? "page" : undefined}
         className={cn(
@@ -179,6 +182,7 @@ export function BottomNav() {
             {role === "admin" && (
               <Link
                 to="/settings"
+                search={() => menuSearch("/settings")}
                 onClick={() => setAccountOpen(false)}
                 className="flex min-h-[48px] items-center gap-3 rounded-xl border border-border/60 px-3 text-sm font-medium"
               >

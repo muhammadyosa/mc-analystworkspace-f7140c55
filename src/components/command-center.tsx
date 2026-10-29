@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/command";
 import { useDataStore } from "@/lib/store";
 import { useRole } from "@/hooks/use-role";
+import { useMenuSearch } from "@/hooks/use-menu-state";
 
 const pages = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
@@ -43,6 +44,7 @@ const pages = [
 
 /** Pencarian cepat lintas menu, cluster, dan PIC. Dibuka dengan Ctrl/Cmd + K. */
 export function CommandCenter() {
+  const menuSearch = useMenuSearch();
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const { isAdmin } = useRole();
@@ -135,7 +137,7 @@ export function CommandCenter() {
                 <CommandItem
                   key={p.url}
                   value={`menu ${p.title}`}
-                  onSelect={() => go(() => navigate({ to: p.url }))}
+                  onSelect={() => go(() => navigate({ to: p.url, search: menuSearch(p.url) }))}
                 >
                   <p.icon className="mr-2 h-4 w-4" />
                   {p.title}

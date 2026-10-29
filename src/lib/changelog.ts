@@ -13,6 +13,15 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2.12.1",
+    date: "2026-10-29",
+    title: "Navigasi dan Filter Tetap Tersimpan",
+    items: [
+      { kind: "perbaikan", text: "Pencarian, filter, sorting, halaman dan pilihan tab tetap tersimpan saat berpindah menu melalui navigasi utama." },
+      { kind: "fungsi", text: "Posisi scroll dipulihkan per menu; pemuatan halaman berdasarkan niat pengguna dan kalkulasi filter global digunakan bersama tanpa menyimpan halaman tersembunyi." },
+    ],
+  },
+  {
     version: "2.12.0",
     date: "2026-10-29",
     title: "Ranking Churn dan Competitor Profiling",

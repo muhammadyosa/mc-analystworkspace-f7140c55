@@ -23,6 +23,7 @@ import { usePresenceHeartbeat } from "@/hooks/use-presence";
 import { useCloudData } from "@/hooks/use-cloud-data";
 import { usePrefsStore } from "@/lib/prefs";
 import { initializeAppWorker } from "@/lib/pwa";
+import { navigationMemory } from "@/lib/navigation-state";
 
 function NotFoundComponent() {
   return (
@@ -196,6 +197,8 @@ function AuthGate({ children }: { children: ReactNode }) {
         generation++;
         clearTimeout(deferred);
         if (event !== "INITIAL_SESSION") {
+          navigationMemory(queryClient).clear();
+          queryClient.removeQueries({ queryKey: ["admin-users"] });
           queryClient.removeQueries({ queryKey: ["workspace-user"] });
         }
         deferred = setTimeout(() => {
@@ -256,6 +259,7 @@ function AuthedShell({ children }: { children: ReactNode }) {
       <AppSidebar />
       <SidebarInset
         id="main-content"
+        data-scroll-restoration-id="workspace-main"
         role="main"
         aria-label="Konten utama"
         className="app-scroll min-h-0 min-w-0 overflow-x-hidden overflow-y-auto"
