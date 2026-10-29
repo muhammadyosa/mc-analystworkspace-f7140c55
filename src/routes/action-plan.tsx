@@ -428,10 +428,13 @@ function TimelineView({ rows }: { rows: ActionPlanRow[] }) {
 }
 
 function CalendarView({ rows }: { rows: ActionPlanRow[] }) {
-  const [cursor, setCursor] = useState(() => {
-    const d = new Date();
-    return new Date(d.getFullYear(), d.getMonth(), 1);
-  });
+  const now = new Date();
+  const [calendarMonth, setCalendarMonth] = useMenuState("calendarMonth", `${now.getFullYear()}-${now.getMonth()}`);
+  const [year, month] = calendarMonth.split("-").map(Number);
+  const cursor = Number.isFinite(year) && Number.isFinite(month)
+    ? new Date(year, month, 1)
+    : new Date(now.getFullYear(), now.getMonth(), 1);
+  const setCursor = (date: Date) => setCalendarMonth(`${date.getFullYear()}-${date.getMonth()}`);
   const y = cursor.getFullYear();
   const m = cursor.getMonth();
   const first = new Date(y, m, 1);
