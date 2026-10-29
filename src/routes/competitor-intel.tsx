@@ -1,3 +1,5 @@
+import { useMenuState } from "@/hooks/use-menu-state";
+import { validateMenuSearch } from "@/lib/navigation-state";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import {
@@ -46,6 +48,7 @@ import {
 } from "@/components/chart-kit";
 
 export const Route = createFileRoute("/competitor-intel")({
+  validateSearch: validateMenuSearch,
   head: () => ({
     meta: [
       { title: "Competitor Intelligence — MCA Analyst Workspace" },
@@ -95,7 +98,7 @@ function CompetitorIntelPage() {
   const allCompetitor = useDataStore((s) => s.competitorData);
   const { dimRows: clusters } = useGlobalClusters();
   const gf = usePrefsStore((s) => s.filters);
-  const [q, setQ] = useState("");
+  const [q, setQ] = useMenuState("q", "");
 
   /** Filter global (provinsi / wilayah / cluster) juga berlaku untuk data kompetitor. */
   const competitorData = useMemo(() => {

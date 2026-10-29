@@ -1,3 +1,5 @@
+import { useMenuState } from "@/hooks/use-menu-state";
+import { validateMenuSearch } from "@/lib/navigation-state";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { format } from "date-fns";
@@ -1199,6 +1201,7 @@ function WeeklyDailyAnalysis({
 }
 
 export const Route = createFileRoute("/reports")({
+  validateSearch: validateMenuSearch,
   head: () => ({
     meta: [
       { title: "Reports — MCA Analyst Workspace" },
@@ -1625,6 +1628,7 @@ function computeStats(
 }
 
 function ReportsPage() {
+  const [tab, setTab] = useMenuState("tab", "day");
   const allClusters = useDataStore((s) => s.clusters);
   const { dimRows: clusters } = useGlobalClusters();
   const actionPlans = useDataStore((s) => s.actionPlans);
@@ -1663,27 +1667,27 @@ function ReportsPage() {
   const lastM = avail[avail.length - 1];
   const prevM = avail.length > 1 ? avail[avail.length - 2] : first;
 
-  const [mFrom, setMFrom] = useState(first);
-  const [mTo, setMTo] = useState(lastM);
+  const [mFrom, setMFrom] = useMenuState("mFrom", first);
+  const [mTo, setMTo] = useMenuState("mTo", lastM);
 
-  const [wDFrom, setWDFrom] = useState("");
-  const [wDTo, setWDTo] = useState("");
+  const [wDFrom, setWDFrom] = useMenuState("wDFrom", "");
+  const [wDTo, setWDTo] = useMenuState("wDTo", "");
   // Weekly: satu kontrol saja — bulan + minggu ke-1..5
-  const [wkMonth, setWkMonth] = useState(lastM);
-  const [wkWeek, setWkWeek] = useState(1);
-  const [cmpWeeks, setCmpWeeks] = useState<number[]>([1, 2]);
+  const [wkMonth, setWkMonth] = useMenuState("wkMonth", lastM);
+  const [wkWeek, setWkWeek] = useMenuState("wkWeek", 1);
+  const [cmpWeeks, setCmpWeeks] = useMenuState<number[]>("cmpWeeks", [1, 2]);
   const toggleCmpWeek = (w: number) =>
     setCmpWeeks((prev) =>
       prev.includes(w) ? prev.filter((x) => x !== w) : [...prev, w].sort((a, b) => a - b),
     );
   const weekSel = weekRange(wkMonth, wkWeek);
   // Competitor Intel: satu kontrol saja — rentang tanggal
-  const [cDFrom, setCDFrom] = useState("");
-  const [cDTo, setCDTo] = useState("");
+  const [cDFrom, setCDFrom] = useMenuState("cDFrom", "");
+  const [cDTo, setCDTo] = useMenuState("cDTo", "");
 
   // Sinkronkan range bila data baru punya bulan terakhir yang berbeda
   const monthRangeKey = `${first}-${lastM}`;
-  const [syncKey, setSyncKey] = useState(monthRangeKey);
+  const [syncKey, setSyncKey] = useMenuState("syncKey", monthRangeKey);
   useEffect(() => {
     if (syncKey === monthRangeKey) return;
     setSyncKey(monthRangeKey);
@@ -2390,7 +2394,7 @@ function ReportsPage() {
       <AppHeader title="Reports" subtitle="Weekly · Day · Monthly · Competitor Intelligence" />
       <div className="min-w-0 space-y-4 p-3 sm:p-5 lg:p-6">
         <GlobalFilterBar hideMonths />
-        <Tabs defaultValue="day">
+        <Tabs value={tab} onValueChange={setTab}>
           <div className="scroll-x pb-1">
             <TabsList className="w-max min-w-full justify-start sm:min-w-0">
               <TabsTrigger value="day">

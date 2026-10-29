@@ -1,3 +1,5 @@
+import { useMenuState } from "@/hooks/use-menu-state";
+import { validateMenuSearch } from "@/lib/navigation-state";
 import { createFileRoute } from "@tanstack/react-router";
 import { lazy, Suspense, useMemo, useState } from "react";
 import {
@@ -30,6 +32,7 @@ import { DrilldownDialog, type DrilldownState } from "@/components/drilldown-dia
 const AnalystCharts = lazy(() => import("@/components/analyst-charts"));
 
 export const Route = createFileRoute("/analyst")({
+  validateSearch: validateMenuSearch,
   head: () => ({
     meta: [
       { title: "Analyst Market — MCA Analyst Workspace" },
@@ -144,16 +147,17 @@ function KpiCard({
 }
 
 function AnalystPage() {
+  const [tab, setTab] = useMenuState("tab", "charts");
   const analyst = useDataStore((s) => s.analyst);
   const clusters = useDataStore((s) => s.clusters);
 
   // ---------- Filter Bar ----------
-  const [q, setQ] = useState("");
-  const [fAE, setFAE] = useState("");
-  const [fPic, setFPic] = useState("");
-  const [fPotensi, setFPotensi] = useState("");
-  const [fSegment, setFSegment] = useState("");
-  const [fProv, setFProv] = useState("");
+  const [q, setQ] = useMenuState("q", "");
+  const [fAE, setFAE] = useMenuState("fAE", "");
+  const [fPic, setFPic] = useMenuState("fPic", "");
+  const [fPotensi, setFPotensi] = useMenuState("fPotensi", "");
+  const [fSegment, setFSegment] = useMenuState("fSegment", "");
+  const [fProv, setFProv] = useMenuState("fProv", "");
 
   // Map cluster→PIC/Provinsi from cluster master
   const clusterMeta = useMemo(() => {
@@ -378,13 +382,13 @@ function AnalystPage() {
   }, [stats]);
 
   const [drill, setDrill] = useState<DrilldownState>(null);
-  const [detailFilter, setDetailFilter] = useState("");
-  const [detailPotensi, setDetailPotensi] = useState("");
-  const [detailAE, setDetailAE] = useState("");
-  const [detailPic, setDetailPic] = useState("");
-  const [detailSeg, setDetailSeg] = useState("");
-  const [detailComp, setDetailComp] = useState("");
-  const [detailSort, setDetailSort] = useState("cluster");
+  const [detailFilter, setDetailFilter] = useMenuState("detailFilter", "");
+  const [detailPotensi, setDetailPotensi] = useMenuState("detailPotensi", "");
+  const [detailAE, setDetailAE] = useMenuState("detailAE", "");
+  const [detailPic, setDetailPic] = useMenuState("detailPic", "");
+  const [detailSeg, setDetailSeg] = useMenuState("detailSeg", "");
+  const [detailComp, setDetailComp] = useMenuState("detailComp", "");
+  const [detailSort, setDetailSort] = useMenuState("detailSort", "cluster");
 
   if (!analyst.length) {
     return (
@@ -640,7 +644,7 @@ function AnalystPage() {
               </CardContent>
             </Card>
 
-            <Tabs defaultValue="charts" className="space-y-4">
+            <Tabs value={tab} onValueChange={setTab} className="space-y-4">
               <TabsList>
                 <TabsTrigger value="charts">Visualisasi</TabsTrigger>
                 <TabsTrigger value="detail">Detail Profiling</TabsTrigger>
