@@ -74,8 +74,12 @@ export function competitorProfiles(
   return result;
 }
 
-export function rankChurn<T extends { id: string; cluster: string; ch: { score: number } }>(rows: T[]) {
-  const sorted = [...rows].sort((a, b) => b.ch.score - a.ch.score || a.cluster.localeCompare(b.cluster));
+export function rankChurn<T extends { id: string; cluster: string; ch: { score: number } }>(
+  rows: T[],
+) {
+  const sorted = [...rows].sort(
+    (a, b) => b.ch.score - a.ch.score || a.cluster.localeCompare(b.cluster),
+  );
   const ranks = new Map<string, number>();
   let rank = 0;
   sorted.forEach((row, index) => {
