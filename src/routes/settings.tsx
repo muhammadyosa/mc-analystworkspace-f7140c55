@@ -54,9 +54,9 @@ function SettingsLayout() {
   const visible = tabs.filter((t) => !t.adminOnly || isAdmin);
   const prefetchUsers = () => {
     if (!isAdmin) return;
-    void import("@/lib/admin-users").then(({ adminUsersOptions }) =>
-      queryClient.prefetchQuery(adminUsersOptions),
-    ).catch(() => undefined);
+    void import("@/lib/admin-users")
+      .then(({ adminUsersOptions }) => queryClient.prefetchQuery(adminUsersOptions))
+      .catch(() => undefined);
   };
   return (
     <>

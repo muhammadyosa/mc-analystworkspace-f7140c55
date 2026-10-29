@@ -22,3 +22,4 @@
 - Competitor profiling derives from the existing shared competitor payload and Analyst assessments with normalized cluster/territory matching; edits use role-validated row-conflict-checked save_competitor_profile RPC and refresh epoch protection to prevent lost updates.
 - Menu controls live in validated URL search; navigation remembers at most 20 searches per QueryClient and restores scroll by pathname, so hidden route trees are not retained and SSR sessions stay isolated.
 - Global cluster derivations are shared by weakly held dataset/filter references, so unchanged charts reuse inputs while dataset mutations naturally invalidate calculations.
+- Report profiling date keys are weakly memoized by immutable analyst row references to avoid repeated parsing without retaining old imports.
