@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { useDataStore } from "@/lib/store";
 import { useRole } from "@/hooks/use-role";
 import type { ClusterRow, CompetitorRow } from "@/lib/excel";
+import { categorizePromo } from "@/lib/excel";
 import {
   competitorProfiles,
   competitorComparison,
@@ -101,7 +102,7 @@ export function CompetitorProfiling({ cluster }: { cluster: ClusterRow }) {
       competitorRaw: form.competitor.trim(),
       price: form.price === "" ? 0 : Number(form.price),
       promo: form.promo.trim(),
-      promoCategory: original?.promoCategory ?? "Lainnya",
+      promoCategory: categorizePromo(form.promo),
     };
     setSaving(true);
     try {
