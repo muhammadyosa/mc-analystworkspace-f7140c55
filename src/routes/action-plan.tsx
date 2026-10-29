@@ -429,11 +429,15 @@ function TimelineView({ rows }: { rows: ActionPlanRow[] }) {
 
 function CalendarView({ rows }: { rows: ActionPlanRow[] }) {
   const now = new Date();
-  const [calendarMonth, setCalendarMonth] = useMenuState("calendarMonth", `${now.getFullYear()}-${now.getMonth()}`);
+  const [calendarMonth, setCalendarMonth] = useMenuState(
+    "calendarMonth",
+    `${now.getFullYear()}-${now.getMonth()}`,
+  );
   const [year, month] = calendarMonth.split("-").map(Number);
-  const cursor = Number.isFinite(year) && Number.isFinite(month)
-    ? new Date(year, month, 1)
-    : new Date(now.getFullYear(), now.getMonth(), 1);
+  const cursor =
+    Number.isFinite(year) && Number.isFinite(month)
+      ? new Date(year, month, 1)
+      : new Date(now.getFullYear(), now.getMonth(), 1);
   const setCursor = (date: Date) => setCalendarMonth(`${date.getFullYear()}-${date.getMonth()}`);
   const y = cursor.getFullYear();
   const m = cursor.getMonth();
