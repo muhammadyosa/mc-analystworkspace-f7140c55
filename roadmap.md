@@ -17,3 +17,9 @@
 - [x] Derive territory-aware competitor and ICONNET comparisons from actual shared data.
 - [x] Add authorized atomic competitor editing and extended Excel fields.
 - [x] Verify tests, persistence, sorting, and desktop/mobile profiling.
+
+# Navigation state and performance
+- [ ] Audit and measure desktop/mobile menu transitions using actual data.
+- [ ] Preserve menu filters, search, pagination, tabs and scroll without retaining hidden pages.
+- [ ] Reduce unnecessary derivations and selectively preload navigation while keeping mutation synchronization.
+- [ ] Run regression tests and compare before/after navigation performance.
