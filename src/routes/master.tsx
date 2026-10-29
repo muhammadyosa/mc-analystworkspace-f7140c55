@@ -39,7 +39,11 @@ import {
 } from "@/components/ui/table";
 import { computePriority, useDataStore } from "@/lib/store";
 import { CompetitorProfiling } from "@/components/competitor-profile";
-import { competitorProfiles, competitorProfileText, competitorComparison } from "@/lib/competitor-profiling";
+import {
+  competitorProfiles,
+  competitorProfileText,
+  competitorComparison,
+} from "@/lib/competitor-profiling";
 import { exportToExcel } from "@/lib/excel";
 import { useGlobalClusters } from "@/hooks/use-global-filters";
 import { GlobalFilterBar } from "@/components/global-filter";
@@ -239,8 +243,17 @@ function MasterPage() {
   }, [scored]);
 
   const churnRanks = useMemo(() => {
-    const ranked = [...scored].sort((a, b) => b.ch.score - a.ch.score || a.cluster.localeCompare(b.cluster));
-    return new Map(ranked.map((c, index) => [c.id, index > 0 && c.ch.score === ranked[index - 1].ch.score ? ranked.findIndex((x) => x.ch.score === c.ch.score) + 1 : index + 1]));
+    const ranked = [...scored].sort(
+      (a, b) => b.ch.score - a.ch.score || a.cluster.localeCompare(b.cluster),
+    );
+    return new Map(
+      ranked.map((c, index) => [
+        c.id,
+        index > 0 && c.ch.score === ranked[index - 1].ch.score
+          ? ranked.findIndex((x) => x.ch.score === c.ch.score) + 1
+          : index + 1,
+      ]),
+    );
   }, [scored]);
 
   const detail = useMemo(() => {
@@ -249,7 +262,13 @@ function MasterPage() {
     const series = hcTrend(c);
     const trend = trendLabel(series);
     const competitors = competitorProfiles(c, competitorRows, analystRows);
-    const advice = [...new Set([...retentionAdvice(c.ch.level, c), ...actionSummary.advice, ...competitors.flatMap((r) => competitorComparison(r).advice)])];
+    const advice = [
+      ...new Set([
+        ...retentionAdvice(c.ch.level, c),
+        ...actionSummary.advice,
+        ...competitors.flatMap((r) => competitorComparison(r).advice),
+      ]),
+    ];
     const period =
       month === "all" ? "Bulan terbaru" : (MONTHS.find((m) => m.key === month)?.label ?? "");
     const text =
@@ -268,7 +287,9 @@ function MasterPage() {
         advice,
       }) +
       "\n\nACTION PLAN — KANBAN\n" +
-      actionSummaryText(actionSummary) + "\n\n" + competitorProfileText(competitors);
+      actionSummaryText(actionSummary) +
+      "\n\n" +
+      competitorProfileText(competitors);
     return { c, series, trend, advice, text, rank: filtered.findIndex((x) => x.id === c.id) + 1 };
   }, [scored, detailId, month, filtered, actionSummary, competitorRows, analystRows]);
 
@@ -410,9 +431,14 @@ function MasterPage() {
             <Button
               variant="outline"
               size="icon"
-              aria-label={dir === "desc" ? "Urutkan terendah ke tertinggi" : "Urutkan tertinggi ke terendah"}
+              aria-label={
+                dir === "desc" ? "Urutkan terendah ke tertinggi" : "Urutkan tertinggi ke terendah"
+              }
               title={dir === "desc" ? "Tertinggi ke terendah" : "Terendah ke tertinggi"}
-              onClick={() => { setDir(dir === "asc" ? "desc" : "asc"); setPage(1); }}
+              onClick={() => {
+                setDir(dir === "asc" ? "desc" : "asc");
+                setPage(1);
+              }}
             >
               <ArrowUpDown className="h-4 w-4" />
             </Button>
@@ -449,7 +475,9 @@ function MasterPage() {
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <p className="truncate font-medium">{c.cluster}</p>
-                      <p className="text-xs font-semibold text-destructive">Peringkat risiko #{churnRanks.get(c.id)}</p>
+                      <p className="text-xs font-semibold text-destructive">
+                        Peringkat risiko #{churnRanks.get(c.id)}
+                      </p>
                       <p className="truncate text-xs text-muted-foreground">
                         {c.kabupaten} · {c.provinsi}
                       </p>
@@ -592,7 +620,12 @@ function MasterPage() {
                   const pr = c.pr;
                   return (
                     <TableRow key={c.id}>
-                      <TableCell className="font-medium">{c.cluster}<p className="text-xs text-muted-foreground">Risiko #{churnRanks.get(c.id)}</p></TableCell>
+                      <TableCell className="font-medium">
+                        {c.cluster}
+                        <p className="text-xs text-muted-foreground">
+                          Risiko #{churnRanks.get(c.id)}
+                        </p>
+                      </TableCell>
                       <TableCell className="text-muted-foreground">{c.kabupaten}</TableCell>
                       <TableCell className="text-muted-foreground">{c.provinsi}</TableCell>
                       <TableCell className="text-muted-foreground">{c.pic || "—"}</TableCell>

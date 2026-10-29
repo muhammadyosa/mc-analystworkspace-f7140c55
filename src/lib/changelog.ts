@@ -17,9 +17,18 @@ export const CHANGELOG: ChangelogEntry[] = [
     date: "2026-10-29",
     title: "Ranking Churn dan Competitor Profiling",
     items: [
-      { kind: "fitur", text: "Master Cluster menampilkan ranking risiko dan sorting skor churn dua arah menggunakan rumus yang sama." },
-      { kind: "fitur", text: "Profiling kompetitor menampilkan paket, promo, instalasi, perbandingan ICONNET, serta rekomendasi dari data aktual Competitor dan Analyst Market." },
-      { kind: "fungsi", text: "Admin dan Manager dapat menambah atau memperbarui data kompetitor bersama, dengan perlindungan konflik pembaruan. Informasi yang belum tersedia ditandai Belum ada data." },
+      {
+        kind: "fitur",
+        text: "Master Cluster menampilkan ranking risiko dan sorting skor churn dua arah menggunakan rumus yang sama.",
+      },
+      {
+        kind: "fitur",
+        text: "Profiling kompetitor menampilkan paket, promo, instalasi, perbandingan ICONNET, serta rekomendasi dari data aktual Competitor dan Analyst Market.",
+      },
+      {
+        kind: "fungsi",
+        text: "Admin dan Manager dapat menambah atau memperbarui data kompetitor bersama, dengan perlindungan konflik pembaruan. Informasi yang belum tersedia ditandai Belum ada data.",
+      },
     ],
   },
   {

@@ -105,7 +105,9 @@ function DetailPage() {
   const hcChangePct = hcPrev > 0 ? ((hcCur - hcPrev) / hcPrev) * 100 : 0;
   const pr = computePriority(cluster, maxTicket);
   const strategy = recommendStrategy(cluster);
-  const competitorResults = competitorProfiles(cluster, competitorRows, analystRows).map(competitorComparison);
+  const competitorResults = competitorProfiles(cluster, competitorRows, analystRows).map(
+    competitorComparison,
+  );
   const TrendTip = makeTooltip<(typeof trend)[number]>((d) => ({
     title: d.month,
     rows: [{ label: "HC Aktif", value: fmtFull(d.hc), color: C.primary, strong: true }],
@@ -293,7 +295,12 @@ function DetailPage() {
                 ))}
               </div>
               <ul className="mt-3 list-disc space-y-1 break-words pl-5 text-sm text-muted-foreground">
-                {[...new Set([...actionSummary.advice, ...competitorResults.flatMap((r) => r.advice)])].map((a) => (
+                {[
+                  ...new Set([
+                    ...actionSummary.advice,
+                    ...competitorResults.flatMap((r) => r.advice),
+                  ]),
+                ].map((a) => (
                   <li key={a}>{a}</li>
                 ))}
               </ul>

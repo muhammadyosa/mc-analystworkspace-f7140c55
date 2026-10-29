@@ -10,8 +10,13 @@ export async function saveCompetitorProfile(profile: CompetitorRow, original?: C
   epoch++;
   busy = true;
   try {
-    const { data, error } = await supabase.rpc("save_competitor_profile", { profile: profile as never, expected_row: (original ?? null) as never });
+    const { data, error } = await supabase.rpc("save_competitor_profile", {
+      profile: profile as never,
+      expected_row: (original ?? null) as never,
+    });
     if (error) throw new Error(error.message);
     useDataStore.getState().applyCloud({ competitorData: data as unknown as CompetitorRow[] });
-  } finally { busy = false; }
+  } finally {
+    busy = false;
+  }
 }
