@@ -14,11 +14,11 @@ export function useMenuState<T>(key: string, initial: T): [T, Dispatch<SetStateA
   const setValue = useCallback<Dispatch<SetStateAction<T>>>(
     (update) => {
       const location = router.state.location;
-      const previous = location.search[key] === undefined ? initial : (location.search[key] as T);
+      const values = { ...location.search, ...navigationMemory(client).read(location.pathname) };
+      const previous = values[key] === undefined ? initial : (values[key] as T);
       const next = typeof update === "function" ? (update as (value: T) => T)(previous) : update;
       const search = {
-        ...location.search,
-        ...navigationMemory(client).read(location.pathname),
+        ...values,
         [key]: next,
       };
       navigationMemory(client).save(location.pathname, search);

@@ -80,7 +80,7 @@ function parseProfilingDate(value: unknown): Date | null {
   const iso = new Date(t);
   if (!isNaN(iso.getTime()) && /^\d{4}-\d{1,2}-\d{1,2}/.test(t)) return iso;
   // DD/MM/YYYY or DD-MM-YYYY
-  const m = t.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/);
+  const m = t.match(/^(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{2,4})/);
   if (m) {
     const d = Number(m[1]);
     const mo = Number(m[2]) - 1;
@@ -1697,7 +1697,7 @@ function ReportsPage() {
     setWkWeek(1);
     setCDFrom("");
     setCDTo("");
-  }, [first, lastM, monthRangeKey, prevM, syncKey]);
+  }, [first, lastM, monthRangeKey, prevM, syncKey, setSyncKey, setMFrom, setMTo, setWkMonth, setWkWeek, setCDFrom, setCDTo]);
 
   const cDFromEff = cDFrom || monthStartKey(first);
   const cDToEff = cDTo || monthEndKey(lastM);
