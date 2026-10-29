@@ -30,6 +30,8 @@ import { ChartCard, C, axisProps, gridProps, makeTooltip, fmtFull } from "@/comp
 import { MONTH_KEYS, MONTH_LABELS } from "@/lib/prefs";
 import { useClusterActions } from "@/hooks/use-cluster-actions";
 import { ClusterActionSummary } from "@/components/cluster-action-summary";
+import { CompetitorProfiling } from "@/components/competitor-profile";
+import { competitorProfiles, competitorComparison } from "@/lib/competitor-profiling";
 
 export const Route = createFileRoute("/cluster/$name")({
   head: () => ({
@@ -54,6 +56,8 @@ export const Route = createFileRoute("/cluster/$name")({
 function DetailPage() {
   const { name } = Route.useParams();
   const clusters = useDataStore((s) => s.clusters);
+  const competitorRows = useDataStore((s) => s.competitorData);
+  const analystRows = useDataStore((s) => s.analyst);
   const decoded = decodeURIComponent(name);
   const actionSummary = useClusterActions(decoded);
   const cluster = clusters.find((c) => c.cluster === decoded);
@@ -101,6 +105,7 @@ function DetailPage() {
   const hcChangePct = hcPrev > 0 ? ((hcCur - hcPrev) / hcPrev) * 100 : 0;
   const pr = computePriority(cluster, maxTicket);
   const strategy = recommendStrategy(cluster);
+  const competitorResults = competitorProfiles(cluster, competitorRows, analystRows).map(competitorComparison);
   const TrendTip = makeTooltip<(typeof trend)[number]>((d) => ({
     title: d.month,
     rows: [{ label: "HC Aktif", value: fmtFull(d.hc), color: C.primary, strong: true }],
@@ -118,6 +123,7 @@ function DetailPage() {
       `Realisasi HC ${((hcCur / cluster.totalHC2026) * 100).toFixed(0)}% dari target 2026 — potensi masih besar.`,
     );
   insights.push(...actionSummary.insights);
+  insights.push(...competitorResults.flatMap((r) => r.insights));
 
   const causes = ["Kompetitor", "Gangguan jaringan", "Kurangnya aktivitas AE"];
 
@@ -287,7 +293,7 @@ function DetailPage() {
                 ))}
               </div>
               <ul className="mt-3 list-disc space-y-1 break-words pl-5 text-sm text-muted-foreground">
-                {actionSummary.advice.map((a) => (
+                {[...new Set([...actionSummary.advice, ...competitorResults.flatMap((r) => r.advice)])].map((a) => (
                   <li key={a}>{a}</li>
                 ))}
               </ul>
@@ -297,6 +303,7 @@ function DetailPage() {
             </CardContent>
           </Card>
         </div>
+        <CompetitorProfiling cluster={cluster} />
       </div>
     </>
   );

@@ -19,3 +19,4 @@
 - Cluster action summaries are derived from shared ActionPlanRow records using one effective-status helper; never persist duplicate summaries. Kanban edits use the role-validated atomic mutate_action_plan RPC on the existing JSON dataset to avoid overwriting concurrent tasks.
 
 - Admin user actions (invite/delete) run through createServerFn in src/lib/user-admin.functions.ts; supabaseAdmin loads inside handlers via await import.
+- Competitor profiling derives from the existing shared competitor payload and Analyst assessments with normalized cluster/territory matching; edits use role-validated row-conflict-checked save_competitor_profile RPC and refresh epoch protection to prevent lost updates.

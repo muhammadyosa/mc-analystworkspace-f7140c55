@@ -37,7 +37,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { computePriority } from "@/lib/store";
+import { computePriority, useDataStore } from "@/lib/store";
+import { CompetitorProfiling } from "@/components/competitor-profile";
+import { competitorProfiles, competitorProfileText, competitorComparison } from "@/lib/competitor-profiling";
 import { exportToExcel } from "@/lib/excel";
 import { useGlobalClusters } from "@/hooks/use-global-filters";
 import { GlobalFilterBar } from "@/components/global-filter";
@@ -77,7 +79,7 @@ type SortKey =
   | "kabupaten"
   | "pic";
 const SORT_LABELS: Record<SortKey, string> = {
-  churn: "Potensi Churn Tertinggi",
+  churn: "Skor Potensi Churn",
   priority: "Priority Score",
   decline: "Penurunan HC",
   ticket: "Jumlah Ticket",
@@ -118,11 +120,13 @@ const ticketOf = (
 
 function MasterPage() {
   const { rows: clusters } = useGlobalClusters();
+  const competitorRows = useDataStore((s) => s.competitorData);
+  const analystRows = useDataStore((s) => s.analyst);
   const density = usePrefsStore((s) => s.density);
   const [q, setQ] = useState("");
   const [prov, setProv] = useState<string>("all");
   const [month, setMonth] = useState<MonthKey | "all">("all");
-  const [sort, setSort] = useState<SortKey>("hc");
+  const [sort, setSort] = useState<SortKey>("churn");
   const [dir, setDir] = useState<"asc" | "desc">("desc");
   const [risk, setRisk] = useState<"all" | "Tinggi" | "Sedang" | "Rendah">("all");
   const [detailId, setDetailId] = useState<string | null>(null);
@@ -234,12 +238,18 @@ function MasterPage() {
     return r;
   }, [scored]);
 
+  const churnRanks = useMemo(() => {
+    const ranked = [...scored].sort((a, b) => b.ch.score - a.ch.score || a.cluster.localeCompare(b.cluster));
+    return new Map(ranked.map((c, index) => [c.id, index > 0 && c.ch.score === ranked[index - 1].ch.score ? ranked.findIndex((x) => x.ch.score === c.ch.score) + 1 : index + 1]));
+  }, [scored]);
+
   const detail = useMemo(() => {
     const c = scored.find((x) => x.id === detailId);
     if (!c) return null;
     const series = hcTrend(c);
     const trend = trendLabel(series);
-    const advice = [...new Set([...retentionAdvice(c.ch.level, c), ...actionSummary.advice])];
+    const competitors = competitorProfiles(c, competitorRows, analystRows);
+    const advice = [...new Set([...retentionAdvice(c.ch.level, c), ...actionSummary.advice, ...competitors.flatMap((r) => competitorComparison(r).advice)])];
     const period =
       month === "all" ? "Bulan terbaru" : (MONTHS.find((m) => m.key === month)?.label ?? "");
     const text =
@@ -258,9 +268,9 @@ function MasterPage() {
         advice,
       }) +
       "\n\nACTION PLAN — KANBAN\n" +
-      actionSummaryText(actionSummary);
+      actionSummaryText(actionSummary) + "\n\n" + competitorProfileText(competitors);
     return { c, series, trend, advice, text, rank: filtered.findIndex((x) => x.id === c.id) + 1 };
-  }, [scored, detailId, month, filtered, actionSummary]);
+  }, [scored, detailId, month, filtered, actionSummary, competitorRows, analystRows]);
 
   const copyText = async (text: string) => {
     try {
@@ -275,6 +285,7 @@ function MasterPage() {
   const paginated = filtered.slice((page - 1) * perPage, page * perPage);
 
   const toggleSort = (k: SortKey) => {
+    setPage(1);
     if (sort === k) setDir(dir === "asc" ? "desc" : "asc");
     else {
       setSort(k);
@@ -292,6 +303,9 @@ function MasterPage() {
         Kabupaten: c.kabupaten,
         Provinsi: c.provinsi,
         PIC: c.pic,
+        Peringkat_Risiko: churnRanks.get(c.id),
+        Skor_Potensi_Churn: c.ch.score,
+        Risiko_Churn: c.ch.level,
         Bulan: monthLabel,
         Homepass: c.homepass,
         HC_Terpasang: c.hcTerpasang,
@@ -396,8 +410,9 @@ function MasterPage() {
             <Button
               variant="outline"
               size="icon"
-              aria-label="Balik urutan"
-              onClick={() => setDir(dir === "asc" ? "desc" : "asc")}
+              aria-label={dir === "desc" ? "Urutkan terendah ke tertinggi" : "Urutkan tertinggi ke terendah"}
+              title={dir === "desc" ? "Tertinggi ke terendah" : "Terendah ke tertinggi"}
+              onClick={() => { setDir(dir === "asc" ? "desc" : "asc"); setPage(1); }}
             >
               <ArrowUpDown className="h-4 w-4" />
             </Button>
@@ -434,6 +449,7 @@ function MasterPage() {
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <p className="truncate font-medium">{c.cluster}</p>
+                      <p className="text-xs font-semibold text-destructive">Peringkat risiko #{churnRanks.get(c.id)}</p>
                       <p className="truncate text-xs text-muted-foreground">
                         {c.kabupaten} · {c.provinsi}
                       </p>
@@ -576,7 +592,7 @@ function MasterPage() {
                   const pr = c.pr;
                   return (
                     <TableRow key={c.id}>
-                      <TableCell className="font-medium">{c.cluster}</TableCell>
+                      <TableCell className="font-medium">{c.cluster}<p className="text-xs text-muted-foreground">Risiko #{churnRanks.get(c.id)}</p></TableCell>
                       <TableCell className="text-muted-foreground">{c.kabupaten}</TableCell>
                       <TableCell className="text-muted-foreground">{c.provinsi}</TableCell>
                       <TableCell className="text-muted-foreground">{c.pic || "—"}</TableCell>
@@ -693,6 +709,7 @@ function MasterPage() {
                   </DialogTitle>
                   <DialogDescription>
                     {detail.c.kabupaten} · {detail.c.provinsi} · PIC {detail.c.pic || "—"}
+                    {` · Peringkat risiko #${churnRanks.get(detail.c.id)}`}
                     {detail.rank > 0 ? ` · Peringkat #${detail.rank} (${SORT_LABELS[sort]})` : ""}
                   </DialogDescription>
                 </DialogHeader>
@@ -737,6 +754,7 @@ function MasterPage() {
                   </div>
                 )}
                 <ClusterActionSummary summary={actionSummary} />
+                <CompetitorProfiling cluster={detail.c} />
                 <div>
                   <p className="mb-1 text-xs font-semibold">Rekomendasi Retention</p>
                   <ul className="list-disc space-y-0.5 pl-5 text-sm text-muted-foreground">
