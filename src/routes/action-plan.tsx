@@ -1,3 +1,5 @@
+import { useMenuState } from "@/hooks/use-menu-state";
+import { validateMenuSearch } from "@/lib/navigation-state";
 import { useShallow } from "zustand/react/shallow";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
@@ -65,6 +67,7 @@ import {
 } from "@/lib/excel";
 
 export const Route = createFileRoute("/action-plan")({
+  validateSearch: validateMenuSearch,
   head: () => ({
     meta: [
       { title: "Action Plan — MCA Analyst Workspace" },
@@ -425,10 +428,17 @@ function TimelineView({ rows }: { rows: ActionPlanRow[] }) {
 }
 
 function CalendarView({ rows }: { rows: ActionPlanRow[] }) {
-  const [cursor, setCursor] = useState(() => {
-    const d = new Date();
-    return new Date(d.getFullYear(), d.getMonth(), 1);
-  });
+  const now = new Date();
+  const [calendarMonth, setCalendarMonth] = useMenuState(
+    "calendarMonth",
+    `${now.getFullYear()}-${now.getMonth()}`,
+  );
+  const [year, month] = calendarMonth.split("-").map(Number);
+  const cursor =
+    Number.isFinite(year) && Number.isFinite(month)
+      ? new Date(year, month, 1)
+      : new Date(now.getFullYear(), now.getMonth(), 1);
+  const setCursor = (date: Date) => setCalendarMonth(`${date.getFullYear()}-${date.getMonth()}`);
   const y = cursor.getFullYear();
   const m = cursor.getMonth();
   const first = new Date(y, m, 1);
@@ -513,6 +523,7 @@ function CalendarView({ rows }: { rows: ActionPlanRow[] }) {
 }
 
 function ActionPlanPage() {
+  const [tab, setTab] = useMenuState("tab", "kanban");
   const { actionPlans, clusters, tickets, analyst, competitorData } = useDataStore(
     useShallow((s) => ({
       actionPlans: s.actionPlans,
@@ -547,13 +558,13 @@ function ActionPlanPage() {
     updateActionPlan(id, { status, statusManual: true });
   const addActionPlans = (rows: ActionPlanRow[]) => mutation.mutate({ kind: "add", rows });
   const removeActionPlan = (id: string) => mutation.mutate({ kind: "delete", id });
-  const [search, setSearch] = useState("");
-  const [filterPic, setFilterPic] = useState("");
-  const [filterCluster, setFilterCluster] = useState("");
-  const [filterKab, setFilterKab] = useState("");
-  const [filterProv, setFilterProv] = useState("");
-  const [filterStatus, setFilterStatus] = useState<"" | ActionPlanStatus>("");
-  const [filterMonth, setFilterMonth] = useState("");
+  const [search, setSearch] = useMenuState("search", "");
+  const [filterPic, setFilterPic] = useMenuState("filterPic", "");
+  const [filterCluster, setFilterCluster] = useMenuState("filterCluster", "");
+  const [filterKab, setFilterKab] = useMenuState("filterKab", "");
+  const [filterProv, setFilterProv] = useMenuState("filterProv", "");
+  const [filterStatus, setFilterStatus] = useMenuState<"" | ActionPlanStatus>("filterStatus", "");
+  const [filterMonth, setFilterMonth] = useMenuState("filterMonth", "");
   const [openRow, setOpenRow] = useState<ActionPlanRow | null>(null);
   const [oltGroup, setOltGroup] = useState<{ cluster: string; rows: ActionPlanRow[] } | null>(null);
   const [addOpen, setAddOpen] = useState(false);
@@ -912,7 +923,7 @@ function ActionPlanPage() {
           </CardContent>
         </Card>
 
-        <Tabs defaultValue="kanban" className="space-y-4">
+        <Tabs value={tab} onValueChange={setTab} className="space-y-4">
           <TabsList>
             <TabsTrigger value="kanban">Kanban</TabsTrigger>
             <TabsTrigger value="timeline">Timeline</TabsTrigger>

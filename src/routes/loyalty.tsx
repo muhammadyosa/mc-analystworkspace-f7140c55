@@ -1,3 +1,5 @@
+import { useMenuState } from "@/hooks/use-menu-state";
+import { validateMenuSearch } from "@/lib/navigation-state";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { AppHeader } from "@/components/app-header";
@@ -27,6 +29,7 @@ import { GlobalFilterBar } from "@/components/global-filter";
 import { computeActionStatus, type ClusterRow } from "@/lib/excel";
 
 export const Route = createFileRoute("/loyalty")({
+  validateSearch: validateMenuSearch,
   head: () => ({
     meta: [
       { title: "Customer Loyalty — MCA Analyst Workspace" },
@@ -84,8 +87,8 @@ function LoyaltyPage() {
     [clusters],
   );
 
-  const [fromKey, setFromKey] = useState<MonthKey | null>(null);
-  const [toKey, setToKey] = useState<MonthKey | null>(null);
+  const [fromKey, setFromKey] = useMenuState<MonthKey | null>("fromKey", null);
+  const [toKey, setToKey] = useMenuState<MonthKey | null>("toKey", null);
 
   const from =
     availableMonths.find((m) => m.key === fromKey) ??

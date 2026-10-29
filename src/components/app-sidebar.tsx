@@ -19,6 +19,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { type ColorTheme, useTheme } from "@/hooks/use-theme";
 import { useRole } from "@/hooks/use-role";
 import { cn } from "@/lib/utils";
+import { useMenuSearch } from "@/hooks/use-menu-state";
 
 const nav = [
   { title: "Dashboard", url: "/", emoji: "🖥️" },
@@ -41,6 +42,7 @@ const colorThemes: { id: ColorTheme; label: string; swatch: string }[] = [
 ];
 
 export function AppSidebar() {
+  const menuSearch = useMenuSearch();
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const { theme, colorTheme, toggle, setColorTheme } = useTheme();
   const { state, openMobile, isMobile, toggleSidebar, setOpenMobile } = useSidebar();
@@ -106,6 +108,7 @@ export function AppSidebar() {
                   >
                     <Link
                       to={item.url}
+                      search={() => menuSearch(item.url)}
                       onClick={() => setOpenMobile(false)}
                       className="flex items-center gap-3"
                     >

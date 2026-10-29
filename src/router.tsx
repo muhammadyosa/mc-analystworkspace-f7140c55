@@ -1,6 +1,7 @@
 import { QueryClient } from "@tanstack/react-query";
 import { createRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
+import { navigationMemory } from "./lib/navigation-state";
 
 export const getRouter = () => {
   const queryClient = new QueryClient({
@@ -19,11 +20,19 @@ export const getRouter = () => {
     routeTree,
     context: { queryClient },
     scrollRestoration: true,
+    getScrollRestorationKey: (location) => location.pathname,
+    scrollToTopSelectors: ["#main-content"],
     defaultPreload: "intent",
-    defaultPreloadDelay: 40,
+    defaultPreloadDelay: 120,
     defaultPreloadStaleTime: 0,
-    defaultPendingMs: 200,
+    defaultPendingMs: 350,
     defaultPendingMinMs: 150,
+  });
+
+  router.subscribe("onBeforeNavigate", ({ fromLocation, toLocation }) => {
+    if (fromLocation && fromLocation.pathname !== toLocation.pathname) {
+      navigationMemory(queryClient).save(fromLocation.pathname, fromLocation.search);
+    }
   });
 
   return router;

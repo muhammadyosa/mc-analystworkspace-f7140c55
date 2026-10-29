@@ -1,3 +1,5 @@
+import { useMenuState } from "@/hooks/use-menu-state";
+import { validateMenuSearch } from "@/lib/navigation-state";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { Search, Download, ChevronRight, ArrowUpDown, FileText, Copy } from "lucide-react";
@@ -54,6 +56,7 @@ import { ClusterActionSummary } from "@/components/cluster-action-summary";
 import { actionSummaryText } from "@/lib/action-plan-summary";
 
 export const Route = createFileRoute("/master")({
+  validateSearch: validateMenuSearch,
   head: () => ({
     meta: [
       { title: "Master Cluster — MCA Analyst Workspace" },
@@ -128,16 +131,16 @@ function MasterPage() {
   const competitorRows = useDataStore((s) => s.competitorData);
   const analystRows = useDataStore((s) => s.analyst);
   const density = usePrefsStore((s) => s.density);
-  const [q, setQ] = useState("");
-  const [prov, setProv] = useState<string>("all");
-  const [month, setMonth] = useState<MonthKey | "all">("all");
-  const [sort, setSort] = useState<SortKey>("churn");
-  const [dir, setDir] = useState<"asc" | "desc">("desc");
-  const [risk, setRisk] = useState<"all" | "Tinggi" | "Sedang" | "Rendah">("all");
+  const [q, setQ] = useMenuState("q", "");
+  const [prov, setProv] = useMenuState<string>("prov", "all");
+  const [month, setMonth] = useMenuState<MonthKey | "all">("month", "all");
+  const [sort, setSort] = useMenuState<SortKey>("sort", "churn");
+  const [dir, setDir] = useMenuState<"asc" | "desc">("dir", "desc");
+  const [risk, setRisk] = useMenuState<"all" | "Tinggi" | "Sedang" | "Rendah">("risk", "all");
   const [detailId, setDetailId] = useState<string | null>(null);
   const detailCluster = clusters.find((c) => c.id === detailId)?.cluster ?? "";
   const actionSummary = useClusterActions(detailCluster);
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useMenuState("page", 1);
   const perPage = 15;
 
   const provinces = useMemo(

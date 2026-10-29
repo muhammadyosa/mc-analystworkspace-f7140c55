@@ -1,3 +1,5 @@
+import { useMenuState } from "@/hooks/use-menu-state";
+import { validateMenuSearch } from "@/lib/navigation-state";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { format } from "date-fns";
@@ -78,7 +80,7 @@ function parseProfilingDate(value: unknown): Date | null {
   const iso = new Date(t);
   if (!isNaN(iso.getTime()) && /^\d{4}-\d{1,2}-\d{1,2}/.test(t)) return iso;
   // DD/MM/YYYY or DD-MM-YYYY
-  const m = t.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/);
+  const m = t.match(/^(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{2,4})/);
   if (m) {
     const d = Number(m[1]);
     const mo = Number(m[2]) - 1;
@@ -95,9 +97,15 @@ function dateToKey(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
+const profilingDates = new WeakMap<AnalystRow, string>();
+
 function profilingDateKey(row: AnalystRow): string {
+  const cached = profilingDates.get(row);
+  if (cached !== undefined) return cached;
   const date = parseProfilingDate(row.profilingDate) || parseProfilingDate(row.timestamp);
-  return date ? dateToKey(date) : "";
+  const key = date ? dateToKey(date) : "";
+  profilingDates.set(row, key);
+  return key;
 }
 
 function formatDateID(key: string, compact = false): string {
@@ -1199,6 +1207,7 @@ function WeeklyDailyAnalysis({
 }
 
 export const Route = createFileRoute("/reports")({
+  validateSearch: validateMenuSearch,
   head: () => ({
     meta: [
       { title: "Reports — MCA Analyst Workspace" },
@@ -1625,6 +1634,7 @@ function computeStats(
 }
 
 function ReportsPage() {
+  const [tab, setTab] = useMenuState("tab", "day");
   const allClusters = useDataStore((s) => s.clusters);
   const { dimRows: clusters } = useGlobalClusters();
   const actionPlans = useDataStore((s) => s.actionPlans);
@@ -1663,27 +1673,27 @@ function ReportsPage() {
   const lastM = avail[avail.length - 1];
   const prevM = avail.length > 1 ? avail[avail.length - 2] : first;
 
-  const [mFrom, setMFrom] = useState(first);
-  const [mTo, setMTo] = useState(lastM);
+  const [mFrom, setMFrom] = useMenuState("mFrom", first);
+  const [mTo, setMTo] = useMenuState("mTo", lastM);
 
-  const [wDFrom, setWDFrom] = useState("");
-  const [wDTo, setWDTo] = useState("");
+  const [wDFrom, setWDFrom] = useMenuState("wDFrom", "");
+  const [wDTo, setWDTo] = useMenuState("wDTo", "");
   // Weekly: satu kontrol saja — bulan + minggu ke-1..5
-  const [wkMonth, setWkMonth] = useState(lastM);
-  const [wkWeek, setWkWeek] = useState(1);
-  const [cmpWeeks, setCmpWeeks] = useState<number[]>([1, 2]);
+  const [wkMonth, setWkMonth] = useMenuState("wkMonth", lastM);
+  const [wkWeek, setWkWeek] = useMenuState("wkWeek", 1);
+  const [cmpWeeks, setCmpWeeks] = useMenuState<number[]>("cmpWeeks", [1, 2]);
   const toggleCmpWeek = (w: number) =>
     setCmpWeeks((prev) =>
       prev.includes(w) ? prev.filter((x) => x !== w) : [...prev, w].sort((a, b) => a - b),
     );
   const weekSel = weekRange(wkMonth, wkWeek);
   // Competitor Intel: satu kontrol saja — rentang tanggal
-  const [cDFrom, setCDFrom] = useState("");
-  const [cDTo, setCDTo] = useState("");
+  const [cDFrom, setCDFrom] = useMenuState("cDFrom", "");
+  const [cDTo, setCDTo] = useMenuState("cDTo", "");
 
   // Sinkronkan range bila data baru punya bulan terakhir yang berbeda
   const monthRangeKey = `${first}-${lastM}`;
-  const [syncKey, setSyncKey] = useState(monthRangeKey);
+  const [syncKey, setSyncKey] = useMenuState("syncKey", monthRangeKey);
   useEffect(() => {
     if (syncKey === monthRangeKey) return;
     setSyncKey(monthRangeKey);
@@ -1693,7 +1703,20 @@ function ReportsPage() {
     setWkWeek(1);
     setCDFrom("");
     setCDTo("");
-  }, [first, lastM, monthRangeKey, prevM, syncKey]);
+  }, [
+    first,
+    lastM,
+    monthRangeKey,
+    prevM,
+    syncKey,
+    setSyncKey,
+    setMFrom,
+    setMTo,
+    setWkMonth,
+    setWkWeek,
+    setCDFrom,
+    setCDTo,
+  ]);
 
   const cDFromEff = cDFrom || monthStartKey(first);
   const cDToEff = cDTo || monthEndKey(lastM);
@@ -2390,7 +2413,7 @@ function ReportsPage() {
       <AppHeader title="Reports" subtitle="Weekly · Day · Monthly · Competitor Intelligence" />
       <div className="min-w-0 space-y-4 p-3 sm:p-5 lg:p-6">
         <GlobalFilterBar hideMonths />
-        <Tabs defaultValue="day">
+        <Tabs value={tab} onValueChange={setTab}>
           <div className="scroll-x pb-1">
             <TabsList className="w-max min-w-full justify-start sm:min-w-0">
               <TabsTrigger value="day">
